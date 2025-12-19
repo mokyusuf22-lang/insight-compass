@@ -29,7 +29,7 @@ serve(async (req) => {
     });
 
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId;
+    let customerId: string | undefined;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
     }
@@ -37,7 +37,7 @@ serve(async (req) => {
     // Create or get price for personality assessment
     let priceId: string;
     const prices = await stripe.prices.list({ limit: 10, active: true });
-    const existingPrice = prices.data.find(p => p.metadata?.product_type === 'personality_assessment');
+    const existingPrice = prices.data.find((p: Stripe.Price) => p.metadata?.product_type === 'personality_assessment');
     
     if (existingPrice) {
       priceId = existingPrice.id;
@@ -71,9 +71,10 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error) {
-    console.error("Payment error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Payment error:", errorMessage);
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
