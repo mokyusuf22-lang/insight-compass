@@ -14,7 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assessment_responses: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          is_paid_question: boolean
+          question_id: string
+          user_id: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          is_paid_question?: boolean
+          question_id: string
+          user_id: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          is_paid_question?: boolean
+          question_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      assessments: {
+        Row: {
+          assessment_type: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          is_complete: boolean
+          is_paid: boolean
+          result_summary: Json | null
+          user_id: string
+        }
+        Insert: {
+          assessment_type?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          is_paid?: boolean
+          result_summary?: Json | null
+          user_id: string
+        }
+        Update: {
+          assessment_type?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          is_paid?: boolean
+          result_summary?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          has_paid: boolean
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          has_paid?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          has_paid?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
