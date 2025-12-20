@@ -89,7 +89,7 @@ export default function Welcome() {
           <Button
             size="lg"
             className="gradient-primary text-primary-foreground hover:opacity-90 px-8 py-6 text-lg"
-            onClick={() => navigate('/assessment/free')}
+            onClick={() => navigate('/assessment/step1')}
           >
             Start Free Assessment
             <ArrowRight className="w-5 h-5 ml-2" />

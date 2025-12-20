@@ -7,7 +7,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Welcome from "./pages/Welcome";
-import FreeAssessment from "./pages/FreeAssessment";
+import Step1Assessment from "./pages/Step1Assessment";
+import Step1Results from "./pages/Step1Results";
 import EmailCapture from "./pages/EmailCapture";
 import FreeResults from "./pages/FreeResults";
 import Paywall from "./pages/Paywall";
@@ -31,7 +32,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/welcome" element={<Welcome />} />
-            <Route path="/assessment/free" element={<FreeAssessment />} />
+            <Route path="/assessment/step1" element={<Step1Assessment />} />
+            <Route path="/assessment/step1/results" element={<Step1Results />} />
             <Route path="/email-capture" element={<EmailCapture />} />
             <Route path="/results/free" element={<FreeResults />} />
             <Route path="/paywall" element={<Paywall />} />
