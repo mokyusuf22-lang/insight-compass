@@ -1,1 +1,7 @@
 project_id = "ekcjzwqjwmupolbxktrr"
+
+[functions.create-payment]
+verify_jwt = true
+
+[functions.generate-hypothesis]
+verify_jwt = true

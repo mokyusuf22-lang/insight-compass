@@ -80,6 +80,7 @@ export type Database = {
           email: string | null
           has_paid: boolean
           id: string
+          step1_completed: boolean
           updated_at: string
           user_id: string
         }
@@ -88,6 +89,7 @@ export type Database = {
           email?: string | null
           has_paid?: boolean
           id?: string
+          step1_completed?: boolean
           updated_at?: string
           user_id: string
         }
@@ -96,8 +98,51 @@ export type Database = {
           email?: string | null
           has_paid?: boolean
           id?: string
+          step1_completed?: boolean
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      step1_assessments: {
+        Row: {
+          ai_hypothesis: Json | null
+          axis_scores: Json
+          biggest_challenge: string | null
+          created_at: string
+          id: string
+          is_complete: boolean
+          time_horizon: string | null
+          updated_at: string
+          user_current_role: string | null
+          user_id: string
+          user_target_role: string | null
+        }
+        Insert: {
+          ai_hypothesis?: Json | null
+          axis_scores?: Json
+          biggest_challenge?: string | null
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          time_horizon?: string | null
+          updated_at?: string
+          user_current_role?: string | null
+          user_id: string
+          user_target_role?: string | null
+        }
+        Update: {
+          ai_hypothesis?: Json | null
+          axis_scores?: Json
+          biggest_challenge?: string | null
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          time_horizon?: string | null
+          updated_at?: string
+          user_current_role?: string | null
+          user_id?: string
+          user_target_role?: string | null
         }
         Relationships: []
       }
