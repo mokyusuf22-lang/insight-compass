@@ -1,13 +1,14 @@
 import { useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
-import { Sparkles, Brain, Heart, Target, ArrowRight, Crown, LogOut, History } from 'lucide-react';
+import { UserHeader } from '@/components/UserHeader';
+import { Brain, Heart, Target, ArrowRight, Crown } from 'lucide-react';
 
 export default function Welcome() {
-  const { user, profile, loading, signOut } = useAuth();
+  const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,26 +30,7 @@ export default function Welcome() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="p-4 md:p-6 flex justify-between items-center border-b border-border">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="font-serif font-semibold text-lg">MindMap</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link to="/history">
-            <Button variant="ghost" size="sm">
-              <History className="w-4 h-4 mr-2" />
-              My Results
-            </Button>
-          </Link>
-          <Button variant="ghost" size="sm" onClick={signOut}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
-        </div>
-      </header>
+      <UserHeader showHomeLink={false} />
 
       {/* Main content */}
       <main className="container max-w-4xl py-12 px-4 md:px-8">

@@ -5,7 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
-import { Brain, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import { UserHeader } from '@/components/UserHeader';
+import { ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
 
 interface AIHypothesis {
   mbti_tendency: string;
@@ -88,19 +89,7 @@ export default function Step1Results() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="p-4 md:p-6 border-b border-border">
-        <div className="container max-w-4xl flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-              <Brain className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <span className="font-serif font-semibold">Initial Hypothesis</span>
-          </div>
-          <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
-            Step 1 Complete
-          </span>
-        </div>
-      </header>
+      <UserHeader />
 
       {/* Content */}
       <main className="container max-w-4xl py-8 px-4 md:px-8">

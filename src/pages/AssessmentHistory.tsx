@@ -1,18 +1,17 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
+import { UserHeader } from '@/components/UserHeader';
 import { 
-  History as HistoryIcon, 
   Crown, 
   ArrowRight, 
   Calendar,
   CheckCircle,
   Clock,
-  Home,
   Sparkles
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -72,22 +71,7 @@ export default function AssessmentHistory() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="p-4 md:p-6 border-b border-border">
-        <div className="container max-w-4xl flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-              <HistoryIcon className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <span className="font-serif font-semibold">Assessment History</span>
-          </div>
-          <Link to="/welcome">
-            <Button variant="ghost" size="sm">
-              <Home className="w-4 h-4 mr-2" />
-              Home
-            </Button>
-          </Link>
-        </div>
-      </header>
+      <UserHeader />
 
       {/* Content */}
       <main className="container max-w-4xl py-8 px-4 md:px-8">
