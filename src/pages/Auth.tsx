@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
+import { SignInConfirmation } from '@/components/SignInConfirmation';
 import { Sparkles, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
@@ -22,16 +23,23 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmedEmail, setConfirmedEmail] = useState('');
 
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const handleConfirmationComplete = useCallback(() => {
+    navigate('/welcome');
+  }, [navigate]);
+
   useEffect(() => {
-    if (!loading && user) {
+    // Only auto-redirect if not showing confirmation
+    if (!loading && user && !showConfirmation) {
       navigate('/welcome');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, showConfirmation]);
 
   const validateForm = () => {
     try {
@@ -76,11 +84,9 @@ export default function Auth() {
             });
           }
         } else {
-          toast({
-            title: 'Welcome back!',
-            description: 'You have successfully signed in.',
-          });
-          navigate('/welcome');
+          // Show confirmation screen before navigating
+          setConfirmedEmail(email);
+          setShowConfirmation(true);
         }
       } else {
         const { error } = await signUp(email, password);
@@ -99,17 +105,25 @@ export default function Auth() {
             });
           }
         } else {
-          toast({
-            title: 'Account created!',
-            description: 'Welcome to your personality journey.',
-          });
-          navigate('/welcome');
+          // Show confirmation screen before navigating
+          setConfirmedEmail(email);
+          setShowConfirmation(true);
         }
       }
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Show sign-in confirmation
+  if (showConfirmation && confirmedEmail) {
+    return (
+      <SignInConfirmation 
+        email={confirmedEmail} 
+        onComplete={handleConfirmationComplete}
+      />
+    );
+  }
 
   if (loading) {
     return (
