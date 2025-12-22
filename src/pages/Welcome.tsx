@@ -77,7 +77,17 @@ export default function Welcome() {
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
           
-          {!hasPaid && (
+          {hasPaid ? (
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-secondary text-secondary hover:bg-secondary/10 px-8 py-6 text-lg"
+              onClick={() => navigate('/assessment/mbti')}
+            >
+              <Crown className="w-5 h-5 mr-2" />
+              Take MBTI Assessment
+            </Button>
+          ) : (
             <Button
               size="lg"
               variant="outline"
@@ -85,7 +95,7 @@ export default function Welcome() {
               onClick={() => navigate('/paywall')}
             >
               <Crown className="w-5 h-5 mr-2" />
-              Unlock Full Assessment
+              Unlock Premium Assessments
             </Button>
           )}
         </div>
@@ -120,20 +130,24 @@ export default function Welcome() {
               <CardContent className="p-6">
                 <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                   <Crown className="w-5 h-5 text-secondary" />
-                  <span className="text-secondary">Premium</span> Full Assessment
+                  <span className="text-secondary">Premium</span> MBTI Assessment
                 </h3>
                 <ul className="space-y-3 text-muted-foreground">
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    12 comprehensive questions
+                    93 research-backed questions
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    Detailed personality analysis
+                    4-axis personality analysis
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    Personalized recommendations
+                    Confidence scoring per dimension
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
+                    Inconsistency detection for accuracy
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-secondary" />

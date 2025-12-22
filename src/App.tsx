@@ -9,6 +9,8 @@ import Auth from "./pages/Auth";
 import Welcome from "./pages/Welcome";
 import Step1Assessment from "./pages/Step1Assessment";
 import Step1Results from "./pages/Step1Results";
+import MBTIAssessment from "./pages/MBTIAssessment";
+import MBTIResults from "./pages/MBTIResults";
 import EmailCapture from "./pages/EmailCapture";
 import FreeResults from "./pages/FreeResults";
 import Paywall from "./pages/Paywall";
@@ -34,6 +36,8 @@ const App = () => (
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/assessment/step1" element={<Step1Assessment />} />
             <Route path="/assessment/step1/results" element={<Step1Results />} />
+            <Route path="/assessment/mbti" element={<MBTIAssessment />} />
+            <Route path="/assessment/mbti/results" element={<MBTIResults />} />
             <Route path="/email-capture" element={<EmailCapture />} />
             <Route path="/results/free" element={<FreeResults />} />
             <Route path="/paywall" element={<Paywall />} />
