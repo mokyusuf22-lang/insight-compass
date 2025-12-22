@@ -74,6 +74,39 @@ export type Database = {
         }
         Relationships: []
       }
+      disc_assessments: {
+        Row: {
+          created_at: string
+          current_question: number
+          id: string
+          is_complete: boolean
+          responses: Json
+          result: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_question?: number
+          id?: string
+          is_complete?: boolean
+          responses?: Json
+          result?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_question?: number
+          id?: string
+          is_complete?: boolean
+          responses?: Json
+          result?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       mbti_assessments: {
         Row: {
           created_at: string
@@ -109,7 +142,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          career_goals: Json | null
           created_at: string
+          disc_completed: boolean
           email: string | null
           has_paid: boolean
           id: string
@@ -119,7 +154,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          career_goals?: Json | null
           created_at?: string
+          disc_completed?: boolean
           email?: string | null
           has_paid?: boolean
           id?: string
@@ -129,7 +166,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          career_goals?: Json | null
           created_at?: string
+          disc_completed?: boolean
           email?: string | null
           has_paid?: boolean
           id?: string
