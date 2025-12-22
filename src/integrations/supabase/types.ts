@@ -74,12 +74,46 @@ export type Database = {
         }
         Relationships: []
       }
+      mbti_assessments: {
+        Row: {
+          created_at: string
+          current_question: number
+          id: string
+          is_complete: boolean
+          responses: Json
+          result: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_question?: number
+          id?: string
+          is_complete?: boolean
+          responses?: Json
+          result?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_question?: number
+          id?: string
+          is_complete?: boolean
+          responses?: Json
+          result?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
           email: string | null
           has_paid: boolean
           id: string
+          mbti_completed: boolean
           step1_completed: boolean
           updated_at: string
           user_id: string
@@ -89,6 +123,7 @@ export type Database = {
           email?: string | null
           has_paid?: boolean
           id?: string
+          mbti_completed?: boolean
           step1_completed?: boolean
           updated_at?: string
           user_id: string
@@ -98,6 +133,7 @@ export type Database = {
           email?: string | null
           has_paid?: boolean
           id?: string
+          mbti_completed?: boolean
           step1_completed?: boolean
           updated_at?: string
           user_id?: string
