@@ -74,6 +74,42 @@ export type Database = {
         }
         Relationships: []
       }
+      career_strategies: {
+        Row: {
+          career_goals: Json | null
+          created_at: string
+          disc_result: Json | null
+          id: string
+          mbti_result: Json | null
+          strategy: Json | null
+          strengths_result: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          career_goals?: Json | null
+          created_at?: string
+          disc_result?: Json | null
+          id?: string
+          mbti_result?: Json | null
+          strategy?: Json | null
+          strengths_result?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          career_goals?: Json | null
+          created_at?: string
+          disc_result?: Json | null
+          id?: string
+          mbti_result?: Json | null
+          strategy?: Json | null
+          strengths_result?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       disc_assessments: {
         Row: {
           created_at: string
@@ -150,6 +186,7 @@ export type Database = {
           id: string
           mbti_completed: boolean
           step1_completed: boolean
+          strategy_generated: boolean
           strengths_completed: boolean
           updated_at: string
           user_id: string
@@ -163,6 +200,7 @@ export type Database = {
           id?: string
           mbti_completed?: boolean
           step1_completed?: boolean
+          strategy_generated?: boolean
           strengths_completed?: boolean
           updated_at?: string
           user_id: string
@@ -176,6 +214,7 @@ export type Database = {
           id?: string
           mbti_completed?: boolean
           step1_completed?: boolean
+          strategy_generated?: boolean
           strengths_completed?: boolean
           updated_at?: string
           user_id?: string

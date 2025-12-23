@@ -15,6 +15,8 @@ import DISCAssessment from "./pages/DISCAssessment";
 import DISCResults from "./pages/DISCResults";
 import StrengthsAssessment from "./pages/StrengthsAssessment";
 import StrengthsResults from "./pages/StrengthsResults";
+import CareerStrategy from "./pages/CareerStrategy";
+import Coaching from "./pages/Coaching";
 import AssessmentJourney from "./pages/AssessmentJourney";
 import EmailCapture from "./pages/EmailCapture";
 import FreeResults from "./pages/FreeResults";
@@ -46,6 +48,8 @@ const App = () => (
             <Route path="/assessment/disc/results" element={<DISCResults />} />
             <Route path="/assessment/strengths" element={<StrengthsAssessment />} />
             <Route path="/assessment/strengths/results" element={<StrengthsResults />} />
+            <Route path="/strategy" element={<CareerStrategy />} />
+            <Route path="/coaching" element={<Coaching />} />
             <Route path="/history" element={<AssessmentJourney />} />
             <Route path="/email-capture" element={<EmailCapture />} />
             <Route path="/results/free" element={<FreeResults />} />
