@@ -150,6 +150,7 @@ export type Database = {
           id: string
           mbti_completed: boolean
           step1_completed: boolean
+          strengths_completed: boolean
           updated_at: string
           user_id: string
         }
@@ -162,6 +163,7 @@ export type Database = {
           id?: string
           mbti_completed?: boolean
           step1_completed?: boolean
+          strengths_completed?: boolean
           updated_at?: string
           user_id: string
         }
@@ -174,6 +176,7 @@ export type Database = {
           id?: string
           mbti_completed?: boolean
           step1_completed?: boolean
+          strengths_completed?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -218,6 +221,39 @@ export type Database = {
           user_current_role?: string | null
           user_id?: string
           user_target_role?: string | null
+        }
+        Relationships: []
+      }
+      strengths_assessments: {
+        Row: {
+          created_at: string
+          current_question: number
+          id: string
+          is_complete: boolean
+          responses: Json
+          result: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_question?: number
+          id?: string
+          is_complete?: boolean
+          responses?: Json
+          result?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_question?: number
+          id?: string
+          is_complete?: boolean
+          responses?: Json
+          result?: Json | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
