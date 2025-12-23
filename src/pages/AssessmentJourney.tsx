@@ -17,7 +17,9 @@ import {
   Users,
   Star,
   Target,
-  Sparkles
+  Sparkles,
+  Compass,
+  MessageSquare
 } from 'lucide-react';
 
 interface AssessmentStatus {
@@ -356,6 +358,82 @@ export default function AssessmentJourney() {
             </Card>
           </div>
         </section>
+
+        {/* Strategy & Coaching Section */}
+        {hasPaid && (assessmentStatus.mbti.completed || assessmentStatus.disc.completed || assessmentStatus.strengths.completed) && (
+          <section className="mb-10">
+            <h2 className="text-xl font-serif font-semibold mb-4 flex items-center gap-2">
+              <Compass className="w-5 h-5 text-primary" />
+              Strategy & Coaching
+            </h2>
+            
+            <div className="space-y-4">
+              {/* Strategy Card */}
+              <Card className="animate-fade-up" style={{ animationDelay: '250ms' }}>
+                <CardContent className="p-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 rounded-xl bg-primary/10">
+                        <Target className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-lg">Career Strategy</h3>
+                          {assessmentStatus.mbti.completed && assessmentStatus.disc.completed && assessmentStatus.strengths.completed ? (
+                            <Badge variant="secondary">Ready</Badge>
+                          ) : (
+                            <Badge variant="outline">Complete all assessments</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          AI-generated career transition roadmap based on your profile.
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      onClick={() => navigate('/strategy')}
+                      disabled={!(assessmentStatus.mbti.completed && assessmentStatus.disc.completed && assessmentStatus.strengths.completed)}
+                    >
+                      View Strategy
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Coaching Card */}
+              <Card className="animate-fade-up" style={{ animationDelay: '300ms' }}>
+                <CardContent className="p-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 rounded-xl bg-secondary/10">
+                        <MessageSquare className="w-6 h-6 text-secondary" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-lg">Personal Coaching</h3>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Daily actionable guidance tailored to your personality.
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      variant="outline"
+                      onClick={() => navigate('/coaching')}
+                      disabled={!(assessmentStatus.mbti.completed && assessmentStatus.disc.completed && assessmentStatus.strengths.completed)}
+                    >
+                      Get Coaching
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        )}
 
         {/* Upgrade CTA for non-paid users */}
         {!hasPaid && (
