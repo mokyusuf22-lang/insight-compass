@@ -13,6 +13,8 @@ import MBTIAssessment from "./pages/MBTIAssessment";
 import MBTIResults from "./pages/MBTIResults";
 import DISCAssessment from "./pages/DISCAssessment";
 import DISCResults from "./pages/DISCResults";
+import StrengthsAssessment from "./pages/StrengthsAssessment";
+import StrengthsResults from "./pages/StrengthsResults";
 import AssessmentJourney from "./pages/AssessmentJourney";
 import EmailCapture from "./pages/EmailCapture";
 import FreeResults from "./pages/FreeResults";
@@ -42,6 +44,8 @@ const App = () => (
             <Route path="/assessment/mbti/results" element={<MBTIResults />} />
             <Route path="/assessment/disc" element={<DISCAssessment />} />
             <Route path="/assessment/disc/results" element={<DISCResults />} />
+            <Route path="/assessment/strengths" element={<StrengthsAssessment />} />
+            <Route path="/assessment/strengths/results" element={<StrengthsResults />} />
             <Route path="/history" element={<AssessmentJourney />} />
             <Route path="/email-capture" element={<EmailCapture />} />
             <Route path="/results/free" element={<FreeResults />} />

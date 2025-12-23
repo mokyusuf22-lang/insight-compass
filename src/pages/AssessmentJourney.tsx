@@ -23,7 +23,7 @@ import {
 interface AssessmentStatus {
   mbti: { completed: boolean; assessmentId: string | null };
   disc: { completed: boolean; assessmentId: string | null };
-  strengths: { available: boolean };
+  strengths: { completed: boolean; assessmentId: string | null };
 }
 
 export default function AssessmentJourney() {
@@ -33,7 +33,7 @@ export default function AssessmentJourney() {
   const [assessmentStatus, setAssessmentStatus] = useState<AssessmentStatus>({
     mbti: { completed: false, assessmentId: null },
     disc: { completed: false, assessmentId: null },
-    strengths: { available: false },
+    strengths: { completed: false, assessmentId: null },
   });
   const [careerGoals, setCareerGoals] = useState<CareerGoals | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,6 +71,16 @@ export default function AssessmentJourney() {
           .limit(1)
           .maybeSingle();
 
+        // Load Strengths assessment status
+        const { data: strengthsData } = await supabase
+          .from('strengths_assessments')
+          .select('id, is_complete')
+          .eq('user_id', user.id)
+          .eq('is_complete', true)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
         // Load career goals from profile
         const { data: profileData } = await supabase
           .from('profiles')
@@ -87,7 +97,10 @@ export default function AssessmentJourney() {
             completed: !!discData?.is_complete, 
             assessmentId: discData?.id || null 
           },
-          strengths: { available: false }, // Coming soon
+          strengths: { 
+            completed: !!strengthsData?.is_complete, 
+            assessmentId: strengthsData?.id || null 
+          },
         });
 
         if (profileData?.career_goals) {
@@ -114,7 +127,7 @@ export default function AssessmentJourney() {
   }
 
   const hasPaid = profile?.has_paid;
-  const completedCount = [assessmentStatus.mbti.completed, assessmentStatus.disc.completed].filter(Boolean).length;
+  const completedCount = [assessmentStatus.mbti.completed, assessmentStatus.disc.completed, assessmentStatus.strengths.completed].filter(Boolean).length;
   const totalAssessments = 3; // MBTI, DISC, Strengths
 
   const getGoalSummary = () => {
@@ -290,29 +303,54 @@ export default function AssessmentJourney() {
               </CardContent>
             </Card>
 
-            {/* Strengths Card - Coming Soon */}
-            <Card className="animate-fade-up opacity-70" style={{ animationDelay: '200ms' }}>
+            {/* Strengths Card */}
+            <Card className="animate-fade-up" style={{ animationDelay: '200ms' }}>
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-start gap-4">
-                    <div className="p-3 rounded-xl bg-muted">
-                      <Star className="w-6 h-6 text-muted-foreground" />
+                    <div className={`p-3 rounded-xl ${assessmentStatus.strengths.completed ? 'bg-green-500/10' : 'bg-primary/10'}`}>
+                      <Star className={`w-6 h-6 ${assessmentStatus.strengths.completed ? 'text-green-600' : 'text-primary'}`} />
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold text-lg">Strengths Finder</h3>
-                        <Badge variant="outline">Coming Soon</Badge>
+                        {assessmentStatus.strengths.completed ? (
+                          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+                            Completed
+                          </Badge>
+                        ) : hasPaid ? (
+                          <Badge variant="secondary">Available</Badge>
+                        ) : (
+                          <Badge variant="outline">Premium</Badge>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground">
+                        48 questions • ~10 minutes
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
                         Identify your core strengths and natural talents.
                       </p>
                     </div>
                   </div>
                   
-                  <Button variant="outline" disabled>
-                    <Clock className="w-4 h-4 mr-2" />
-                    Coming Soon
-                  </Button>
+                  {assessmentStatus.strengths.completed ? (
+                    <Button 
+                      onClick={() => navigate(`/assessment/strengths/results?id=${assessmentStatus.strengths.assessmentId}`)}
+                    >
+                      View Results
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  ) : hasPaid ? (
+                    <Button onClick={() => navigate('/assessment/strengths')}>
+                      Start Assessment
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  ) : (
+                    <Button variant="outline" onClick={() => navigate('/paywall')}>
+                      <Lock className="w-4 h-4 mr-2" />
+                      Unlock
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
