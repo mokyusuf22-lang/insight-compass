@@ -81,6 +81,7 @@ export type Database = {
           disc_result: Json | null
           id: string
           mbti_result: Json | null
+          skill_development_plan: Json | null
           strategy: Json | null
           strengths_result: Json | null
           updated_at: string
@@ -92,6 +93,7 @@ export type Database = {
           disc_result?: Json | null
           id?: string
           mbti_result?: Json | null
+          skill_development_plan?: Json | null
           strategy?: Json | null
           strengths_result?: Json | null
           updated_at?: string
@@ -103,6 +105,7 @@ export type Database = {
           disc_result?: Json | null
           id?: string
           mbti_result?: Json | null
+          skill_development_plan?: Json | null
           strategy?: Json | null
           strengths_result?: Json | null
           updated_at?: string

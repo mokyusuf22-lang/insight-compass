@@ -422,10 +422,10 @@ export default function CareerStrategy() {
             Back to Journey
           </Button>
           <Button 
-            onClick={() => navigate('/coaching')}
+            onClick={() => navigate('/skill-plan')}
             className="gradient-primary text-primary-foreground"
           >
-            Get Coaching Guidance
+            Generate Skill Plan
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
