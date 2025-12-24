@@ -418,10 +418,10 @@ export default function SkillDevelopmentPlan() {
             Back to Strategy
           </Button>
           <Button 
-            onClick={() => navigate('/coaching')}
+            onClick={() => navigate('/weekly')}
             className="gradient-primary text-primary-foreground"
           >
-            Get Coaching Guidance
+            Start Weekly Execution
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>

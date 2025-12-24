@@ -299,6 +299,59 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_execution_plans: {
+        Row: {
+          coaching_notes: string | null
+          completed_tasks: Json
+          created_at: string
+          current_phase: string | null
+          id: string
+          is_complete: boolean
+          strategy_id: string | null
+          tasks: Json
+          updated_at: string
+          user_id: string
+          week_number: number
+          week_start_date: string
+        }
+        Insert: {
+          coaching_notes?: string | null
+          completed_tasks?: Json
+          created_at?: string
+          current_phase?: string | null
+          id?: string
+          is_complete?: boolean
+          strategy_id?: string | null
+          tasks?: Json
+          updated_at?: string
+          user_id: string
+          week_number?: number
+          week_start_date?: string
+        }
+        Update: {
+          coaching_notes?: string | null
+          completed_tasks?: Json
+          created_at?: string
+          current_phase?: string | null
+          id?: string
+          is_complete?: boolean
+          strategy_id?: string | null
+          tasks?: Json
+          updated_at?: string
+          user_id?: string
+          week_number?: number
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_execution_plans_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "career_strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
