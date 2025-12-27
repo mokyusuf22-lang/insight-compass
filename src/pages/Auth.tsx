@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { SignInConfirmation } from '@/components/SignInConfirmation';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
+import { Eye, EyeOff } from 'lucide-react';
 import { z } from 'zod';
 
 const authSchema = z.object({
@@ -33,6 +34,7 @@ export default function Auth() {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedEmail, setConfirmedEmail] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const { signIn, signUp, signInWithGoogle, resetPassword, user, loading } = useAuth();
   const navigate = useNavigate();
@@ -401,15 +403,25 @@ export default function Auth() {
                       </button>
                     )}
                   </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={isLoading}
-                    className={`h-12 rounded-lg border-border ${errors.password ? 'border-destructive' : ''}`}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={isLoading}
+                      className={`h-12 rounded-lg border-border pr-12 ${errors.password ? 'border-destructive' : ''}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
                   {errors.password && (
                     <p className="text-sm text-destructive">{errors.password}</p>
                   )}
