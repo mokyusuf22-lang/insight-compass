@@ -93,10 +93,13 @@ serve(async (req) => {
     let subscriptionEnd = null;
     let cancelAtPeriodEnd = false;
 
+    let lastPaymentDate = null;
+
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
       cancelAtPeriodEnd = subscription.cancel_at_period_end;
+      lastPaymentDate = new Date(subscription.current_period_start * 1000).toISOString();
       logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
       
       productId = subscription.items.data[0].price.product as string;
@@ -126,6 +129,7 @@ serve(async (req) => {
         if (endDate > new Date()) {
           subscriptionEnd = endDate.toISOString();
           cancelAtPeriodEnd = true;
+          lastPaymentDate = new Date(canceledSub.current_period_start * 1000).toISOString();
           productId = canceledSub.items.data[0].price.product as string;
           
           if (productId === TIERS.premium.product_id) {
@@ -143,13 +147,31 @@ serve(async (req) => {
       }
     }
 
+    // Update user profile with subscription data
+    const { error: updateError } = await supabaseClient
+      .from('profiles')
+      .update({
+        subscription_tier: tier === "free" ? null : tier,
+        last_payment_date: lastPaymentDate,
+        subscription_end_date: subscriptionEnd,
+        has_paid: tier !== "free",
+      })
+      .eq('user_id', user.id);
+
+    if (updateError) {
+      logStep("Error updating profile", { error: updateError.message });
+    } else {
+      logStep("Profile updated with subscription data", { tier, lastPaymentDate, subscriptionEnd });
+    }
+
     return new Response(JSON.stringify({
       subscribed: tier !== "free",
       tier,
       tier_name: tierName,
       product_id: productId,
       subscription_end: subscriptionEnd,
-      cancel_at_period_end: cancelAtPeriodEnd
+      cancel_at_period_end: cancelAtPeriodEnd,
+      last_payment_date: lastPaymentDate
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
