@@ -118,10 +118,17 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
             </Link>
           )}
 
-          <Link to="/history">
+          <Link to="/results">
             <Button variant="ghost" size="sm">
               <History className="w-4 h-4 mr-2" />
-              My Results
+              Results
+            </Button>
+          </Link>
+
+          <Link to="/task/today">
+            <Button variant="ghost" size="sm">
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Weekly Coaching
             </Button>
           </Link>
 

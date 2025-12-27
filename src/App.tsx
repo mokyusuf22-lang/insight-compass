@@ -27,6 +27,8 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCanceled from "./pages/PaymentCanceled";
 import FullAssessment from "./pages/FullAssessment";
 import FullResults from "./pages/FullResults";
+import Results from "./pages/Results";
+import TaskToday from "./pages/TaskToday";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +64,8 @@ const App = () => (
             <Route path="/payment-canceled" element={<PaymentCanceled />} />
             <Route path="/assessment/full" element={<FullAssessment />} />
             <Route path="/results/full" element={<FullResults />} />
+            <Route path="/results" element={<Results />} />
+            <Route path="/task/today" element={<TaskToday />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
