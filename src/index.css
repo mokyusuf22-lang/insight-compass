@@ -164,6 +164,52 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  /* Chamfered corners - using clip-path for diagonal cuts */
+  .chamfer {
+    --chamfer-size: 16px;
+    clip-path: polygon(
+      var(--chamfer-size) 0,
+      calc(100% - var(--chamfer-size)) 0,
+      100% var(--chamfer-size),
+      100% calc(100% - var(--chamfer-size)),
+      calc(100% - var(--chamfer-size)) 100%,
+      var(--chamfer-size) 100%,
+      0 calc(100% - var(--chamfer-size)),
+      0 var(--chamfer-size)
+    );
+    border-radius: 0;
+  }
+
+  .chamfer-sm {
+    --chamfer-size: 10px;
+    clip-path: polygon(
+      var(--chamfer-size) 0,
+      calc(100% - var(--chamfer-size)) 0,
+      100% var(--chamfer-size),
+      100% calc(100% - var(--chamfer-size)),
+      calc(100% - var(--chamfer-size)) 100%,
+      var(--chamfer-size) 100%,
+      0 calc(100% - var(--chamfer-size)),
+      0 var(--chamfer-size)
+    );
+    border-radius: 0;
+  }
+
+  .chamfer-lg {
+    --chamfer-size: 24px;
+    clip-path: polygon(
+      var(--chamfer-size) 0,
+      calc(100% - var(--chamfer-size)) 0,
+      100% var(--chamfer-size),
+      100% calc(100% - var(--chamfer-size)),
+      calc(100% - var(--chamfer-size)) 100%,
+      var(--chamfer-size) 100%,
+      0 calc(100% - var(--chamfer-size)),
+      0 var(--chamfer-size)
+    );
+    border-radius: 0;
+  }
 }
 
 /* Custom animations */

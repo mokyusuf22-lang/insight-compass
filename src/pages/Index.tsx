@@ -1,7 +1,6 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ArrowRight, MessageSquare, Brain, Target, BarChart3, Check } from 'lucide-react';
 import heroImage from '@/assets/hero-professional-1.jpg';
@@ -45,7 +44,7 @@ export default function Index() {
       <section className="pt-16">
         <div className="grid lg:grid-cols-2 min-h-[70vh]">
           {/* Image Side */}
-          <div className="relative bg-amber-100 order-1 lg:order-2">
+          <div className="relative order-1 lg:order-2 overflow-hidden">
             <img
               src={heroImage}
               alt="Professional at work"
@@ -54,7 +53,7 @@ export default function Index() {
           </div>
           
           {/* Content Side */}
-          <div className="flex items-center px-6 md:px-12 lg:px-16 py-16 lg:py-24 order-2 lg:order-1 bg-amber-50">
+          <div className="flex items-center px-6 md:px-12 lg:px-16 py-16 lg:py-24 order-2 lg:order-1 bg-amber-100">
             <div className="max-w-md space-y-6">
               <h1 className="text-3xl md:text-4xl lg:text-5xl leading-tight font-serif">
                 Structured career coaching for people who want real execution.
@@ -64,7 +63,7 @@ export default function Index() {
               </p>
               <div className="space-y-3 pt-4">
                 <Button 
-                  className="w-full sm:w-auto bg-foreground text-background hover:bg-foreground/90"
+                  className="w-full sm:w-auto bg-foreground text-background hover:bg-foreground/90 chamfer-sm"
                   onClick={handleGetStarted}
                 >
                   Start free
@@ -133,7 +132,7 @@ export default function Index() {
               },
             ].map((feature) => (
               <div key={feature.title} className="space-y-3">
-                <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                <div className="w-10 h-10 chamfer-sm bg-secondary flex items-center justify-center">
                   <feature.icon className="w-5 h-5 text-foreground" />
                 </div>
                 <h3 className="font-sans font-semibold text-base">{feature.title}</h3>
@@ -163,7 +162,7 @@ export default function Index() {
               <img
                 src={quoteImage}
                 alt="Professional with tablet"
-                className="w-full max-w-sm mx-auto lg:max-w-none rounded-lg"
+                className="w-full max-w-sm mx-auto lg:max-w-none chamfer"
               />
             </div>
           </div>
@@ -185,7 +184,7 @@ export default function Index() {
             <img
               src={collaborationImage}
               alt="Professionals collaborating"
-              className="w-full rounded-lg"
+              className="w-full chamfer"
             />
           </div>
         </div>
@@ -200,7 +199,7 @@ export default function Index() {
               <img
                 src={workspaceImage}
                 alt="Professional in workspace"
-                className="w-full rounded-lg"
+                className="w-full chamfer"
               />
             </div>
             {/* Content */}
@@ -214,10 +213,10 @@ export default function Index() {
                 Our platform combines AI coaching with evidence-based assessments to give you a personalized career strategy. No generic advice. No vague promises. Just clear thinking and practical steps.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <Button onClick={handleGetStarted}>
+                <Button className="chamfer-sm" onClick={handleGetStarted}>
                   Start free
                 </Button>
-                <Button variant="outline" onClick={() => {
+                <Button variant="outline" className="chamfer-sm" onClick={() => {
                   document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
                 }}>
                   See pricing
@@ -242,81 +241,77 @@ export default function Index() {
           
           <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
             {/* Free Tier */}
-            <Card className="border-border shadow-sm">
-              <CardContent className="p-8 space-y-6">
-                <div>
-                  <h3 className="text-lg font-sans font-semibold mb-1">Free</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-serif">£0</span>
-                  </div>
+            <div className="chamfer bg-card p-8 space-y-6">
+              <div>
+                <h3 className="text-lg font-sans font-semibold mb-1">Free</h3>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-serif">£0</span>
                 </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={handleGetStarted}
-                >
-                  Start with Free
-                </Button>
-                <div className="pt-2">
-                  <p className="text-sm text-muted-foreground mb-4">Included:</p>
-                  <ul className="space-y-3">
-                    {[
-                      'AI-powered suggestions',
-                      'Core profile building',
-                      'Basic assessments',
-                      'High-level insights',
-                    ].map((item) => (
-                      <li key={item} className="flex items-start gap-3 text-sm">
-                        <Check className="w-4 h-4 mt-0.5 text-foreground shrink-0" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+              <Button 
+                variant="outline" 
+                className="w-full chamfer-sm"
+                onClick={handleGetStarted}
+              >
+                Start with Free
+              </Button>
+              <div className="pt-2">
+                <p className="text-sm text-muted-foreground mb-4">Included:</p>
+                <ul className="space-y-3">
+                  {[
+                    'AI-powered suggestions',
+                    'Core profile building',
+                    'Basic assessments',
+                    'High-level insights',
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-3 text-sm">
+                      <Check className="w-4 h-4 mt-0.5 text-foreground shrink-0" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
 
             {/* Pro Tier */}
-            <Card className="border-foreground shadow-md relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="bg-foreground text-background text-xs px-3 py-1 rounded-full font-medium">
+            <div className="chamfer bg-foreground text-background p-8 space-y-6 relative">
+              <div className="absolute top-4 right-6">
+                <span className="bg-background text-foreground text-xs px-3 py-1 chamfer-sm font-medium">
                   Recommended
                 </span>
               </div>
-              <CardContent className="p-8 space-y-6">
-                <div>
-                  <h3 className="text-lg font-sans font-semibold mb-1">Pro</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-serif">£49</span>
-                    <span className="text-muted-foreground text-sm">/mo</span>
-                  </div>
+              <div>
+                <h3 className="text-lg font-sans font-semibold mb-1">Pro</h3>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-serif">£49</span>
+                  <span className="text-background/70 text-sm">/mo</span>
                 </div>
-                <Button 
-                  className="w-full"
-                  onClick={() => navigate('/paywall')}
-                >
-                  Start with Pro
-                </Button>
-                <div className="pt-2">
-                  <p className="text-sm text-muted-foreground mb-4">Everything in Free, plus:</p>
-                  <ul className="space-y-3">
-                    {[
-                      'Full AI coaching access',
-                      'Personality-led guidance',
-                      '3 core assessments',
-                      'Personalized career roadmap',
-                      'Weekly execution guidance',
-                      'Progress tracking dashboard',
-                    ].map((item) => (
-                      <li key={item} className="flex items-start gap-3 text-sm">
-                        <Check className="w-4 h-4 mt-0.5 text-foreground shrink-0" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+              <Button 
+                className="w-full chamfer-sm bg-background text-foreground hover:bg-background/90"
+                onClick={() => navigate('/paywall')}
+              >
+                Start with Pro
+              </Button>
+              <div className="pt-2">
+                <p className="text-sm text-background/70 mb-4">Everything in Free, plus:</p>
+                <ul className="space-y-3">
+                  {[
+                    'Full AI coaching access',
+                    'Personality-led guidance',
+                    '3 core assessments',
+                    'Personalized career roadmap',
+                    'Weekly execution guidance',
+                    'Progress tracking dashboard',
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-3 text-sm">
+                      <Check className="w-4 h-4 mt-0.5 text-background shrink-0" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </div>
 
           {/* Premium Note */}
@@ -325,7 +320,7 @@ export default function Index() {
             <p className="text-muted-foreground text-sm mb-4">
               Premium includes AI coaching + human coaches, complete personality profile, advanced strategy reviews, and priority support.
             </p>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="chamfer-sm">
               Learn about Premium — £149/mo
             </Button>
           </div>
@@ -363,7 +358,7 @@ export default function Index() {
                   placeholder="you@email.com" 
                   className="bg-background/10 border-background/20 text-background placeholder:text-background/50"
                 />
-                <Button size="sm" variant="secondary">
+                <Button size="sm" variant="secondary" className="chamfer-sm">
                   Join
                 </Button>
               </div>
