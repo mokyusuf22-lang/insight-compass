@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,68 +8,30 @@ import { UserHeader } from '@/components/UserHeader';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { AICoachPanel } from '@/components/path/AICoachPanel';
-import { PhaseSection } from '@/components/path/PhaseSection';
+import { PhaseCard } from '@/components/path/PhaseCard';
 import { TodayFocus } from '@/components/path/TodayFocus';
+import { AssessmentChangeModal } from '@/components/path/AssessmentChangeModal';
 import { 
   ArrowRight, 
   Sparkles,
   RefreshCw,
   Lock,
   Target,
-  Clock
 } from 'lucide-react';
 import { Json } from '@/integrations/supabase/types';
+import type { PathPhase, PathTask, SkillPathData, UserProfile } from '@/types/skillPath';
 
-export interface PathTask {
-  id: string;
-  title: string;
-  description: string;
-  type: 'reading' | 'practice' | 'reflection' | 'project';
-  estimatedMinutes: number;
-  status: 'locked' | 'available' | 'in_progress' | 'completed';
-  successCriteria: string;
-}
+import phaseAnalysis from '@/assets/phase-analysis.jpg';
+import phaseFoundation from '@/assets/phase-foundation.jpg';
+import phaseApplication from '@/assets/phase-application.jpg';
+import phaseMastery from '@/assets/phase-mastery.jpg';
 
-export interface PathWeek {
-  id: string;
-  weekNumber: number;
-  title: string;
-  estimatedHours: number;
-  status: 'locked' | 'not_started' | 'in_progress' | 'completed';
-  tasks: PathTask[];
-}
-
-export interface PathPhase {
-  id: string;
-  phaseNumber: number;
-  title: string;
-  durationWeeks: string;
-  goal: string;
-  progress: number;
-  weeks: PathWeek[];
-}
-
-export interface SkillPathData {
-  title: string;
-  description: string;
-  totalProgress: number;
-  phases: PathPhase[];
-  todaysFocus?: {
-    taskId: string;
-    phaseId: string;
-    weekId: string;
-    reason: string;
-  };
-  recommendedNext?: PathTask[];
-}
-
-export interface UserProfile {
-  mbtiType?: string;
-  discStyle?: string;
-  topStrengths?: string[];
-  careerGoal?: string;
-}
+const phaseImageMap: Record<number, string> = {
+  0: phaseAnalysis,
+  1: phaseFoundation,
+  2: phaseApplication,
+  3: phaseMastery,
+};
 
 export default function SkillPath() {
   const { user, profile, loading } = useAuth();
@@ -79,9 +41,10 @@ export default function SkillPath() {
   const [userProfile, setUserProfile] = useState<UserProfile>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<{task: PathTask; phase: PathPhase; week: PathWeek} | null>(null);
   const [assessmentsComplete, setAssessmentsComplete] = useState(false);
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
+  const [showAssessmentChangeModal, setShowAssessmentChangeModal] = useState(false);
+  const [assessmentHashMismatch, setAssessmentHashMismatch] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -92,6 +55,13 @@ export default function SkillPath() {
       }
     }
   }, [user, profile, loading, navigate]);
+
+  const generateAssessmentHash = useCallback((mbti: any, disc: any, strengths: any): string => {
+    const mbtiType = mbti?.type || '';
+    const discStyle = disc?.primaryStyle || '';
+    const strengthsList = strengths?.ranked_strengths?.slice(0, 5).map((s: any) => s.name).join(',') || '';
+    return `${mbtiType}-${discStyle}-${strengthsList}`;
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -120,6 +90,19 @@ export default function SkillPath() {
                            profileData?.strengths_completed;
         setAssessmentsComplete(allComplete || false);
 
+        // Load current assessment data to check for changes
+        const [mbtiRes, discRes, strengthsRes] = await Promise.all([
+          supabase.from('mbti_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+          supabase.from('disc_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+          supabase.from('strengths_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+        ]);
+
+        const currentHash = generateAssessmentHash(
+          mbtiRes.data?.result,
+          discRes.data?.result,
+          strengthsRes.data?.result
+        );
+
         if (strategyData) {
           const mbti = strategyData.mbti_result as { type?: string } | null;
           const disc = strategyData.disc_result as { primaryStyle?: string } | null;
@@ -132,6 +115,18 @@ export default function SkillPath() {
             topStrengths: strengths?.ranked_strengths?.slice(0, 3).map(s => s.name),
             careerGoal: goals?.target_role,
           });
+
+          // Check if assessment has changed since strategy was generated
+          const storedHash = generateAssessmentHash(
+            strategyData.mbti_result,
+            strategyData.disc_result,
+            strategyData.strengths_result
+          );
+
+          if (currentHash !== storedHash && strategyData.skill_development_plan) {
+            setAssessmentHashMismatch(true);
+            setShowAssessmentChangeModal(true);
+          }
 
           // Check for existing skill path
           if (strategyData.skill_development_plan) {
@@ -155,10 +150,10 @@ export default function SkillPath() {
 
             // Convert existing skill plan to path format
             const convertedPath = convertSkillPlanToPath(
-              strategyData.strategy as any,
               skillPlan,
               goals?.target_role || 'Career Transition',
-              completedTaskIds
+              completedTaskIds,
+              strategyData.id
             );
             setPathData(convertedPath);
           }
@@ -172,85 +167,102 @@ export default function SkillPath() {
     };
 
     if (user) loadData();
-  }, [user, navigate]);
+  }, [user, navigate, generateAssessmentHash]);
 
   const convertSkillPlanToPath = (
-    strategy: any,
     skillPlan: any,
     targetRole: string,
-    completedTaskIds: string[]
+    completedTaskIds: string[],
+    strategyId: string
   ): SkillPathData => {
-    const phases: PathPhase[] = (skillPlan.skill_development_plan || []).map((phase: any, phaseIdx: number) => {
-      const weeks: PathWeek[] = phase.skill_clusters.map((cluster: any, weekIdx: number) => {
-        const tasks: PathTask[] = cluster.skills.map((skill: string, taskIdx: number) => {
-          const taskId = `phase${phaseIdx}-week${weekIdx}-task${taskIdx}`;
-          const isCompleted = completedTaskIds.includes(taskId) || completedTaskIds.includes(String(taskIdx));
-          const isFirstIncomplete = !isCompleted && taskIdx === 0;
+    let globalTaskIndex = 0;
+    
+    const phases: PathPhase[] = (skillPlan.skill_development_plan || []).map((phaseData: any, phaseIdx: number) => {
+      const tasks: PathTask[] = [];
+      
+      phaseData.skill_clusters?.forEach((cluster: any) => {
+        cluster.skills?.forEach((skill: string, skillIdx: number) => {
+          const taskId = `phase${phaseIdx}-task${globalTaskIndex}`;
+          const isCompleted = completedTaskIds.includes(taskId);
           
-          return {
+          tasks.push({
             id: taskId,
             title: skill,
             description: `Develop competency in ${skill.toLowerCase()}`,
-            type: taskIdx % 4 === 0 ? 'reading' : taskIdx % 4 === 1 ? 'practice' : taskIdx % 4 === 2 ? 'reflection' : 'project',
-            estimatedMinutes: 30 + (taskIdx * 15),
-            status: isCompleted ? 'completed' : (phaseIdx === 0 && weekIdx === 0) ? (isFirstIncomplete ? 'in_progress' : 'available') : 'locked',
-            successCriteria: `Complete ${skill.toLowerCase()} task`,
-          } as PathTask;
+            type: skillIdx % 4 === 0 ? 'reading' : skillIdx % 4 === 1 ? 'practice' : skillIdx % 4 === 2 ? 'reflection' : 'project',
+            estimatedMinutes: 30 + (skillIdx * 10),
+            status: isCompleted ? 'completed' : 'locked',
+            successCriteria: `Complete ${skill.toLowerCase()} and document your learnings`,
+          });
+          
+          globalTaskIndex++;
         });
-
-        const completedInWeek = tasks.filter(t => t.status === 'completed').length;
-        const weekStatus = completedInWeek === tasks.length ? 'completed' : 
-                          completedInWeek > 0 ? 'in_progress' : 
-                          (phaseIdx === 0 && weekIdx === 0) ? 'not_started' : 'locked';
-
-        return {
-          id: `phase${phaseIdx}-week${weekIdx}`,
-          weekNumber: weekIdx + 1,
-          title: cluster.cluster_name,
-          estimatedHours: Math.ceil(tasks.reduce((sum, t) => sum + t.estimatedMinutes, 0) / 60),
-          status: weekStatus,
-          tasks,
-        } as PathWeek;
       });
 
-      const totalTasks = weeks.reduce((sum, w) => sum + w.tasks.length, 0);
-      const completedTasks = weeks.reduce((sum, w) => sum + w.tasks.filter(t => t.status === 'completed').length, 0);
+      // Update task statuses based on sequential completion
+      for (let i = 0; i < tasks.length; i++) {
+        if (tasks[i].status === 'completed') continue;
+        
+        if (i === 0) {
+          tasks[i].status = phaseIdx === 0 ? 'available' : 'locked';
+        } else if (tasks[i - 1].status === 'completed') {
+          tasks[i].status = 'available';
+        }
+      }
 
+      const completedInPhase = tasks.filter(t => t.status === 'completed').length;
+      
       return {
         id: `phase${phaseIdx}`,
         phaseNumber: phaseIdx + 1,
-        title: phase.phase,
-        durationWeeks: phase.duration,
-        goal: phase.exit_criteria,
-        progress: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
-        weeks,
-      } as PathPhase;
+        title: phaseData.phase,
+        duration: phaseData.duration,
+        goal: phaseData.exit_criteria,
+        successDefinition: phaseData.exit_criteria,
+        progress: tasks.length > 0 ? Math.round((completedInPhase / tasks.length) * 100) : 0,
+        image: phaseImageMap[phaseIdx % 4],
+        tasks,
+      };
     });
 
-    // Calculate total progress
-    const allTasks = phases.flatMap(p => p.weeks.flatMap(w => w.tasks));
+    // Update phase locking - phases are unlocked when previous is 100% complete
+    for (let i = 1; i < phases.length; i++) {
+      if (phases[i - 1].progress < 100) {
+        phases[i].tasks = phases[i].tasks.map(t => ({ ...t, status: 'locked' as const }));
+      } else {
+        // Unlock first task of next phase
+        if (phases[i].tasks.length > 0 && phases[i].tasks[0].status === 'locked') {
+          phases[i].tasks[0].status = 'available';
+        }
+      }
+    }
+
+    // Recalculate phase progress after locking updates
+    phases.forEach(phase => {
+      const completedInPhase = phase.tasks.filter(t => t.status === 'completed').length;
+      phase.progress = phase.tasks.length > 0 ? Math.round((completedInPhase / phase.tasks.length) * 100) : 0;
+    });
+
+    const allTasks = phases.flatMap(p => p.tasks);
     const totalCompleted = allTasks.filter(t => t.status === 'completed').length;
     const totalProgress = allTasks.length > 0 ? Math.round((totalCompleted / allTasks.length) * 100) : 0;
 
-    // Find today's focus - first in-progress or available task
+    // Find today's focus - first available task
     let todaysFocus: SkillPathData['todaysFocus'] = undefined;
     for (const phase of phases) {
-      for (const week of phase.weeks) {
-        const nextTask = week.tasks.find(t => t.status === 'in_progress' || t.status === 'available');
-        if (nextTask) {
-          todaysFocus = {
-            taskId: nextTask.id,
-            phaseId: phase.id,
-            weekId: week.id,
-            reason: `This task aligns with your current phase: ${phase.title}`,
-          };
-          break;
-        }
+      const nextTask = phase.tasks.find(t => t.status === 'available' || t.status === 'in_progress');
+      if (nextTask) {
+        todaysFocus = {
+          taskId: nextTask.id,
+          phaseId: phase.id,
+          reason: `This task aligns with your current phase: ${phase.title}`,
+        };
+        break;
       }
-      if (todaysFocus) break;
     }
 
     return {
+      id: strategyId,
       title: `${targetRole} Path`,
       description: "A personalized, step-by-step roadmap based on your personality, strengths, and career goals.",
       totalProgress,
@@ -276,9 +288,9 @@ export default function SkillPath() {
       if (!strategyData?.strategy) {
         // Generate strategy first
         const [mbtiRes, discRes, strengthsRes, profileRes] = await Promise.all([
-          supabase.from('mbti_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).maybeSingle(),
-          supabase.from('disc_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).maybeSingle(),
-          supabase.from('strengths_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).maybeSingle(),
+          supabase.from('mbti_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+          supabase.from('disc_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+          supabase.from('strengths_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
           supabase.from('profiles').select('career_goals').eq('user_id', user.id).single(),
         ]);
 
@@ -325,13 +337,13 @@ export default function SkillPath() {
 
         const goals = profileRes.data?.career_goals as { target_role?: string } | null;
         const convertedPath = convertSkillPlanToPath(
-          strategyResult.strategy,
           skillPlanResult.skill_plan,
           goals?.target_role || 'Career Transition',
-          []
+          [],
+          newStrategy?.id || ''
         );
         setPathData(convertedPath);
-        toast.success('Your skill path has been generated!');
+        toast.success('Your Skill Path has been generated!');
       } else if (!strategyData.skill_development_plan) {
         // Generate skill plan only
         const { data: skillPlanResult, error } = await supabase.functions.invoke('generate-skill-plan', {
@@ -352,13 +364,13 @@ export default function SkillPath() {
 
         const goals = strategyData.career_goals as { target_role?: string } | null;
         const convertedPath = convertSkillPlanToPath(
-          strategyData.strategy,
           skillPlanResult.skill_plan,
           goals?.target_role || 'Career Transition',
-          []
+          [],
+          strategyData.id
         );
         setPathData(convertedPath);
-        toast.success('Your skill path has been generated!');
+        toast.success('Your Skill Path has been generated!');
       }
     } catch (error: any) {
       console.error('Error generating path:', error);
@@ -367,96 +379,102 @@ export default function SkillPath() {
       } else if (error.message?.includes('402')) {
         toast.error('Please add credits to continue using AI features.');
       } else {
-        toast.error('Failed to generate skill path');
+        toast.error('Failed to generate Skill Path');
       }
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleTaskClick = (task: PathTask, phase: PathPhase, week: PathWeek) => {
-    if (task.status === 'locked') {
-      toast.error('Complete previous tasks to unlock this one');
-      return;
-    }
-    setSelectedTask({ task, phase, week });
-  };
+  const handleRegenerate = async () => {
+    if (!user) return;
+    setIsGenerating(true);
 
-  const handleTaskComplete = async (taskId: string) => {
-    if (!pathData || !user) return;
-
-    const newCompletedTasks = [...completedTasks, taskId];
-    setCompletedTasks(newCompletedTasks);
-
-    // Update local state
-    const updatedPhases = pathData.phases.map(phase => ({
-      ...phase,
-      weeks: phase.weeks.map(week => ({
-        ...week,
-        tasks: week.tasks.map((task, idx) => {
-          if (task.id === taskId) {
-            return { ...task, status: 'completed' as const };
-          }
-          // Unlock next task if previous is now completed
-          const prevTask = week.tasks[idx - 1];
-          if (prevTask && newCompletedTasks.includes(prevTask.id) && task.status === 'locked') {
-            return { ...task, status: 'available' as const };
-          }
-          return task;
-        }),
-      })),
-    }));
-
-    // Recalculate progress
-    const allTasks = updatedPhases.flatMap(p => p.weeks.flatMap(w => w.tasks));
-    const totalCompleted = allTasks.filter(t => t.status === 'completed').length;
-    const totalProgress = Math.round((totalCompleted / allTasks.length) * 100);
-
-    setPathData({
-      ...pathData,
-      phases: updatedPhases.map(phase => {
-        const phaseTasks = phase.weeks.flatMap(w => w.tasks);
-        const phaseCompleted = phaseTasks.filter(t => t.status === 'completed').length;
-        return {
-          ...phase,
-          progress: Math.round((phaseCompleted / phaseTasks.length) * 100),
-        };
-      }),
-      totalProgress,
-    });
-
-    // Save to database
     try {
-      const { data: existingPlan } = await supabase
-        .from('weekly_execution_plans')
-        .select('id, completed_tasks')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // Get fresh assessment data
+      const [mbtiRes, discRes, strengthsRes, profileRes] = await Promise.all([
+        supabase.from('mbti_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('disc_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('strengths_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('profiles').select('career_goals').eq('user_id', user.id).single(),
+      ]);
 
-      if (existingPlan) {
-        const existing = (existingPlan.completed_tasks as string[]) || [];
-        await supabase.from('weekly_execution_plans').update({
-          completed_tasks: [...existing, taskId] as unknown as Json,
-        }).eq('id', existingPlan.id);
-      }
-    } catch (error) {
-      console.error('Error saving progress:', error);
+      // Generate new strategy
+      const { data: strategyResult, error: strategyError } = await supabase.functions.invoke('generate-strategy', {
+        body: {
+          mbti_result: mbtiRes.data?.result,
+          disc_result: discRes.data?.result,
+          strengths_result: strengthsRes.data?.result,
+          career_goals: profileRes.data?.career_goals,
+        },
+      });
+
+      if (strategyError) throw strategyError;
+
+      // Create new strategy record (archive old one by creating new)
+      const { data: newStrategy } = await supabase.from('career_strategies').insert({
+        user_id: user.id,
+        mbti_result: mbtiRes.data?.result as unknown as Json,
+        disc_result: discRes.data?.result as unknown as Json,
+        strengths_result: strengthsRes.data?.result as unknown as Json,
+        career_goals: profileRes.data?.career_goals as unknown as Json,
+        strategy: strategyResult.strategy as unknown as Json,
+      }).select().single();
+
+      // Generate new skill plan
+      const { data: skillPlanResult, error: skillError } = await supabase.functions.invoke('generate-skill-plan', {
+        body: {
+          career_strategy: strategyResult.strategy,
+          mbti_result: mbtiRes.data?.result,
+          disc_result: discRes.data?.result,
+          strengths_result: strengthsRes.data?.result,
+          career_goals: profileRes.data?.career_goals,
+        },
+      });
+
+      if (skillError) throw skillError;
+
+      await supabase.from('career_strategies').update({
+        skill_development_plan: skillPlanResult.skill_plan as unknown as Json,
+      }).eq('id', newStrategy?.id);
+
+      const goals = profileRes.data?.career_goals as { target_role?: string } | null;
+      const convertedPath = convertSkillPlanToPath(
+        skillPlanResult.skill_plan,
+        goals?.target_role || 'Career Transition',
+        [],
+        newStrategy?.id || ''
+      );
+      
+      setPathData(convertedPath);
+      setCompletedTasks([]);
+      setShowAssessmentChangeModal(false);
+      setAssessmentHashMismatch(false);
+      toast.success('Your Skill Path has been regenerated!');
+    } catch (error: any) {
+      console.error('Error regenerating path:', error);
+      toast.error('Failed to regenerate Skill Path');
+    } finally {
+      setIsGenerating(false);
     }
-
-    setSelectedTask(null);
-    toast.success('Task completed!');
   };
 
-  const handleClosePanel = () => {
-    setSelectedTask(null);
+  const handleKeepCurrent = () => {
+    setShowAssessmentChangeModal(false);
+  };
+
+  const handleTodayFocusClick = () => {
+    if (pathData?.todaysFocus) {
+      navigate(`/path/task/${pathData.todaysFocus.taskId}`, { 
+        state: { phaseId: pathData.todaysFocus.phaseId } 
+      });
+    }
   };
 
   if (loading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <LoadingSpinner size="lg" text="Loading your skill path..." />
+        <LoadingSpinner size="lg" text="Loading your Skill Path..." />
       </div>
     );
   }
@@ -475,7 +493,7 @@ export default function SkillPath() {
               Complete Your Assessment
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-              Complete your assessment to generate your personalized skill path.
+              Complete your assessment to generate your personalized Skill Path.
             </p>
             <div className="chamfer bg-card p-6 max-w-md mx-auto mb-8">
               <h3 className="font-semibold mb-4">Required Assessments:</h3>
@@ -522,7 +540,7 @@ export default function SkillPath() {
               Generate Your Skill Path
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-              Based on your personality, strengths, and career goals, we'll create a personalized learning path with phases, weeks, and actionable tasks.
+              Based on your personality, strengths, and career goals, we'll create a personalized learning path with phases and actionable tasks.
             </p>
             <Button 
               size="lg" 
@@ -552,97 +570,86 @@ export default function SkillPath() {
     <div className="min-h-screen bg-background">
       <UserHeader />
 
-      <div className="flex">
-        {/* Main Content */}
-        <main className={`flex-1 transition-all duration-300 ${selectedTask ? 'mr-[400px]' : ''}`}>
-          {/* Path Header */}
-          <div className="border-b border-border bg-card/50">
-            <div className="container max-w-4xl py-8 px-4 md:px-8">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div className="flex-1 min-w-0">
-                  <Badge variant="secondary" className="mb-3">
-                    {pathData.totalProgress}% Complete
-                  </Badge>
-                  <h1 className="text-2xl md:text-3xl font-serif font-bold text-foreground mb-2">
-                    {pathData.title}
-                  </h1>
-                  <p className="text-muted-foreground max-w-xl">
-                    {pathData.description}
-                  </p>
-                  <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Target className="w-4 h-4" />
-                      {pathData.phases.length} Phases
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      {pathData.phases.reduce((sum, p) => sum + p.weeks.length, 0)} Weeks
-                    </span>
-                  </div>
-                </div>
-                <Button 
-                  size="lg"
-                  className="gradient-primary text-primary-foreground rounded-full"
-                  onClick={() => {
-                    if (pathData.todaysFocus) {
-                      const phase = pathData.phases.find(p => p.id === pathData.todaysFocus?.phaseId);
-                      const week = phase?.weeks.find(w => w.id === pathData.todaysFocus?.weekId);
-                      const task = week?.tasks.find(t => t.id === pathData.todaysFocus?.taskId);
-                      if (task && phase && week) {
-                        handleTaskClick(task, phase, week);
-                      }
-                    }
-                  }}
-                >
-                  Continue Path
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </div>
-              <div className="mt-6">
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-muted-foreground">Overall Progress</span>
-                  <span className="font-medium">{pathData.totalProgress}%</span>
-                </div>
-                <Progress value={pathData.totalProgress} className="h-2" />
+      {/* Assessment Change Modal */}
+      <AssessmentChangeModal
+        open={showAssessmentChangeModal}
+        onClose={() => setShowAssessmentChangeModal(false)}
+        onRegenerate={handleRegenerate}
+        onKeepCurrent={handleKeepCurrent}
+        isRegenerating={isGenerating}
+      />
+
+      {/* Path Header */}
+      <div className="border-b border-border bg-card/50">
+        <div className="container max-w-5xl py-8 px-4 md:px-8">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <Badge variant="secondary" className="mb-3">
+                {pathData.totalProgress}% Complete
+              </Badge>
+              <h1 className="text-2xl md:text-3xl font-serif font-bold text-foreground mb-2">
+                {pathData.title}
+              </h1>
+              <p className="text-muted-foreground max-w-xl">
+                {pathData.description}
+              </p>
+              <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Target className="w-4 h-4" />
+                  {pathData.phases.length} Phases
+                </span>
+                <span className="flex items-center gap-1">
+                  {pathData.phases.reduce((sum, p) => sum + p.tasks.length, 0)} Tasks
+                </span>
               </div>
             </div>
-          </div>
-
-          <div className="container max-w-4xl py-8 px-4 md:px-8">
-            {/* Today's Focus */}
             {pathData.todaysFocus && (
-              <TodayFocus 
-                pathData={pathData}
-                onTaskClick={handleTaskClick}
-              />
+              <Button 
+                size="lg"
+                className="gradient-primary text-primary-foreground rounded-full"
+                onClick={handleTodayFocusClick}
+              >
+                Continue Path
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
             )}
-
-            {/* Phases */}
-            <div className="space-y-4">
-              {pathData.phases.map((phase, index) => (
-                <PhaseSection 
-                  key={phase.id}
-                  phase={phase}
-                  isFirst={index === 0}
-                  onTaskClick={handleTaskClick}
-                />
-              ))}
-            </div>
           </div>
-        </main>
+          <div className="mt-6">
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="text-muted-foreground">Overall Progress</span>
+              <span className="font-medium">{pathData.totalProgress}%</span>
+            </div>
+            <Progress value={pathData.totalProgress} className="h-2" />
+          </div>
+        </div>
+      </div>
 
-        {/* AI Coach Panel */}
-        {selectedTask && (
-          <AICoachPanel 
-            task={selectedTask.task}
-            phase={selectedTask.phase}
-            week={selectedTask.week}
-            userProfile={userProfile}
-            onClose={handleClosePanel}
-            onComplete={() => handleTaskComplete(selectedTask.task.id)}
+      <main className="container max-w-5xl py-8 px-4 md:px-8">
+        {/* Today's Focus */}
+        {pathData.todaysFocus && (
+          <TodayFocus 
+            pathData={pathData}
+            onTaskClick={handleTodayFocusClick}
           />
         )}
-      </div>
+
+        {/* Phase Cards Grid */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {pathData.phases.map((phase, index) => {
+            // Phase is locked if previous phase is not 100% complete
+            const isLocked = index > 0 && pathData.phases[index - 1].progress < 100;
+            
+            return (
+              <PhaseCard 
+                key={phase.id}
+                phase={phase}
+                isLocked={isLocked}
+                index={index}
+              />
+            );
+          })}
+        </div>
+      </main>
     </div>
   );
 }

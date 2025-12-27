@@ -16,6 +16,8 @@ import DISCResults from "./pages/DISCResults";
 import StrengthsAssessment from "./pages/StrengthsAssessment";
 import StrengthsResults from "./pages/StrengthsResults";
 import SkillPath from "./pages/SkillPath";
+import PhasePage from "./pages/PhasePage";
+import TaskPage from "./pages/TaskPage";
 import AssessmentJourney from "./pages/AssessmentJourney";
 import EmailCapture from "./pages/EmailCapture";
 import FreeResults from "./pages/FreeResults";
@@ -49,6 +51,8 @@ const App = () => (
             <Route path="/assessment/strengths" element={<StrengthsAssessment />} />
             <Route path="/assessment/strengths/results" element={<StrengthsResults />} />
             <Route path="/path" element={<SkillPath />} />
+            <Route path="/path/phase/:id" element={<PhasePage />} />
+            <Route path="/path/task/:id" element={<TaskPage />} />
             {/* Redirects for deprecated routes */}
             <Route path="/strategy" element={<Navigate to="/path" replace />} />
             <Route path="/skill-plan" element={<Navigate to="/path" replace />} />
