@@ -23,7 +23,6 @@ import type { PathTask, PathPhase, UserProfile } from '@/types/skillPath';
 interface AICoachPanelProps {
   task: PathTask;
   phase: PathPhase;
-  week: PathWeek;
   userProfile: UserProfile;
   onClose: () => void;
   onComplete: () => void;
@@ -43,7 +42,7 @@ const taskTypeLabels = {
   project: 'Project',
 };
 
-export function AICoachPanel({ task, phase, week, userProfile, onClose, onComplete }: AICoachPanelProps) {
+export function AICoachPanel({ task, phase, userProfile, onClose, onComplete }: AICoachPanelProps) {
   const [question, setQuestion] = useState('');
   const [isAsking, setIsAsking] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
@@ -62,7 +61,6 @@ export function AICoachPanel({ task, phase, week, userProfile, onClose, onComple
             title: task.title,
             description: task.description,
             phase: phase.title,
-            week: week.title,
           },
           user_profile: userProfile,
         },
@@ -134,11 +132,8 @@ export function AICoachPanel({ task, phase, week, userProfile, onClose, onComple
 
         {/* Context */}
         <div className="chamfer-sm bg-muted/50 p-3">
-          <p className="text-xs text-muted-foreground mb-1">
-            <strong>Phase {phase.phaseNumber}:</strong> {phase.title}
-          </p>
           <p className="text-xs text-muted-foreground">
-            <strong>Week {week.weekNumber}:</strong> {week.title}
+            <strong>Phase {phase.phaseNumber}:</strong> {phase.title}
           </p>
         </div>
 
