@@ -257,7 +257,7 @@ export default function CareerStrategy() {
                     <span>Career Goals</span>
                   </div>
                 </div>
-                <Button className="mt-6 rounded-full" onClick={() => navigate('/history')}>
+                <Button className="mt-6 rounded-full" onClick={() => navigate('/welcome')}>
                   Complete Assessments
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -398,7 +398,7 @@ export default function CareerStrategy() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up" style={{ animationDelay: '250ms' }}>
           <Button 
             variant="outline"
-            onClick={() => navigate('/history')}
+            onClick={() => navigate('/welcome')}
             className="rounded-full"
           >
             Back to Journey

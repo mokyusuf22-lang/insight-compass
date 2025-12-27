@@ -76,7 +76,7 @@ export default function DISCResults() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <p className="text-muted-foreground mb-4">Results not found</p>
-        <Button onClick={() => navigate('/history')}>Go to Journey</Button>
+        <Button onClick={() => navigate('/welcome')}>Go to Dashboard</Button>
       </div>
     );
   }
@@ -100,9 +100,9 @@ export default function DISCResults() {
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
         {/* Back button */}
-        <Button variant="ghost" onClick={() => navigate('/history')} className="mb-6">
+        <Button variant="ghost" onClick={() => navigate('/welcome')} className="mb-6">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Journey
+          Back to Dashboard
         </Button>
 
         {/* Main result */}
@@ -222,7 +222,7 @@ export default function DISCResults() {
           </Button>
           <Button 
             className="flex-1"
-            onClick={() => navigate('/history')}
+            onClick={() => navigate('/welcome')}
           >
             Continue Your Journey
             <ArrowRight className="w-4 h-4 ml-2" />

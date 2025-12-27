@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -56,7 +56,7 @@ const App = () => (
             <Route path="/skill-plan" element={<SkillDevelopmentPlan />} />
             <Route path="/weekly" element={<WeeklyExecution />} />
             <Route path="/coaching" element={<Coaching />} />
-            <Route path="/history" element={<AssessmentJourney />} />
+            <Route path="/history" element={<Navigate to="/welcome" replace />} />
             <Route path="/email-capture" element={<EmailCapture />} />
             <Route path="/results/free" element={<FreeResults />} />
             <Route path="/paywall" element={<Paywall />} />

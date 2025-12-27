@@ -343,9 +343,9 @@ export default function Coaching() {
           </Button>
           <Button 
             variant="outline"
-            onClick={() => navigate('/history')}
+            onClick={() => navigate('/welcome')}
           >
-            Back to Journey
+            Back to Dashboard
           </Button>
         </div>
       </main>

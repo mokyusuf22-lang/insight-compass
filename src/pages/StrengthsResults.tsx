@@ -56,7 +56,7 @@ export default function StrengthsResults() {
           setResult(data.result as unknown as StrengthsResult);
         } else {
           toast.error('No results found');
-          navigate('/history');
+          navigate('/welcome');
         }
       } catch (error) {
         console.error('Error loading results:', error);
@@ -232,12 +232,12 @@ export default function StrengthsResults() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up" style={{ animationDelay: '300ms' }}>
           <Button 
             variant="outline"
-            onClick={() => navigate('/history')}
+            onClick={() => navigate('/welcome')}
           >
-            Back to Journey
+            Back to Dashboard
           </Button>
           <Button 
-            onClick={() => navigate('/history')}
+            onClick={() => navigate('/welcome')}
             className="gradient-primary text-primary-foreground"
           >
             Continue Your Journey

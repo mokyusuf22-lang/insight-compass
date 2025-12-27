@@ -14,8 +14,7 @@ import {
   Target,
   MessageCircle,
   Rocket,
-  Home,
-  History
+  Home
 } from 'lucide-react';
 
 const fullTraits = [
@@ -145,10 +144,10 @@ export default function FullResults() {
             <span className="font-serif font-semibold">Full Results</span>
           </div>
           <div className="flex items-center gap-2">
-            <Link to="/history">
+            <Link to="/welcome">
               <Button variant="ghost" size="sm">
-                <History className="w-4 h-4 mr-2" />
-                History
+                <Home className="w-4 h-4 mr-2" />
+                Dashboard
               </Button>
             </Link>
             <Link to="/welcome">
@@ -247,10 +246,10 @@ export default function FullResults() {
                 Your results are saved and you can revisit them anytime from your assessment history.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link to="/history">
+                <Link to="/welcome">
                   <Button variant="outline">
-                    <History className="w-4 h-4 mr-2" />
-                    View Assessment History
+                    <Home className="w-4 h-4 mr-2" />
+                    Back to Dashboard
                   </Button>
                 </Link>
                 <Link to="/welcome">
