@@ -322,9 +322,9 @@ export default function Welcome() {
             className="bg-secondary-foreground text-secondary hover:bg-secondary-foreground/90 px-8 py-6 text-lg rounded-full"
             onClick={() => {
               if (progress.strategyGenerated) {
-                navigate('/weekly-execution');
+                navigate('/path');
               } else if (allAssessmentsComplete) {
-                navigate('/strategy');
+                navigate('/path');
               } else if (progress.step1Completed) {
                 navigate('/assessment/mbti');
               } else {
@@ -332,7 +332,7 @@ export default function Welcome() {
               }
             }}
           >
-            {progress.strategyGenerated ? "View today's tasks" : allAssessmentsComplete ? "Generate Strategy" : "Continue"}
+            {progress.strategyGenerated ? "View Skill Path" : allAssessmentsComplete ? "Generate Skill Path" : "Continue"}
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
         </div>
