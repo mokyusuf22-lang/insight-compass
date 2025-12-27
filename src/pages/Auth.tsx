@@ -138,8 +138,8 @@ export default function Auth() {
       {/* Main content */}
       <main className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          {/* Card with rounded border */}
-          <div className="border border-border rounded-3xl p-8 md:p-12 bg-background">
+          {/* Card with chamfered corners */}
+          <div className="chamfer-lg bg-card p-8 md:p-12">
             {/* Title */}
             <div className="text-center mb-10">
               <h1 className="text-3xl md:text-4xl leading-tight">
