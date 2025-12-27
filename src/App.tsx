@@ -28,6 +28,7 @@ import FullAssessment from "./pages/FullAssessment";
 import FullResults from "./pages/FullResults";
 import Results from "./pages/Results";
 import Account from "./pages/Account";
+import HumanCoaching from "./pages/HumanCoaching";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -71,6 +72,7 @@ const App = () => (
             <Route path="/results/full" element={<FullResults />} />
             <Route path="/results" element={<Results />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/human-coaching" element={<HumanCoaching />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

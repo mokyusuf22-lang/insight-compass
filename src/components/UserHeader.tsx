@@ -29,7 +29,9 @@ import {
   LogOut,
   Home,
   Settings,
-  Crown
+  Crown,
+  Users,
+  MessageCircle
 } from 'lucide-react';
 
 interface UserHeaderProps {
@@ -131,6 +133,24 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
             <Button variant="ghost" size="sm">
               <History className="w-4 h-4 mr-2" />
               Results
+            </Button>
+          </Link>
+
+          <a 
+            href="https://www.linkedin.com/groups/your-community-group" 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            <Button variant="ghost" size="sm">
+              <Users className="w-4 h-4 mr-2" />
+              Community
+            </Button>
+          </a>
+
+          <Link to="/human-coaching">
+            <Button variant="ghost" size="sm">
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Coaching
             </Button>
           </Link>
 
