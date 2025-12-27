@@ -5,15 +5,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { UserHeader } from '@/components/UserHeader';
+import { GoalReview } from '@/components/GoalReview';
 import { 
   ArrowRight, 
   Lock, 
-  Clock, 
   Brain, 
   Target,
   Zap,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  Users,
+  Star,
+  Compass,
+  MessageSquare,
+  Edit2
 } from 'lucide-react';
 
 interface UserProgress {
@@ -26,6 +31,12 @@ interface UserProgress {
   todaysFocus?: string;
 }
 
+interface AssessmentResults {
+  mbtiType?: string;
+  discProfile?: { primary: string; secondary?: string };
+  topStrengths?: string[];
+}
+
 export default function Welcome() {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
@@ -36,6 +47,7 @@ export default function Welcome() {
     strengthsCompleted: false,
     strategyGenerated: false,
   });
+  const [results, setResults] = useState<AssessmentResults>({});
   const [loadingProgress, setLoadingProgress] = useState(true);
 
   useEffect(() => {
@@ -63,7 +75,38 @@ export default function Welcome() {
           .eq('user_id', user.id)
           .maybeSingle();
 
+        // Fetch assessment results in parallel
+        const [mbtiRes, discRes, strengthsRes] = await Promise.all([
+          supabase
+            .from('mbti_assessments')
+            .select('result')
+            .eq('user_id', user.id)
+            .eq('is_complete', true)
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('disc_assessments')
+            .select('result')
+            .eq('user_id', user.id)
+            .eq('is_complete', true)
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('strengths_assessments')
+            .select('result')
+            .eq('user_id', user.id)
+            .eq('is_complete', true)
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        ]);
+
         const strategy = strategyData?.strategy as { phases?: { name: string }[] } | null;
+        const mbtiResult = mbtiRes.data?.result as { type?: string } | null;
+        const discResult = discRes.data?.result as { primary?: string; secondary?: string } | null;
+        const strengthsResult = strengthsRes.data?.result as { topStrengths?: { name: string }[] } | null;
         
         setProgress({
           step1Completed: profileData?.step1_completed || false,
@@ -72,6 +115,12 @@ export default function Welcome() {
           strengthsCompleted: profileData?.strengths_completed || false,
           strategyGenerated: profileData?.strategy_generated || false,
           currentPhase: strategy?.phases?.[0]?.name,
+        });
+
+        setResults({
+          mbtiType: mbtiResult?.type,
+          discProfile: discResult ? { primary: discResult.primary || '', secondary: discResult.secondary } : undefined,
+          topStrengths: strengthsResult?.topStrengths?.slice(0, 5).map(s => s.name),
         });
       } catch (error) {
         console.error('Error fetching progress:', error);
@@ -94,6 +143,7 @@ export default function Welcome() {
   const hasPaid = profile?.has_paid;
   const userName = user?.email?.split('@')[0] || 'there';
   const completedSteps = [progress.step1Completed, progress.mbtiCompleted, progress.discCompleted].filter(Boolean).length;
+  const allAssessmentsComplete = progress.mbtiCompleted && progress.discCompleted && progress.strengthsCompleted;
 
   // ============================================
   // FREE USER VIEW - Exploration Mode
@@ -211,13 +261,13 @@ export default function Welcome() {
   }
 
   // ============================================
-  // PAID USER VIEW - Execution Mode
+  // PAID USER VIEW - Execution Mode (Control Center)
   // ============================================
   return (
     <div className="min-h-screen bg-background">
       <UserHeader showHomeLink={false} />
 
-      <main className="container max-w-3xl py-12 px-4 md:px-8">
+      <main className="container max-w-4xl py-12 px-4 md:px-8">
         {/* Personalized Header */}
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-serif font-semibold text-foreground mb-2">
@@ -244,18 +294,22 @@ export default function Welcome() {
           <h2 className="text-xl md:text-2xl font-serif font-semibold text-secondary-foreground mb-4">
             {progress.strategyGenerated 
               ? "Continue your weekly execution plan"
-              : progress.step1Completed
-                ? "Complete your personality assessments"
-                : "Start with your Quick Assessment"
+              : allAssessmentsComplete
+                ? "Generate your personalized career strategy"
+                : progress.step1Completed
+                  ? "Complete your personality assessments"
+                  : "Start with your Quick Assessment"
             }
           </h2>
           
           <p className="text-secondary-foreground/80 mb-6">
             {progress.strategyGenerated
               ? "Review your tasks and track progress on your career goals."
-              : progress.step1Completed
-                ? "Deep-dive into MBTI, DISC, and Strengths to unlock your full strategy."
-                : "20 questions to understand your career context and goals."
+              : allAssessmentsComplete
+                ? "All assessments complete! Generate your AI-powered career roadmap."
+                : progress.step1Completed
+                  ? "Deep-dive into MBTI, DISC, and Strengths to unlock your full strategy."
+                  : "20 questions to understand your career context and goals."
             }
           </p>
 
@@ -265,6 +319,8 @@ export default function Welcome() {
             onClick={() => {
               if (progress.strategyGenerated) {
                 navigate('/weekly-execution');
+              } else if (allAssessmentsComplete) {
+                navigate('/strategy');
               } else if (progress.step1Completed) {
                 navigate('/assessment/mbti');
               } else {
@@ -272,9 +328,99 @@ export default function Welcome() {
               }
             }}
           >
-            {progress.strategyGenerated ? "View today's tasks" : "Continue"}
+            {progress.strategyGenerated ? "View today's tasks" : allAssessmentsComplete ? "Generate Strategy" : "Continue"}
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
+        </div>
+
+        {/* Assessment Results Summary Cards */}
+        {(results.mbtiType || results.discProfile || results.topStrengths) && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <Brain className="w-5 h-5 text-primary" />
+                Your Profile Summary
+              </h3>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => navigate('/results')}
+                className="text-primary"
+              >
+                View Full Results
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* MBTI Card */}
+              <button
+                onClick={() => navigate('/assessment/mbti/results')}
+                className="chamfer bg-card border border-border p-5 text-left hover:border-primary/50 transition-colors"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Brain className="w-4 h-4 text-primary" />
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Personality</span>
+                </div>
+                <p className="text-3xl font-serif font-bold text-foreground">
+                  {results.mbtiType || '—'}
+                </p>
+                {!results.mbtiType && (
+                  <p className="text-xs text-muted-foreground mt-1">Complete MBTI</p>
+                )}
+              </button>
+
+              {/* DISC Card */}
+              <button
+                onClick={() => navigate('/assessment/disc/results')}
+                className="chamfer bg-card border border-border p-5 text-left hover:border-primary/50 transition-colors"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="w-4 h-4 text-primary" />
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Behavior</span>
+                </div>
+                <p className="text-2xl font-serif font-bold text-foreground">
+                  {results.discProfile?.primary || '—'}
+                </p>
+                {results.discProfile?.secondary && (
+                  <p className="text-xs text-muted-foreground mt-1">+ {results.discProfile.secondary}</p>
+                )}
+                {!results.discProfile && (
+                  <p className="text-xs text-muted-foreground mt-1">Complete DISC</p>
+                )}
+              </button>
+
+              {/* Strengths Card */}
+              <button
+                onClick={() => navigate('/assessment/strengths/results')}
+                className="chamfer bg-card border border-border p-5 text-left hover:border-primary/50 transition-colors"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Star className="w-4 h-4 text-primary" />
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Top Strengths</span>
+                </div>
+                {results.topStrengths && results.topStrengths.length > 0 ? (
+                  <div className="space-y-1">
+                    {results.topStrengths.slice(0, 3).map((strength, i) => (
+                      <p key={strength} className={`text-sm ${i === 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                        {i + 1}. {strength}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-2xl font-serif font-bold text-foreground">—</p>
+                    <p className="text-xs text-muted-foreground mt-1">Complete Strengths</p>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Career Goals Section */}
+        <div className="chamfer bg-card p-6 mb-8">
+          <GoalReview showTitle={true} />
         </div>
 
         {/* Progress Overview */}
@@ -344,7 +490,80 @@ export default function Welcome() {
           </div>
         </div>
 
-        {/* Coaching Note */}
+        {/* Strategy & Coaching Quick Access */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          {/* Career Strategy */}
+          <button
+            onClick={() => {
+              if (allAssessmentsComplete) {
+                navigate('/strategy');
+              }
+            }}
+            disabled={!allAssessmentsComplete}
+            className={`chamfer p-6 text-left transition-all ${
+              allAssessmentsComplete 
+                ? 'bg-primary/10 border border-primary/20 hover:border-primary/50' 
+                : 'bg-muted/50 opacity-60 cursor-not-allowed'
+            }`}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className={`p-2 chamfer-sm ${allAssessmentsComplete ? 'bg-primary/20' : 'bg-muted'}`}>
+                <Compass className={`w-5 h-5 ${allAssessmentsComplete ? 'text-primary' : 'text-muted-foreground'}`} />
+              </div>
+              <div>
+                <h4 className="font-semibold text-foreground">Career Strategy</h4>
+                <p className="text-xs text-muted-foreground">AI-powered roadmap</p>
+              </div>
+            </div>
+            {!allAssessmentsComplete && (
+              <p className="text-xs text-muted-foreground">
+                Complete all assessments to unlock
+              </p>
+            )}
+            {progress.strategyGenerated && (
+              <p className="text-xs text-primary">
+                Strategy generated • View details →
+              </p>
+            )}
+          </button>
+
+          {/* Personal Coaching */}
+          <button
+            onClick={() => {
+              if (progress.strategyGenerated) {
+                navigate('/coaching');
+              }
+            }}
+            disabled={!progress.strategyGenerated}
+            className={`chamfer p-6 text-left transition-all ${
+              progress.strategyGenerated 
+                ? 'bg-secondary/10 border border-secondary/20 hover:border-secondary/50' 
+                : 'bg-muted/50 opacity-60 cursor-not-allowed'
+            }`}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className={`p-2 chamfer-sm ${progress.strategyGenerated ? 'bg-secondary/20' : 'bg-muted'}`}>
+                <MessageSquare className={`w-5 h-5 ${progress.strategyGenerated ? 'text-secondary-foreground' : 'text-muted-foreground'}`} />
+              </div>
+              <div>
+                <h4 className="font-semibold text-foreground">Personal Coaching</h4>
+                <p className="text-xs text-muted-foreground">Daily guidance</p>
+              </div>
+            </div>
+            {!progress.strategyGenerated && (
+              <p className="text-xs text-muted-foreground">
+                Generate strategy first to unlock
+              </p>
+            )}
+            {progress.strategyGenerated && (
+              <p className="text-xs text-primary">
+                Get today's focus →
+              </p>
+            )}
+          </button>
+        </div>
+
+        {/* Weekly Coaching Note */}
         <div className="chamfer bg-muted/50 p-5">
           <div className="flex items-start gap-3">
             <Target className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
@@ -355,7 +574,9 @@ export default function Welcome() {
               <p className="text-sm text-muted-foreground">
                 {progress.strategyGenerated
                   ? "Your personalized tasks are ready. Check your weekly execution plan for this week's priorities."
-                  : "Complete your assessments to unlock weekly coaching and task recommendations."
+                  : allAssessmentsComplete
+                    ? "Generate your career strategy to unlock weekly coaching and task recommendations."
+                    : "Complete your assessments to unlock weekly coaching and task recommendations."
                 }
               </p>
             </div>

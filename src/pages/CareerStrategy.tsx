@@ -193,7 +193,7 @@ export default function CareerStrategy() {
     }
   };
 
-  const canGenerate = profileData?.mbti && profileData?.disc && profileData?.strengths && profileData?.goals;
+  const canGenerate = profileData?.mbti && profileData?.disc && profileData?.strengths && profileData?.goals?.target_role;
 
   if (loading || isLoading) {
     return (
