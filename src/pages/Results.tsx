@@ -91,6 +91,8 @@ export default function Results() {
           .select('result')
           .eq('user_id', user.id)
           .eq('is_complete', true)
+          .order('updated_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         // Fetch DISC result
@@ -99,6 +101,8 @@ export default function Results() {
           .select('result')
           .eq('user_id', user.id)
           .eq('is_complete', true)
+          .order('updated_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         // Fetch Strengths result
@@ -107,6 +111,8 @@ export default function Results() {
           .select('result')
           .eq('user_id', user.id)
           .eq('is_complete', true)
+          .order('updated_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         const mbtiResult = mbtiData?.result as { type?: string; axisResults?: Record<string, { percentage: number }> } | null;
