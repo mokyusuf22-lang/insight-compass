@@ -25,17 +25,25 @@ export default function MBTIResults() {
 
   useEffect(() => {
     const loadResults = async () => {
-      if (!user || !assessmentId) return;
+      if (!user) return;
       
       setIsLoading(true);
       
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('mbti_assessments')
           .select('*')
-          .eq('id', assessmentId)
           .eq('user_id', user.id)
-          .single();
+          .eq('is_complete', true);
+
+        if (assessmentId) {
+          query = query.eq('id', assessmentId);
+        } else {
+          // If no ID provided, get the latest completed assessment
+          query = query.order('updated_at', { ascending: false }).limit(1);
+        }
+
+        const { data, error } = await query.maybeSingle();
 
         if (error) throw error;
 
