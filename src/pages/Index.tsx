@@ -2,8 +2,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Brain, Target, BarChart3, MessageSquare, Check } from 'lucide-react';
-import heroImage from '@/assets/hero-professional.jpg';
+import { Input } from '@/components/ui/input';
+import { ArrowRight, MessageSquare, Brain, Target, BarChart3, Check } from 'lucide-react';
+import heroImage from '@/assets/hero-professional-1.jpg';
+import quoteImage from '@/assets/quote-professional.jpg';
+import collaborationImage from '@/assets/collaboration-1.jpg';
+import workspaceImage from '@/assets/professional-workspace.jpg';
 
 export default function Index() {
   const { user } = useAuth();
@@ -20,69 +24,54 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border">
         <div className="container max-w-6xl py-4 flex justify-between items-center">
-          <span className="font-serif text-2xl">MindMap</span>
+          <span className="font-sans font-semibold tracking-wide text-lg">CLARITY</span>
           <div className="flex items-center gap-4">
             {user ? (
               <Link to="/welcome">
-                <Button variant="ghost">Dashboard</Button>
+                <Button variant="ghost" size="sm">Dashboard</Button>
               </Link>
             ) : (
-              <>
-                <Link to="/auth">
-                  <Button variant="ghost">Sign in</Button>
-                </Link>
-                <Button onClick={handleGetStarted}>
-                  Get started
-                </Button>
-              </>
+              <Link to="/auth">
+                <Button variant="ghost" size="sm">Sign in</Button>
+              </Link>
             )}
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="pt-20">
-        <div className="relative">
-          <div className="aspect-[16/9] md:aspect-[21/9] w-full overflow-hidden">
+      {/* Hero Section - Split Layout */}
+      <section className="pt-16">
+        <div className="grid lg:grid-cols-2 min-h-[70vh]">
+          {/* Image Side */}
+          <div className="relative bg-amber-100 order-1 lg:order-2">
             <img
               src={heroImage}
-              alt="Professional working at desk"
+              alt="Professional at work"
               className="w-full h-full object-cover"
             />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/50 to-transparent" />
-          <div className="absolute inset-0 flex items-center">
-            <div className="container max-w-6xl">
-              <div className="max-w-xl space-y-6 text-background">
-                <h1 className="text-3xl md:text-5xl lg:text-6xl leading-tight">
-                  Structured career coaching, powered by AI and human insight.
-                </h1>
-                <p className="text-lg md:text-xl text-background/80">
-                  A system for professionals who want clarity, direction, and measurable progress — not generic advice.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <Button
-                    size="lg"
-                    className="bg-background text-foreground hover:bg-background/90"
-                    onClick={handleGetStarted}
-                  >
-                    Get started
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                  <Link to="/auth">
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="border-background/30 text-background hover:bg-background/10"
-                    >
-                      Sign in
-                    </Button>
-                  </Link>
-                </div>
-                <p className="text-sm text-background/60">
-                  Start free. Upgrade when you're ready.
+          
+          {/* Content Side */}
+          <div className="flex items-center px-6 md:px-12 lg:px-16 py-16 lg:py-24 order-2 lg:order-1 bg-amber-50">
+            <div className="max-w-md space-y-6">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl leading-tight font-serif">
+                Structured career coaching for people who want real execution.
+              </h1>
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+                AI-powered coaching combined with personality insight to help you plan, decide, and move forward with confidence.
+              </p>
+              <div className="space-y-3 pt-4">
+                <Button 
+                  className="w-full sm:w-auto bg-foreground text-background hover:bg-foreground/90"
+                  onClick={handleGetStarted}
+                >
+                  Start free
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Free to start. No credit card required.
                 </p>
               </div>
             </div>
@@ -90,234 +79,315 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Value Statement */}
-      <section className="py-24 md:py-32 bg-secondary">
-        <div className="container max-w-4xl text-center space-y-8">
-          <h2 className="text-3xl md:text-5xl lg:text-6xl leading-tight">
-            Nothing meaningful is built{' '}
-            <span className="font-editorial">without structure.</span>
+      {/* Statement Section - Large Typography */}
+      <section className="py-20 md:py-28 px-6 bg-background">
+        <div className="container max-w-5xl">
+          <div className="text-center mb-8">
+            <div className="flex flex-wrap justify-center items-baseline gap-x-2 gap-y-1 text-xs uppercase tracking-widest text-muted-foreground mb-6">
+              <span>PLANNING</span>
+              <span className="text-muted-foreground/30">·</span>
+              <span>EXECUTION</span>
+              <span className="text-muted-foreground/30">·</span>
+              <span>DIRECTION</span>
+              <span className="text-muted-foreground/30">·</span>
+              <span>STRUCTURE</span>
+            </div>
+          </div>
+          <h2 className="text-4xl md:text-6xl lg:text-7xl text-center leading-tight mb-8">
+            <span className="font-serif italic">Nothing</span>{' '}
+            <span className="font-sans font-bold">meaningful</span>
+            <br />
+            <span className="font-sans">is built</span>{' '}
+            <span className="font-serif italic">without structure.</span>
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-            We combine personality science, behavioral data, and execution planning to help professionals navigate complex career transitions with confidence.
+          <p className="text-center text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+            This platform exists to replace vague advice with clear thinking, practical plans, and measurable progress.
           </p>
         </div>
       </section>
 
       {/* Features Grid */}
-      <section className="py-24 md:py-32">
-        <div className="container max-w-6xl">
-          <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+      <section className="py-16 md:py-24 px-6 border-t border-border">
+        <div className="container max-w-5xl">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-6">
             {[
               {
                 icon: MessageSquare,
                 title: 'AI Coaching',
-                description: 'Ongoing, structured AI coaching that adapts to your personality, goals, and progress.',
+                description: 'Continuous, adaptive coaching that responds to your goals, decisions, and progress.',
               },
               {
                 icon: Brain,
                 title: 'Core Assessments',
-                description: 'Evidence-based personality and behavioral assessments that inform every recommendation.',
+                description: 'Personality and behavioral assessments that explain how you think, work, and execute.',
               },
               {
                 icon: Target,
                 title: 'Career Strategy',
-                description: "A personalized roadmap showing what to do, when to do it, and why it works for you.",
+                description: 'A structured roadmap that shows what to focus on now — and what to ignore.',
               },
               {
                 icon: BarChart3,
-                title: 'Progress Tracking',
-                description: 'Clear milestones, skill proof, and accountability — no vague "growth" metrics.',
+                title: 'Execution Tracking',
+                description: 'Clear milestones, accountability, and evidence of progress.',
               },
             ].map((feature) => (
-              <Card
-                key={feature.title}
-                className="border-border/50 shadow-soft hover:shadow-card transition-shadow duration-300"
-              >
-                <CardContent className="p-8 space-y-4">
-                  <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
-                    <feature.icon className="w-6 h-6 text-foreground" />
-                  </div>
-                  <h3 className="text-xl font-sans font-semibold">{feature.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-                </CardContent>
-              </Card>
+              <div key={feature.title} className="space-y-3">
+                <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                  <feature.icon className="w-5 h-5 text-foreground" />
+                </div>
+                <h3 className="font-sans font-semibold text-base">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Quote Section */}
-      <section className="py-24 md:py-32 bg-foreground text-background">
-        <div className="container max-w-4xl text-center space-y-8">
-          <blockquote className="text-2xl md:text-4xl lg:text-5xl leading-tight font-serif">
-            "Most career advice fails because it ignores how people think, decide, and execute."
-          </blockquote>
-          <p className="text-sm text-background/60 uppercase tracking-wider">
-            Based on aggregated career transition data and coaching outcomes
-          </p>
+      {/* Quote Section with Image */}
+      <section className="py-16 md:py-24 px-6 bg-teal-600">
+        <div className="container max-w-5xl">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Quote */}
+            <div className="order-2 lg:order-1">
+              <blockquote className="text-2xl md:text-3xl lg:text-4xl text-white leading-snug font-serif">
+                <span className="text-5xl leading-none">"</span>Most people don't fail because of ability — they fail because they{' '}
+                <span className="italic">lack structure.</span>"
+              </blockquote>
+              <p className="mt-6 text-white/70 text-sm uppercase tracking-wider">
+                Aggregated coaching and career transition data
+              </p>
+            </div>
+            {/* Image */}
+            <div className="order-1 lg:order-2">
+              <img
+                src={quoteImage}
+                alt="Professional with tablet"
+                className="w-full max-w-sm mx-auto lg:max-w-none rounded-lg"
+              />
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 md:py-32">
-        <div className="container max-w-4xl text-center space-y-8">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl">
-            Start with understanding how{' '}
-            <span className="font-editorial">you operate.</span>
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Complete assessments, receive a strategy, and begin structured execution.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-            <Button size="lg" onClick={handleGetStarted}>
-              Start free
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-            <Button size="lg" variant="outline">
-              See how it works
-            </Button>
+      {/* Collaboration Section */}
+      <section className="py-20 md:py-28 px-6 bg-background">
+        <div className="container max-w-5xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-4">
+              Start with clarity. Build momentum.
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-lg mx-auto">
+              Understand how you operate, then execute with intention.
+            </p>
+          </div>
+          <div className="max-w-2xl mx-auto">
+            <img
+              src={collaborationImage}
+              alt="Professionals collaborating"
+              className="w-full rounded-lg"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Strategy Section - Split */}
+      <section className="py-16 md:py-24 px-6 bg-secondary">
+        <div className="container max-w-5xl">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Image */}
+            <div>
+              <img
+                src={workspaceImage}
+                alt="Professional in workspace"
+                className="w-full rounded-lg"
+              />
+            </div>
+            {/* Content */}
+            <div className="space-y-6">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-serif leading-tight">
+                Clear direction.<br />
+                Structured execution.<br />
+                Real progress.
+              </h2>
+              <p className="text-muted-foreground leading-relaxed">
+                Our platform combines AI coaching with evidence-based assessments to give you a personalized career strategy. No generic advice. No vague promises. Just clear thinking and practical steps.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <Button onClick={handleGetStarted}>
+                  Start free
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+                }}>
+                  See pricing
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section className="py-24 md:py-32 bg-secondary">
-        <div className="container max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl mb-4">
-              Simple, transparent pricing
+      <section id="pricing" className="py-20 md:py-28 px-6 bg-background">
+        <div className="container max-w-5xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-4">
+              Simple pricing, real value
             </h2>
             <p className="text-muted-foreground text-lg">
-              Start free and upgrade as you grow.
+              Start free and upgrade when you're ready.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
-            {/* Free */}
-            <Card className="border-border/50 shadow-soft">
+          
+          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+            {/* Free Tier */}
+            <Card className="border-border shadow-sm">
               <CardContent className="p-8 space-y-6">
                 <div>
-                  <h3 className="text-xl font-sans font-semibold mb-2">Free</h3>
+                  <h3 className="text-lg font-sans font-semibold mb-1">Free</h3>
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-serif">£0</span>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full" onClick={handleGetStarted}>
-                  Start free
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={handleGetStarted}
+                >
+                  Start with Free
                 </Button>
-                <p className="text-sm text-muted-foreground">Included:</p>
-                <ul className="space-y-3">
-                  {[
-                    'Basic AI coaching',
-                    'Limited assessments',
-                    'High-level insights',
-                    'Strategy preview',
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-3 text-sm">
-                      <Check className="w-4 h-4 mt-0.5 text-foreground" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="pt-2">
+                  <p className="text-sm text-muted-foreground mb-4">Included:</p>
+                  <ul className="space-y-3">
+                    {[
+                      'AI-powered suggestions',
+                      'Core profile building',
+                      'Basic assessments',
+                      'High-level insights',
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-3 text-sm">
+                        <Check className="w-4 h-4 mt-0.5 text-foreground shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Pro */}
-            <Card className="border-foreground shadow-elevated relative">
+            {/* Pro Tier */}
+            <Card className="border-foreground shadow-md relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className="bg-foreground text-background text-xs px-3 py-1 rounded-full font-medium">
-                  Most popular
+                  Recommended
                 </span>
               </div>
               <CardContent className="p-8 space-y-6">
                 <div>
-                  <h3 className="text-xl font-sans font-semibold mb-2">Pro</h3>
+                  <h3 className="text-lg font-sans font-semibold mb-1">Pro</h3>
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-serif">£49</span>
-                    <span className="text-muted-foreground">/ month</span>
+                    <span className="text-muted-foreground text-sm">/mo</span>
                   </div>
                 </div>
-                <Button className="w-full" onClick={() => navigate('/paywall')}>
-                  Upgrade to Pro
+                <Button 
+                  className="w-full"
+                  onClick={() => navigate('/paywall')}
+                >
+                  Start with Pro
                 </Button>
-                <p className="text-sm text-muted-foreground">Everything in Free, plus:</p>
-                <ul className="space-y-3">
-                  {[
-                    'Full AI coaching',
-                    '3 core assessments',
-                    'Personalized career roadmap',
-                    'Weekly execution guidance',
-                    'Progress tracking',
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-3 text-sm">
-                      <Check className="w-4 h-4 mt-0.5 text-foreground" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="pt-2">
+                  <p className="text-sm text-muted-foreground mb-4">Everything in Free, plus:</p>
+                  <ul className="space-y-3">
+                    {[
+                      'Full AI coaching access',
+                      'Personality-led guidance',
+                      '3 core assessments',
+                      'Personalized career roadmap',
+                      'Weekly execution guidance',
+                      'Progress tracking dashboard',
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-3 text-sm">
+                        <Check className="w-4 h-4 mt-0.5 text-foreground shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </CardContent>
             </Card>
+          </div>
 
-            {/* Premium */}
-            <Card className="border-border/50 shadow-soft">
-              <CardContent className="p-8 space-y-6">
-                <div>
-                  <h3 className="text-xl font-sans font-semibold mb-2">Premium</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-serif">£149</span>
-                    <span className="text-muted-foreground">/ month</span>
-                  </div>
-                </div>
-                <Button variant="outline" className="w-full">
-                  Join Premium
-                </Button>
-                <p className="text-sm text-muted-foreground">Everything in Pro, plus:</p>
-                <ul className="space-y-3">
-                  {[
-                    'AI coaching + human coaches',
-                    'Complete personality profile',
-                    'Advanced strategy reviews',
-                    'Direct feedback on progress',
-                    'Priority support',
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-3 text-sm">
-                      <Check className="w-4 h-4 mt-0.5 text-foreground" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+          {/* Premium Note */}
+          <div className="text-center mt-12 pt-8 border-t border-border">
+            <h3 className="font-sans font-semibold mb-2">Need human coaching?</h3>
+            <p className="text-muted-foreground text-sm mb-4">
+              Premium includes AI coaching + human coaches, complete personality profile, advanced strategy reviews, and priority support.
+            </p>
+            <Button variant="outline" size="sm">
+              Learn about Premium — £149/mo
+            </Button>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-16 px-4">
-        <div className="container max-w-6xl">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div className="md:col-span-2">
-              <span className="font-serif text-2xl block mb-4">MindMap</span>
-              <p className="text-muted-foreground max-w-sm">
-                A structured career coaching platform for professionals making deliberate transitions.
+      <footer className="border-t border-border py-16 px-6 bg-foreground text-background">
+        <div className="container max-w-5xl">
+          <div className="grid md:grid-cols-3 gap-12 mb-12">
+            {/* Brand */}
+            <div className="md:col-span-1">
+              <span className="font-sans font-semibold tracking-wide text-lg block mb-4">CLARITY</span>
+              <p className="text-background/70 text-sm leading-relaxed">
+                A structured career coaching platform for professionals who want direction, not noise.
               </p>
             </div>
+            
+            {/* Links */}
             <div>
-              <h4 className="font-sans font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">How it works</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Pricing</a></li>
+              <h4 className="font-sans font-semibold mb-4 text-sm uppercase tracking-wider">Links</h4>
+              <ul className="space-y-2 text-background/70 text-sm">
+                <li><a href="#" className="hover:text-background transition-colors">How it works</a></li>
+                <li><a href="#pricing" className="hover:text-background transition-colors">Pricing</a></li>
+                <li><a href="#" className="hover:text-background transition-colors">Privacy</a></li>
+                <li><a href="#" className="hover:text-background transition-colors">Contact</a></li>
               </ul>
             </div>
+
+            {/* Newsletter */}
             <div>
-              <h4 className="font-sans font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">Privacy</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Contact</a></li>
-              </ul>
+              <h4 className="font-sans font-semibold mb-4 text-sm uppercase tracking-wider">Stay updated</h4>
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="you@email.com" 
+                  className="bg-background/10 border-background/20 text-background placeholder:text-background/50"
+                />
+                <Button size="sm" variant="secondary">
+                  Join
+                </Button>
+              </div>
             </div>
           </div>
-          <div className="border-t border-border mt-12 pt-8 text-center text-sm text-muted-foreground">
-            <p>© 2024 MindMap. All rights reserved.</p>
+          
+          {/* Bottom */}
+          <div className="pt-8 border-t border-background/20">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-xs text-background/50">
+                © 2024 Clarity. All rights reserved.
+              </p>
+              <div className="text-xs text-background/50 flex gap-4">
+                <a href="#" className="hover:text-background/70">Terms of Service</a>
+                <a href="#" className="hover:text-background/70">Privacy Policy</a>
+              </div>
+            </div>
+          </div>
+          
+          {/* Large Brand Name */}
+          <div className="mt-12 pt-8">
+            <span className="text-6xl md:text-8xl lg:text-9xl font-sans font-bold tracking-tight text-background/10">
+              CLARITY
+            </span>
           </div>
         </div>
       </footer>
