@@ -12,21 +12,98 @@ import {
   Target, 
   Sparkles, 
   Shield, 
-  ArrowLeft 
+  ArrowLeft,
+  Zap,
+  Users,
+  RefreshCw,
+  MessageSquare
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { SUBSCRIPTION_TIERS, SubscriptionTier } from '@/lib/subscriptionTiers';
 
-const benefits = [
-  { icon: Brain, text: '12 comprehensive personality questions' },
-  { icon: Heart, text: 'Deep emotional intelligence analysis' },
-  { icon: Target, text: 'Personalized growth recommendations' },
-  { icon: Sparkles, text: 'Detailed trait breakdowns' },
-  { icon: Shield, text: 'Lifetime access to your results' },
+const proFeatures = [
+  { icon: Brain, text: 'Full AI coaching access' },
+  { icon: Target, text: 'Up to 3 core assessments' },
+  { icon: RefreshCw, text: 'Skill Path regeneration' },
+  { icon: Sparkles, text: 'One active Skill Path' },
 ];
 
+const premiumFeatures = [
+  { icon: Users, text: 'AI + human coaching' },
+  { icon: Heart, text: 'Full personality profile' },
+  { icon: Zap, text: 'Unlimited assessments' },
+  { icon: RefreshCw, text: 'Priority Skill Path regeneration' },
+  { icon: MessageSquare, text: 'Advanced coaching insights' },
+];
+
+interface PlanCardProps {
+  tier: SubscriptionTier;
+  isCurrentPlan: boolean;
+  onSelect: (tier: SubscriptionTier) => void;
+  isLoading: boolean;
+  loadingTier: SubscriptionTier | null;
+}
+
+function PlanCard({ tier, isCurrentPlan, onSelect, isLoading, loadingTier }: PlanCardProps) {
+  const config = SUBSCRIPTION_TIERS[tier];
+  const features = tier === 'pro' ? proFeatures : premiumFeatures;
+  const isPremium = tier === 'premium';
+  
+  return (
+    <div className={`chamfer p-6 md:p-8 ${isPremium ? 'bg-primary/5 border-2 border-primary' : 'bg-card'} ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}>
+      {isPremium && (
+        <div className="flex items-center gap-2 mb-4">
+          <Crown className="w-5 h-5 text-primary" />
+          <span className="text-sm font-medium text-primary">Most Popular</span>
+        </div>
+      )}
+      {isCurrentPlan && (
+        <div className="inline-flex items-center gap-1 bg-green-500/10 text-green-600 px-3 py-1 rounded-full text-sm font-medium mb-4">
+          <Check className="w-4 h-4" />
+          Your Plan
+        </div>
+      )}
+      
+      <h3 className="text-2xl font-serif font-semibold mb-2">{config.name}</h3>
+      <div className="flex items-baseline gap-1 mb-1">
+        <span className="text-4xl font-bold">{config.priceDisplay}</span>
+        <span className="text-muted-foreground">/ month</span>
+      </div>
+      <p className="text-sm text-muted-foreground mb-6">Billed monthly</p>
+      
+      <ul className="space-y-3 mb-8">
+        {features.map((feature, index) => (
+          <li key={index} className="flex items-center gap-3">
+            <div className="w-8 h-8 chamfer-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <feature.icon className="w-4 h-4 text-primary" />
+            </div>
+            <span className="text-foreground text-sm">{feature.text}</span>
+          </li>
+        ))}
+      </ul>
+      
+      <Button
+        className={`w-full ${isPremium ? 'gradient-primary text-primary-foreground' : ''}`}
+        variant={isPremium ? 'default' : 'outline'}
+        size="lg"
+        onClick={() => onSelect(tier)}
+        disabled={isLoading || isCurrentPlan}
+      >
+        {loadingTier === tier ? (
+          <LoadingSpinner size="sm" />
+        ) : isCurrentPlan ? (
+          'Current Plan'
+        ) : (
+          `Get ${config.name}`
+        )}
+      </Button>
+    </div>
+  );
+}
+
 export default function Paywall() {
-  const [isLoading, setIsLoading] = useState(false);
-  const { user, profile, loading, refreshProfile } = useAuth();
+  const [loadingTier, setLoadingTier] = useState<SubscriptionTier | null>(null);
+  const { user, subscription, loading, refreshSubscription } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -36,24 +113,26 @@ export default function Paywall() {
     }
   }, [user, loading, navigate]);
 
+  // Refresh subscription on mount
   useEffect(() => {
-    // If user has already paid, redirect to full assessment
-    if (profile?.has_paid) {
-      navigate('/assessment/full');
+    if (user) {
+      refreshSubscription();
     }
-  }, [profile, navigate]);
+  }, [user]);
 
-  const handlePayment = async () => {
+  const handleSelectPlan = async (tier: SubscriptionTier) => {
     if (!user) {
       navigate('/auth');
       return;
     }
 
-    setIsLoading(true);
+    if (tier === 'free') return;
+
+    setLoadingTier(tier);
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: { priceId: 'personality_assessment' }
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { tier }
       });
 
       if (error) throw error;
@@ -64,17 +143,17 @@ export default function Paywall() {
         throw new Error('No checkout URL received');
       }
     } catch (error) {
-      console.error('Payment error:', error);
+      console.error('Checkout error:', error);
       toast({
-        title: 'Payment Error',
+        title: 'Checkout Error',
         description: 'Unable to start checkout. Please try again.',
         variant: 'destructive',
       });
-      setIsLoading(false);
+      setLoadingTier(null);
     }
   };
 
-  if (loading) {
+  if (loading || subscription.loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <LoadingSpinner size="lg" text="Loading..." />
@@ -88,17 +167,17 @@ export default function Paywall() {
       <header className="p-4 md:p-6">
         <Button
           variant="ghost"
-          onClick={() => navigate('/results/free')}
+          onClick={() => navigate(-1)}
           className="text-muted-foreground hover:text-foreground rounded-full"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Results
+          Back
         </Button>
       </header>
 
       {/* Content */}
-      <main className="container max-w-3xl py-8 px-4 md:px-8">
-        <div className="text-center mb-10 animate-fade-up">
+      <main className="container max-w-5xl py-8 px-4 md:px-8">
+        <div className="text-center mb-12 animate-fade-up">
           <div className="w-20 h-20 chamfer gradient-primary flex items-center justify-center mx-auto mb-6">
             <Crown className="w-10 h-10 text-primary-foreground" />
           </div>
@@ -106,65 +185,46 @@ export default function Paywall() {
             Unlock Your Full Potential
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Get the complete picture of your personality with our comprehensive assessment and detailed analysis.
+            Choose the plan that fits your career development goals. Upgrade or downgrade anytime.
           </p>
         </div>
 
-        {/* Benefits */}
-        <div className="chamfer bg-card p-6 md:p-8 mb-8 animate-fade-up" style={{ animationDelay: '100ms' }}>
-          <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            What's Included
-          </h2>
-          <ul className="space-y-4">
-            {benefits.map((benefit, index) => (
-              <li key={index} className="flex items-center gap-4">
-                <div className="w-10 h-10 chamfer-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <benefit.icon className="w-5 h-5 text-primary" />
-                </div>
-                <span className="text-foreground">{benefit.text}</span>
-                <Check className="w-5 h-5 text-green-500 ml-auto flex-shrink-0" />
-              </li>
-            ))}
-          </ul>
+        {/* Pricing Cards */}
+        <div className="grid md:grid-cols-2 gap-6 mb-8 animate-fade-up" style={{ animationDelay: '100ms' }}>
+          <PlanCard
+            tier="pro"
+            isCurrentPlan={subscription.tier === 'pro'}
+            onSelect={handleSelectPlan}
+            isLoading={loadingTier !== null}
+            loadingTier={loadingTier}
+          />
+          <PlanCard
+            tier="premium"
+            isCurrentPlan={subscription.tier === 'premium'}
+            onSelect={handleSelectPlan}
+            isLoading={loadingTier !== null}
+            loadingTier={loadingTier}
+          />
         </div>
 
-        {/* Pricing */}
-        <div className="chamfer bg-secondary p-6 md:p-8 text-center animate-fade-up" style={{ animationDelay: '200ms' }}>
-          <p className="text-muted-foreground mb-2">One-time payment</p>
-          <div className="flex items-baseline justify-center gap-1 mb-2">
-            <span className="text-5xl font-serif font-bold text-foreground">$29</span>
-          </div>
-          <p className="text-sm text-muted-foreground mb-6">
-            Lifetime access • No subscription
+        {/* Free tier info */}
+        <div className="chamfer bg-secondary/50 p-6 text-center animate-fade-up" style={{ animationDelay: '200ms' }}>
+          <h3 className="font-semibold mb-2">Free Plan</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Limited AI coaching • Limited assessments • View Skill Path overview (no regeneration)
           </p>
-          
-          <Button
-            size="lg"
-            className="w-full gradient-primary text-primary-foreground hover:opacity-90 py-6 text-lg rounded-full"
-            onClick={handlePayment}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <LoadingSpinner size="sm" />
-            ) : (
-              <>
-                <Crown className="w-5 h-5 mr-2" />
-                Pay & Unlock Full Assessment
-              </>
-            )}
-          </Button>
-
-          <div className="flex items-center justify-center gap-2 mt-6 text-sm text-muted-foreground">
-            <Shield className="w-4 h-4" />
-            Secure payment powered by Stripe
-          </div>
+          {subscription.tier !== 'free' && (
+            <p className="text-xs text-muted-foreground">
+              You can manage your subscription in your <button onClick={() => navigate('/account')} className="underline hover:text-foreground">Account Settings</button>
+            </p>
+          )}
         </div>
 
-        {/* Money back */}
-        <p className="text-center text-sm text-muted-foreground mt-8 animate-fade-up" style={{ animationDelay: '300ms' }}>
-          Not satisfied? Contact us for a full refund within 7 days.
-        </p>
+        {/* Security badge */}
+        <div className="flex items-center justify-center gap-2 mt-8 text-sm text-muted-foreground animate-fade-up" style={{ animationDelay: '300ms' }}>
+          <Shield className="w-4 h-4" />
+          Secure payment powered by Stripe
+        </div>
       </main>
     </div>
   );
