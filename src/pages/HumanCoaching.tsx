@@ -45,7 +45,10 @@ export default function HumanCoaching() {
   const { user, profile, loading, subscription } = useAuth();
   const navigate = useNavigate();
   
-  const [stage, setStage] = useState<'loading' | 'matched' | 'messaging'>('loading');
+  // Check if user has already seen the loading animation
+  const hasSeenLoading = localStorage.getItem('coach_matched') === 'true';
+  
+  const [stage, setStage] = useState<'loading' | 'matched' | 'messaging'>(hasSeenLoading ? 'matched' : 'loading');
   const [loadingMessage, setLoadingMessage] = useState(LOADING_MESSAGES[0]);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [message, setMessage] = useState('');
@@ -74,6 +77,7 @@ export default function HumanCoaching() {
         if (prev >= 100) {
           clearInterval(progressInterval);
           clearInterval(messageInterval);
+          localStorage.setItem('coach_matched', 'true');
           setTimeout(() => setStage('matched'), 500);
           return 100;
         }
