@@ -187,10 +187,13 @@ export type Database = {
           email: string | null
           has_paid: boolean
           id: string
+          last_payment_date: string | null
           mbti_completed: boolean
           step1_completed: boolean
           strategy_generated: boolean
           strengths_completed: boolean
+          subscription_end_date: string | null
+          subscription_tier: string | null
           updated_at: string
           user_id: string
         }
@@ -201,10 +204,13 @@ export type Database = {
           email?: string | null
           has_paid?: boolean
           id?: string
+          last_payment_date?: string | null
           mbti_completed?: boolean
           step1_completed?: boolean
           strategy_generated?: boolean
           strengths_completed?: boolean
+          subscription_end_date?: string | null
+          subscription_tier?: string | null
           updated_at?: string
           user_id: string
         }
@@ -215,10 +221,13 @@ export type Database = {
           email?: string | null
           has_paid?: boolean
           id?: string
+          last_payment_date?: string | null
           mbti_completed?: boolean
           step1_completed?: boolean
           strategy_generated?: boolean
           strengths_completed?: boolean
+          subscription_end_date?: string | null
+          subscription_tier?: string | null
           updated_at?: string
           user_id?: string
         }
