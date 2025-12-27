@@ -321,25 +321,25 @@ export default function Welcome() {
               title="Quick Assessment"
               description="Career context & goals"
               completed={progress.step1Completed}
-              onClick={() => navigate(progress.step1Completed ? '/results/step1' : '/assessment/step1')}
+              onClick={() => navigate(progress.step1Completed ? '/assessment/step1/results' : '/assessment/step1')}
             />
             <AssessmentItem
               title="MBTI Assessment"
               description="93 personality questions"
               completed={progress.mbtiCompleted}
-              onClick={() => navigate(progress.mbtiCompleted ? '/results/mbti' : '/assessment/mbti')}
+              onClick={() => navigate(progress.mbtiCompleted ? '/assessment/mbti/results' : '/assessment/mbti')}
             />
             <AssessmentItem
               title="DISC Assessment"
               description="Behavioral style analysis"
               completed={progress.discCompleted}
-              onClick={() => navigate(progress.discCompleted ? '/results/disc' : '/assessment/disc')}
+              onClick={() => navigate(progress.discCompleted ? '/assessment/disc/results' : '/assessment/disc')}
             />
             <AssessmentItem
               title="Strengths Assessment"
               description="Core strengths identification"
               completed={progress.strengthsCompleted}
-              onClick={() => navigate(progress.strengthsCompleted ? '/results/strengths' : '/assessment/strengths')}
+              onClick={() => navigate(progress.strengthsCompleted ? '/assessment/strengths/results' : '/assessment/strengths')}
             />
           </div>
         </div>
