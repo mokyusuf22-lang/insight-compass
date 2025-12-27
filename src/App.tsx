@@ -15,10 +15,7 @@ import DISCAssessment from "./pages/DISCAssessment";
 import DISCResults from "./pages/DISCResults";
 import StrengthsAssessment from "./pages/StrengthsAssessment";
 import StrengthsResults from "./pages/StrengthsResults";
-import CareerStrategy from "./pages/CareerStrategy";
-import SkillDevelopmentPlan from "./pages/SkillDevelopmentPlan";
-import WeeklyExecution from "./pages/WeeklyExecution";
-import Coaching from "./pages/Coaching";
+import SkillPath from "./pages/SkillPath";
 import AssessmentJourney from "./pages/AssessmentJourney";
 import EmailCapture from "./pages/EmailCapture";
 import FreeResults from "./pages/FreeResults";
@@ -28,7 +25,6 @@ import PaymentCanceled from "./pages/PaymentCanceled";
 import FullAssessment from "./pages/FullAssessment";
 import FullResults from "./pages/FullResults";
 import Results from "./pages/Results";
-import TaskToday from "./pages/TaskToday";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,11 +48,15 @@ const App = () => (
             <Route path="/assessment/disc/results" element={<DISCResults />} />
             <Route path="/assessment/strengths" element={<StrengthsAssessment />} />
             <Route path="/assessment/strengths/results" element={<StrengthsResults />} />
-            <Route path="/strategy" element={<CareerStrategy />} />
-            <Route path="/skill-plan" element={<SkillDevelopmentPlan />} />
-            <Route path="/weekly" element={<WeeklyExecution />} />
-            <Route path="/coaching" element={<Coaching />} />
+            <Route path="/path" element={<SkillPath />} />
+            {/* Redirects for deprecated routes */}
+            <Route path="/strategy" element={<Navigate to="/path" replace />} />
+            <Route path="/skill-plan" element={<Navigate to="/path" replace />} />
+            <Route path="/weekly" element={<Navigate to="/path" replace />} />
+            <Route path="/coaching" element={<Navigate to="/path" replace />} />
+            <Route path="/task/today" element={<Navigate to="/path" replace />} />
             <Route path="/history" element={<Navigate to="/welcome" replace />} />
+            <Route path="/weekly-execution" element={<Navigate to="/path" replace />} />
             <Route path="/email-capture" element={<EmailCapture />} />
             <Route path="/results/free" element={<FreeResults />} />
             <Route path="/paywall" element={<Paywall />} />
@@ -65,7 +65,6 @@ const App = () => (
             <Route path="/assessment/full" element={<FullAssessment />} />
             <Route path="/results/full" element={<FullResults />} />
             <Route path="/results" element={<Results />} />
-            <Route path="/task/today" element={<TaskToday />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
