@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { SubscriptionTier } from '@/lib/subscriptionTiers';
 
 interface Profile {
   id: string;
@@ -11,10 +12,21 @@ interface Profile {
   updated_at: string;
 }
 
+interface SubscriptionState {
+  subscribed: boolean;
+  tier: SubscriptionTier;
+  tierName: string;
+  productId: string | null;
+  subscriptionEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  loading: boolean;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
+  subscription: SubscriptionState;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -22,7 +34,19 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshSubscription: () => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
 }
+
+const defaultSubscription: SubscriptionState = {
+  subscribed: false,
+  tier: 'free',
+  tierName: 'Free',
+  productId: null,
+  subscriptionEnd: null,
+  cancelAtPeriodEnd: false,
+  loading: true,
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -30,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionState>(defaultSubscription);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -44,15 +69,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const fetchSubscription = useCallback(async () => {
+    if (!session?.access_token) {
+      setSubscription({ ...defaultSubscription, loading: false });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('check-subscription');
+      
+      if (error) {
+        console.error('Error checking subscription:', error);
+        setSubscription({ ...defaultSubscription, loading: false });
+        return;
+      }
+
+      setSubscription({
+        subscribed: data.subscribed || false,
+        tier: (data.tier as SubscriptionTier) || 'free',
+        tierName: data.tier_name || 'Free',
+        productId: data.product_id || null,
+        subscriptionEnd: data.subscription_end || null,
+        cancelAtPeriodEnd: data.cancel_at_period_end || false,
+        loading: false,
+      });
+    } catch (err) {
+      console.error('Error fetching subscription:', err);
+      setSubscription({ ...defaultSubscription, loading: false });
+    }
+  }, [session?.access_token]);
+
   const refreshProfile = async () => {
     if (user) {
       await fetchProfile(user.id);
     }
   };
 
+  const refreshSubscription = async () => {
+    await fetchSubscription();
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
@@ -63,6 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }, 0);
         } else {
           setProfile(null);
+          setSubscription({ ...defaultSubscription, loading: false });
         }
       }
     );
@@ -78,8 +138,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => authSubscription.unsubscribe();
   }, []);
+
+  // Fetch subscription when session changes
+  useEffect(() => {
+    if (session) {
+      fetchSubscription();
+    }
+  }, [session, fetchSubscription]);
+
+  // Auto-refresh subscription every minute
+  useEffect(() => {
+    if (!session) return;
+
+    const interval = setInterval(() => {
+      fetchSubscription();
+    }, 60000); // 1 minute
+
+    return () => clearInterval(interval);
+  }, [session, fetchSubscription]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -113,9 +191,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error as Error | null };
   };
 
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    return { error: error as Error | null };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
+    setSubscription({ ...defaultSubscription, loading: false });
   };
 
   return (
@@ -123,13 +207,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       session,
       profile,
+      subscription,
       loading,
       signIn,
       signUp,
       signInWithGoogle,
       resetPassword,
       signOut,
-      refreshProfile
+      refreshProfile,
+      refreshSubscription,
+      updatePassword
     }}>
       {children}
     </AuthContext.Provider>

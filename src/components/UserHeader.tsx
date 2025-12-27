@@ -27,7 +27,9 @@ import {
   History,
   RefreshCw,
   LogOut,
-  Home
+  Home,
+  Settings,
+  Crown
 } from 'lucide-react';
 
 interface UserHeaderProps {
@@ -41,7 +43,7 @@ interface AssessmentStats {
 }
 
 export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
-  const { user, signOut } = useAuth();
+  const { user, signOut, subscription } = useAuth();
   const navigate = useNavigate();
   const [showSwitchDialog, setShowSwitchDialog] = useState(false);
   const [stats, setStats] = useState<AssessmentStats>({ completed: 0, lastActive: null });
@@ -167,6 +169,19 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
                 </div>
               </div>
               <DropdownMenuSeparator />
+              {subscription.tier !== 'free' && (
+                <div className="px-2 py-1.5 flex items-center gap-2 text-xs">
+                  <Crown className="w-3 h-3 text-primary" />
+                  <span className="text-primary font-medium">{subscription.tierName} Plan</span>
+                </div>
+              )}
+              <DropdownMenuItem 
+                onClick={() => navigate('/account')}
+                className="cursor-pointer"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Account Settings
+              </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => setShowSwitchDialog(true)}
                 className="cursor-pointer"

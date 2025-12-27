@@ -27,6 +27,7 @@ import PaymentCanceled from "./pages/PaymentCanceled";
 import FullAssessment from "./pages/FullAssessment";
 import FullResults from "./pages/FullResults";
 import Results from "./pages/Results";
+import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -69,6 +70,7 @@ const App = () => (
             <Route path="/assessment/full" element={<FullAssessment />} />
             <Route path="/results/full" element={<FullResults />} />
             <Route path="/results" element={<Results />} />
+            <Route path="/account" element={<Account />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
