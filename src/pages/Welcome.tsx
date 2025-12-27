@@ -567,25 +567,6 @@ export default function Welcome() {
           </button>
         </div>
 
-        {/* Weekly Coaching Note */}
-        <div className="chamfer bg-muted/50 p-5">
-          <div className="flex items-start gap-3">
-            <Target className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm text-foreground font-medium mb-1">
-                Weekly Coaching
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {progress.strategyGenerated
-                  ? "Your personalized tasks are ready. Check your weekly execution plan for this week's priorities."
-                  : allAssessmentsComplete
-                    ? "Generate your career strategy to unlock weekly coaching and task recommendations."
-                    : "Complete your assessments to unlock weekly coaching and task recommendations."
-                }
-              </p>
-            </div>
-          </div>
-        </div>
       </main>
     </div>
   );

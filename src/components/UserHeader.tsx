@@ -118,17 +118,17 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
             </Link>
           )}
 
+          <Link to="/path">
+            <Button variant="ghost" size="sm">
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Skill Path
+            </Button>
+          </Link>
+
           <Link to="/results">
             <Button variant="ghost" size="sm">
               <History className="w-4 h-4 mr-2" />
               Results
-            </Button>
-          </Link>
-
-          <Link to="/task/today">
-            <Button variant="ghost" size="sm">
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Weekly Coaching
             </Button>
           </Link>
 

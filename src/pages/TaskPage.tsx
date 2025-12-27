@@ -286,6 +286,22 @@ export default function TaskPage() {
         
         <div className="flex-1 min-w-0">
           <h1 className="font-semibold truncate">{task.title}</h1>
+          <p className="text-xs text-muted-foreground">Phase {phase.phaseNumber}: {phase.title}</p>
+        </div>
+
+        {/* Task Progress Indicator */}
+        <div className="hidden md:flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-1.5">
+            <div className="flex gap-0.5">
+              {[...Array(5)].map((_, i) => (
+                <div 
+                  key={i} 
+                  className={`w-2 h-2 rounded-full ${i < 2 ? 'bg-primary' : 'bg-muted'}`}
+                />
+              ))}
+            </div>
+            <span className="text-muted-foreground text-xs">2 of 5 tasks</span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
