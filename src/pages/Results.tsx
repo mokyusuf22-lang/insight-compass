@@ -81,9 +81,9 @@ export default function Results() {
           .eq('is_complete', true)
           .maybeSingle();
 
-        const mbtiResult = mbtiData?.result as { type?: string } | null;
-        const discResult = discData?.result as { primary?: string; secondary?: string } | null;
-        const strengthsResult = strengthsData?.result as { topStrengths?: { name: string }[] } | null;
+        const mbtiResult = mbtiData?.result as { type?: string; axisResults?: Record<string, { percentage: number }> } | null;
+        const discResult = discData?.result as { primary?: string; secondary?: string; scores?: Record<string, number> } | null;
+        const strengthsResult = strengthsData?.result as { ranked_strengths?: { name: string; score: number }[] } | null;
         const step1Hypothesis = step1Data?.ai_hypothesis as { mbtiTendency?: string; confidence?: number } | null;
 
         let count = 0;
@@ -96,7 +96,7 @@ export default function Results() {
         setResults({
           mbtiType: mbtiResult?.type,
           discProfile: discResult ? { primary: discResult.primary || '', secondary: discResult.secondary } : undefined,
-          topStrengths: strengthsResult?.topStrengths?.slice(0, 5).map(s => s.name),
+          topStrengths: strengthsResult?.ranked_strengths?.slice(0, 5).map(s => s.name),
           step1Hypothesis: step1Hypothesis || undefined,
         });
       } catch (error) {

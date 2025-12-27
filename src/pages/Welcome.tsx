@@ -104,9 +104,9 @@ export default function Welcome() {
         ]);
 
         const strategy = strategyData?.strategy as { phases?: { name: string }[] } | null;
-        const mbtiResult = mbtiRes.data?.result as { type?: string } | null;
-        const discResult = discRes.data?.result as { primary?: string; secondary?: string } | null;
-        const strengthsResult = strengthsRes.data?.result as { topStrengths?: { name: string }[] } | null;
+        const mbtiResult = mbtiRes.data?.result as { type?: string; axisResults?: Record<string, { percentage: number }> } | null;
+        const discResult = discRes.data?.result as { primary?: string; secondary?: string; scores?: Record<string, number> } | null;
+        const strengthsResult = strengthsRes.data?.result as { ranked_strengths?: { name: string; score: number }[] } | null;
         
         setProgress({
           step1Completed: profileData?.step1_completed || false,
@@ -120,7 +120,7 @@ export default function Welcome() {
         setResults({
           mbtiType: mbtiResult?.type,
           discProfile: discResult ? { primary: discResult.primary || '', secondary: discResult.secondary } : undefined,
-          topStrengths: strengthsResult?.topStrengths?.slice(0, 5).map(s => s.name),
+          topStrengths: strengthsResult?.ranked_strengths?.slice(0, 5).map(s => s.name),
         });
       } catch (error) {
         console.error('Error fetching progress:', error);
