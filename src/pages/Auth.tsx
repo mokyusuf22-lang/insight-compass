@@ -1,15 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { SignInConfirmation } from '@/components/SignInConfirmation';
-import { Sparkles, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { z } from 'zod';
 
 const authSchema = z.object({
@@ -35,7 +32,6 @@ export default function Auth() {
   }, [navigate]);
 
   useEffect(() => {
-    // Only auto-redirect if not showing confirmation
     if (!loading && user && !showConfirmation) {
       navigate('/welcome');
     }
@@ -84,7 +80,6 @@ export default function Auth() {
             });
           }
         } else {
-          // Show confirmation screen before navigating
           setConfirmedEmail(email);
           setShowConfirmation(true);
         }
@@ -105,7 +100,6 @@ export default function Auth() {
             });
           }
         } else {
-          // Show confirmation screen before navigating
           setConfirmedEmail(email);
           setShowConfirmation(true);
         }
@@ -115,7 +109,6 @@ export default function Auth() {
     }
   };
 
-  // Show sign-in confirmation
   if (showConfirmation && confirmedEmail) {
     return (
       <SignInConfirmation 
@@ -136,93 +129,128 @@ export default function Auth() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="p-4 md:p-6">
-        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          Back to home
+      <header className="py-6 px-6 text-center border-b border-border">
+        <Link to="/" className="font-sans font-semibold tracking-wide text-lg">
+          CLARITY
         </Link>
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex items-center justify-center p-4 md:p-8">
-        <Card className="w-full max-w-md shadow-card animate-fade-up">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 rounded-xl gradient-primary flex items-center justify-center mb-4">
-              <Sparkles className="w-6 h-6 text-primary-foreground" />
+      <main className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          {/* Card with rounded border */}
+          <div className="border border-border rounded-3xl p-8 md:p-12 bg-background">
+            {/* Title */}
+            <div className="text-center mb-10">
+              <h1 className="text-3xl md:text-4xl leading-tight">
+                <span className="font-sans">Please sign</span>
+                <br />
+                <span className="font-sans">in </span>
+                <span className="font-serif italic">to continue</span>
+              </h1>
             </div>
-            <CardTitle className="text-2xl font-serif">
-              {isLogin ? 'Welcome Back' : 'Begin Your Journey'}
-            </CardTitle>
-            <CardDescription>
-              {isLogin
-                ? 'Sign in to continue your personality assessment'
-                : 'Create an account to discover your unique personality profile'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-sm text-muted-foreground">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="Your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
-                  className={errors.email ? 'border-destructive' : ''}
+                  className={`h-12 rounded-lg border-border ${errors.email ? 'border-destructive' : ''}`}
                 />
                 {errors.email && (
                   <p className="text-sm text-destructive">{errors.email}</p>
                 )}
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="password" className="text-sm text-muted-foreground">
+                    Password
+                  </Label>
+                  {isLogin && (
+                    <button
+                      type="button"
+                      className="text-sm text-muted-foreground hover:text-foreground underline"
+                    >
+                      Forgot?
+                    </button>
+                  )}
+                </div>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="Your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  className={errors.password ? 'border-destructive' : ''}
+                  className={`h-12 rounded-lg border-border ${errors.password ? 'border-destructive' : ''}`}
                 />
                 {errors.password && (
                   <p className="text-sm text-destructive">{errors.password}</p>
                 )}
               </div>
+
               <Button
                 type="submit"
-                className="w-full gradient-primary text-primary-foreground hover:opacity-90"
+                className="w-full h-12 rounded-full bg-foreground text-background hover:bg-foreground/90 text-base font-medium"
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <LoadingSpinner size="sm" />
                 ) : isLogin ? (
-                  'Sign In'
+                  'Sign in'
                 ) : (
-                  'Create Account'
+                  'Create account'
                 )}
               </Button>
             </form>
 
+            {/* Toggle */}
             <div className="mt-6 text-center">
+              <span className="text-sm text-muted-foreground">
+                {isLogin ? "Don't have an account? " : "Already have an account? "}
+              </span>
               <button
                 type="button"
                 onClick={() => {
                   setIsLogin(!isLogin);
                   setErrors({});
                 }}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="text-sm text-foreground hover:underline font-medium"
               >
-                {isLogin
-                  ? "Don't have an account? Sign up"
-                  : 'Already have an account? Sign in'}
+                {isLogin ? 'Get started' : 'Sign in'}
               </button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Terms */}
+          <div className="mt-8 text-center">
+            <p className="text-xs text-muted-foreground">
+              By continuing, you acknowledge and agree to our
+            </p>
+            <p className="text-xs text-muted-foreground">
+              <a href="#" className="underline hover:text-foreground">terms of service</a>
+              {' '}and{' '}
+              <a href="#" className="underline hover:text-foreground">privacy policy</a>
+            </p>
+          </div>
+        </div>
       </main>
+
+      {/* Footer */}
+      <footer className="py-6 text-center">
+        <p className="text-xs text-muted-foreground">
+          ©2025 Clarity
+        </p>
+      </footer>
     </div>
   );
 }
