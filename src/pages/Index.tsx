@@ -63,7 +63,7 @@ export default function Index() {
               </p>
               <div className="space-y-3 pt-4">
                 <Button 
-                  className="w-full sm:w-auto bg-foreground text-background hover:bg-foreground/90 chamfer-sm"
+                  className="w-full sm:w-auto bg-foreground text-background hover:bg-foreground/90 rounded-full"
                   onClick={handleGetStarted}
                 >
                   Start free
@@ -213,10 +213,10 @@ export default function Index() {
                 Our platform combines AI coaching with evidence-based assessments to give you a personalized career strategy. No generic advice. No vague promises. Just clear thinking and practical steps.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <Button className="chamfer-sm" onClick={handleGetStarted}>
+                <Button className="rounded-full" onClick={handleGetStarted}>
                   Start free
                 </Button>
-                <Button variant="outline" className="chamfer-sm" onClick={() => {
+                <Button variant="outline" className="rounded-full" onClick={() => {
                   document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
                 }}>
                   See pricing
@@ -250,7 +250,7 @@ export default function Index() {
               </div>
               <Button 
                 variant="outline" 
-                className="w-full chamfer-sm"
+                className="w-full rounded-full"
                 onClick={handleGetStarted}
               >
                 Start with Free
@@ -276,7 +276,7 @@ export default function Index() {
             {/* Pro Tier */}
             <div className="chamfer bg-foreground text-background p-8 space-y-6 relative">
               <div className="absolute top-4 right-6">
-                <span className="bg-background text-foreground text-xs px-3 py-1 chamfer-sm font-medium">
+                <span className="bg-background text-foreground text-xs px-3 py-1 rounded-full font-medium">
                   Recommended
                 </span>
               </div>
@@ -288,7 +288,7 @@ export default function Index() {
                 </div>
               </div>
               <Button 
-                className="w-full chamfer-sm bg-background text-foreground hover:bg-background/90"
+                className="w-full rounded-full bg-background text-foreground hover:bg-background/90"
                 onClick={() => navigate('/paywall')}
               >
                 Start with Pro
@@ -320,7 +320,7 @@ export default function Index() {
             <p className="text-muted-foreground text-sm mb-4">
               Premium includes AI coaching + human coaches, complete personality profile, advanced strategy reviews, and priority support.
             </p>
-            <Button variant="outline" size="sm" className="chamfer-sm">
+            <Button variant="outline" size="sm" className="rounded-full">
               Learn about Premium — £149/mo
             </Button>
           </div>
@@ -358,7 +358,7 @@ export default function Index() {
                   placeholder="you@email.com" 
                   className="bg-background/10 border-background/20 text-background placeholder:text-background/50"
                 />
-                <Button size="sm" variant="secondary" className="chamfer-sm">
+                <Button size="sm" variant="secondary" className="rounded-full">
                   Join
                 </Button>
               </div>

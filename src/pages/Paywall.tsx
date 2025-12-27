@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { 
   Crown, 
@@ -90,7 +89,7 @@ export default function Paywall() {
         <Button
           variant="ghost"
           onClick={() => navigate('/results/free')}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground rounded-full"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Results
@@ -100,7 +99,7 @@ export default function Paywall() {
       {/* Content */}
       <main className="container max-w-3xl py-8 px-4 md:px-8">
         <div className="text-center mb-10 animate-fade-up">
-          <div className="w-20 h-20 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-6 shadow-glow">
+          <div className="w-20 h-20 chamfer gradient-primary flex items-center justify-center mx-auto mb-6">
             <Crown className="w-10 h-10 text-primary-foreground" />
           </div>
           <h1 className="text-3xl md:text-4xl font-serif font-semibold text-foreground mb-4">
@@ -112,59 +111,55 @@ export default function Paywall() {
         </div>
 
         {/* Benefits */}
-        <Card className="shadow-card mb-8 animate-fade-up" style={{ animationDelay: '100ms' }}>
-          <CardContent className="p-6 md:p-8">
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-secondary" />
-              What's Included
-            </h2>
-            <ul className="space-y-4">
-              {benefits.map((benefit, index) => (
-                <li key={index} className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <benefit.icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <span className="text-foreground">{benefit.text}</span>
-                  <Check className="w-5 h-5 text-success ml-auto flex-shrink-0" />
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <div className="chamfer bg-card p-6 md:p-8 mb-8 animate-fade-up" style={{ animationDelay: '100ms' }}>
+          <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" />
+            What's Included
+          </h2>
+          <ul className="space-y-4">
+            {benefits.map((benefit, index) => (
+              <li key={index} className="flex items-center gap-4">
+                <div className="w-10 h-10 chamfer-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <benefit.icon className="w-5 h-5 text-primary" />
+                </div>
+                <span className="text-foreground">{benefit.text}</span>
+                <Check className="w-5 h-5 text-green-500 ml-auto flex-shrink-0" />
+              </li>
+            ))}
+          </ul>
+        </div>
 
         {/* Pricing */}
-        <Card className="shadow-card border-secondary/50 animate-fade-up" style={{ animationDelay: '200ms' }}>
-          <CardContent className="p-6 md:p-8 text-center">
-            <p className="text-muted-foreground mb-2">One-time payment</p>
-            <div className="flex items-baseline justify-center gap-1 mb-2">
-              <span className="text-5xl font-serif font-bold text-foreground">$29</span>
-            </div>
-            <p className="text-sm text-muted-foreground mb-6">
-              Lifetime access • No subscription
-            </p>
-            
-            <Button
-              size="lg"
-              className="w-full gradient-primary text-primary-foreground hover:opacity-90 py-6 text-lg"
-              onClick={handlePayment}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <LoadingSpinner size="sm" />
-              ) : (
-                <>
-                  <Crown className="w-5 h-5 mr-2" />
-                  Pay & Unlock Full Assessment
-                </>
-              )}
-            </Button>
+        <div className="chamfer bg-secondary p-6 md:p-8 text-center animate-fade-up" style={{ animationDelay: '200ms' }}>
+          <p className="text-muted-foreground mb-2">One-time payment</p>
+          <div className="flex items-baseline justify-center gap-1 mb-2">
+            <span className="text-5xl font-serif font-bold text-foreground">$29</span>
+          </div>
+          <p className="text-sm text-muted-foreground mb-6">
+            Lifetime access • No subscription
+          </p>
+          
+          <Button
+            size="lg"
+            className="w-full gradient-primary text-primary-foreground hover:opacity-90 py-6 text-lg rounded-full"
+            onClick={handlePayment}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <LoadingSpinner size="sm" />
+            ) : (
+              <>
+                <Crown className="w-5 h-5 mr-2" />
+                Pay & Unlock Full Assessment
+              </>
+            )}
+          </Button>
 
-            <div className="flex items-center justify-center gap-2 mt-6 text-sm text-muted-foreground">
-              <Shield className="w-4 h-4" />
-              Secure payment powered by Stripe
-            </div>
-          </CardContent>
-        </Card>
+          <div className="flex items-center justify-center gap-2 mt-6 text-sm text-muted-foreground">
+            <Shield className="w-4 h-4" />
+            Secure payment powered by Stripe
+          </div>
+        </div>
 
         {/* Money back */}
         <p className="text-center text-sm text-muted-foreground mt-8 animate-fade-up" style={{ animationDelay: '300ms' }}>

@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { UserHeader } from '@/components/UserHeader';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import {
   Collapsible,
@@ -197,7 +195,7 @@ export default function SkillDevelopmentPlan() {
         <UserHeader />
         <main className="container max-w-3xl py-8 px-4 md:px-8">
           <div className="text-center animate-fade-up">
-            <div className="inline-flex items-center justify-center p-3 rounded-xl bg-primary/10 mb-4">
+            <div className="inline-flex items-center justify-center p-3 chamfer bg-primary/10 mb-4">
               <BookOpen className="w-8 h-8 text-primary" />
             </div>
             <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-3">
@@ -209,33 +207,31 @@ export default function SkillDevelopmentPlan() {
 
             {strategy ? (
               <div className="space-y-6">
-                <Card className="text-left">
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold mb-4 flex items-center gap-2">
-                      <Target className="w-5 h-5 text-primary" />
-                      Your Career Roadmap ({strategy.roadmap.length} phases)
-                    </h3>
-                    <div className="space-y-2">
-                      {strategy.roadmap.map((phase, index) => (
-                        <div key={index} className="flex items-center gap-2 text-sm">
-                          <Badge variant="outline" className="text-xs">
-                            {index + 1}
-                          </Badge>
-                          <span className="font-medium">{phase.phase}</span>
-                          <span className="text-muted-foreground">
-                            (Months {phase.duration_months})
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="chamfer bg-card p-6 text-left">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <Target className="w-5 h-5 text-primary" />
+                    Your Career Roadmap ({strategy.roadmap.length} phases)
+                  </h3>
+                  <div className="space-y-2">
+                    {strategy.roadmap.map((phase, index) => (
+                      <div key={index} className="flex items-center gap-2 text-sm">
+                        <Badge variant="outline" className="text-xs">
+                          {index + 1}
+                        </Badge>
+                        <span className="font-medium">{phase.phase}</span>
+                        <span className="text-muted-foreground">
+                          (Months {phase.duration_months})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 <Button 
                   size="lg" 
                   onClick={generateSkillPlan}
                   disabled={isGenerating}
-                  className="gradient-primary text-primary-foreground"
+                  className="gradient-primary text-primary-foreground rounded-full"
                 >
                   {isGenerating ? (
                     <>
@@ -255,7 +251,7 @@ export default function SkillDevelopmentPlan() {
                 <p className="text-muted-foreground mb-4">
                   You need to generate your career strategy first.
                 </p>
-                <Button onClick={() => navigate('/strategy')}>
+                <Button onClick={() => navigate('/strategy')} className="rounded-full">
                   Go to Strategy
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -283,7 +279,7 @@ export default function SkillDevelopmentPlan() {
       <main className="container max-w-3xl py-8 px-4 md:px-8">
         {/* Header */}
         <div className="text-center mb-8 animate-fade-up">
-          <div className="inline-flex items-center justify-center p-3 rounded-xl bg-primary/10 mb-4">
+          <div className="inline-flex items-center justify-center p-3 chamfer bg-primary/10 mb-4">
             <BookOpen className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-3">
@@ -296,24 +292,18 @@ export default function SkillDevelopmentPlan() {
 
         {/* Summary Stats */}
         <div className="grid gap-4 md:grid-cols-3 mb-8 animate-fade-up" style={{ animationDelay: '50ms' }}>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary">{skillPlan.skill_development_plan.length}</div>
-              <div className="text-sm text-muted-foreground">Phases</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary">{totalSkills}</div>
-              <div className="text-sm text-muted-foreground">Skills to Build</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary">{totalArtifacts}</div>
-              <div className="text-sm text-muted-foreground">Proof Artifacts</div>
-            </CardContent>
-          </Card>
+          <div className="chamfer bg-card p-4 text-center">
+            <div className="text-2xl font-bold text-primary">{skillPlan.skill_development_plan.length}</div>
+            <div className="text-sm text-muted-foreground">Phases</div>
+          </div>
+          <div className="chamfer bg-card p-4 text-center">
+            <div className="text-2xl font-bold text-primary">{totalSkills}</div>
+            <div className="text-sm text-muted-foreground">Skills to Build</div>
+          </div>
+          <div className="chamfer bg-card p-4 text-center">
+            <div className="text-2xl font-bold text-primary">{totalArtifacts}</div>
+            <div className="text-sm text-muted-foreground">Proof Artifacts</div>
+          </div>
         </div>
 
         {/* Phases */}
@@ -324,16 +314,16 @@ export default function SkillDevelopmentPlan() {
               open={openPhases.includes(index)}
               onOpenChange={() => togglePhase(index)}
             >
-              <Card>
+              <div className="chamfer bg-card overflow-hidden">
                 <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="cursor-pointer hover:bg-muted/50 transition-colors p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <div className="w-8 h-8 chamfer-sm bg-primary/10 flex items-center justify-center">
                           <span className="text-sm font-bold text-primary">{index + 1}</span>
                         </div>
                         <div className="text-left">
-                          <CardTitle className="text-lg">{phase.phase}</CardTitle>
+                          <h3 className="text-lg font-semibold">{phase.phase}</h3>
                           <Badge variant="secondary" className="text-xs mt-1">
                             {phase.duration}
                           </Badge>
@@ -341,11 +331,11 @@ export default function SkillDevelopmentPlan() {
                       </div>
                       <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${openPhases.includes(index) ? 'rotate-180' : ''}`} />
                     </div>
-                  </CardHeader>
+                  </div>
                 </CollapsibleTrigger>
                 
                 <CollapsibleContent>
-                  <CardContent className="pt-0 space-y-6">
+                  <div className="p-4 pt-0 space-y-6">
                     {/* Skill Clusters */}
                     <div>
                       <h4 className="font-semibold text-sm flex items-center gap-2 mb-3">
@@ -359,7 +349,7 @@ export default function SkillDevelopmentPlan() {
                             <ul className="space-y-1">
                               {cluster.skills.map((skill, sIndex) => (
                                 <li key={sIndex} className="text-sm text-muted-foreground flex items-start gap-2">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-primary/50 mt-2 flex-shrink-0" />
+                                  <div className="w-1.5 h-1.5 bg-primary/50 mt-2 flex-shrink-0 chamfer-sm" />
                                   {skill}
                                 </li>
                               ))}
@@ -386,7 +376,7 @@ export default function SkillDevelopmentPlan() {
                     </div>
 
                     {/* Exit Criteria */}
-                    <div className="p-4 bg-muted/50 rounded-lg">
+                    <div className="chamfer-sm p-4 bg-muted/50">
                       <h4 className="font-semibold text-sm flex items-center gap-2 mb-2">
                         <Lightbulb className="w-4 h-4 text-amber-500" />
                         Exit Criteria
@@ -395,16 +385,16 @@ export default function SkillDevelopmentPlan() {
                     </div>
 
                     {/* Personality Notes */}
-                    <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
+                    <div className="chamfer-sm p-4 bg-primary/5">
                       <h4 className="font-semibold text-sm flex items-center gap-2 mb-2">
                         <Brain className="w-4 h-4 text-primary" />
                         Execution Notes (Based on Your Profile)
                       </h4>
                       <p className="text-sm text-muted-foreground">{phase.personality_execution_notes}</p>
                     </div>
-                  </CardContent>
+                  </div>
                 </CollapsibleContent>
-              </Card>
+              </div>
             </Collapsible>
           ))}
         </div>
@@ -414,12 +404,13 @@ export default function SkillDevelopmentPlan() {
           <Button 
             variant="outline"
             onClick={() => navigate('/strategy')}
+            className="rounded-full"
           >
             Back to Strategy
           </Button>
           <Button 
             onClick={() => navigate('/weekly')}
-            className="gradient-primary text-primary-foreground"
+            className="gradient-primary text-primary-foreground rounded-full"
           >
             Start Weekly Execution
             <ArrowRight className="w-4 h-4 ml-2" />
