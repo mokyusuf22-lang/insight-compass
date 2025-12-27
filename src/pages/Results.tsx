@@ -110,7 +110,7 @@ export default function Results() {
           .maybeSingle();
 
         const mbtiResult = mbtiData?.result as { type?: string; axisResults?: Record<string, { percentage: number }> } | null;
-        const discResult = discData?.result as { primary?: string; secondary?: string; scores?: Record<string, number> } | null;
+        const discResult = discData?.result as { D?: number; I?: number; S?: number; C?: number; primaryStyle?: string; secondaryStyle?: string | null } | null;
         const strengthsResult = strengthsData?.result as { ranked_strengths?: { name: string; score: number }[] } | null;
         const step1Hypothesis = step1Data?.ai_hypothesis as { mbtiTendency?: string; confidence?: number } | null;
 
@@ -121,12 +121,16 @@ export default function Results() {
         if (strengthsData) count++;
         setCompletedCount(count);
 
+        // Extract primary letter from "High C" -> "C"
+        const primaryLetter = discResult?.primaryStyle?.replace('High ', '').split(' ')[0] || '';
+        const secondaryLetter = discResult?.secondaryStyle?.replace('High ', '') || undefined;
+
         setResults({
           mbtiType: mbtiResult?.type,
           discProfile: discResult ? { 
-            primary: discResult.primary || '', 
-            secondary: discResult.secondary,
-            scores: discResult.scores 
+            primary: primaryLetter, 
+            secondary: secondaryLetter,
+            scores: { D: discResult.D || 0, I: discResult.I || 0, S: discResult.S || 0, C: discResult.C || 0 }
           } : undefined,
           topStrengths: strengthsResult?.ranked_strengths?.slice(0, 5).map(s => s.name),
           step1Hypothesis: step1Hypothesis || undefined,

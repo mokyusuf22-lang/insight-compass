@@ -105,7 +105,7 @@ export default function Welcome() {
 
         const strategy = strategyData?.strategy as { phases?: { name: string }[] } | null;
         const mbtiResult = mbtiRes.data?.result as { type?: string; axisResults?: Record<string, { percentage: number }> } | null;
-        const discResult = discRes.data?.result as { primary?: string; secondary?: string; scores?: Record<string, number> } | null;
+        const discResult = discRes.data?.result as { D?: number; I?: number; S?: number; C?: number; primaryStyle?: string; secondaryStyle?: string | null } | null;
         const strengthsResult = strengthsRes.data?.result as { ranked_strengths?: { name: string; score: number }[] } | null;
         
         setProgress({
@@ -117,9 +117,13 @@ export default function Welcome() {
           currentPhase: strategy?.phases?.[0]?.name,
         });
 
+        // Extract primary letter from "High C" -> "C"
+        const primaryLetter = discResult?.primaryStyle?.replace('High ', '').split(' ')[0] || '';
+        const secondaryLetter = discResult?.secondaryStyle?.replace('High ', '') || undefined;
+
         setResults({
           mbtiType: mbtiResult?.type,
-          discProfile: discResult ? { primary: discResult.primary || '', secondary: discResult.secondary } : undefined,
+          discProfile: discResult ? { primary: primaryLetter, secondary: secondaryLetter } : undefined,
           topStrengths: strengthsResult?.ranked_strengths?.slice(0, 5).map(s => s.name),
         });
       } catch (error) {
