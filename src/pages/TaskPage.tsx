@@ -52,6 +52,9 @@ export default function TaskPage() {
   const [question, setQuestion] = useState('');
   const [isAsking, setIsAsking] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [phaseTaskCount, setPhaseTaskCount] = useState(0);
+  const [completedInPhase, setCompletedInPhase] = useState(0);
+  const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
 
   const phaseId = location.state?.phaseId;
 
@@ -71,13 +74,26 @@ export default function TaskPage() {
       setIsLoading(true);
 
       try {
-        const { data: strategyData } = await supabase
-          .from('career_strategies')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        // Fetch strategy and completed tasks in parallel
+        const [strategyRes, plansRes] = await Promise.all([
+          supabase
+            .from('career_strategies')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('weekly_execution_plans')
+            .select('completed_tasks')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        ]);
+
+        const strategyData = strategyRes.data;
+        const completedTasks = (plansRes.data?.completed_tasks as string[]) || [];
 
         if (strategyData) {
           const mbti = strategyData.mbti_result as { type?: string } | null;
@@ -98,11 +114,17 @@ export default function TaskPage() {
             let foundTask: PathTask | null = null;
             let foundPhase: PathPhase | null = null;
             let globalTaskIndex = 0;
+            let taskIndexInPhase = 0;
+            let phaseTaskIds: string[] = [];
 
             for (const [phaseIdx, phaseData] of (skillPlan.skill_development_plan || []).entries()) {
+              const currentPhaseTaskIds: string[] = [];
+              let localTaskIndex = 0;
+              
               for (const cluster of (phaseData.skill_clusters || [])) {
                 for (const [skillIdx, skill] of (cluster.skills || []).entries()) {
                   const taskId = `phase${phaseIdx}-task${globalTaskIndex}`;
+                  currentPhaseTaskIds.push(taskId);
                   
                   if (taskId === id) {
                     foundTask = {
@@ -126,16 +148,68 @@ export default function TaskPage() {
                       image: '',
                       tasks: [],
                     };
-                    break;
+                    
+                    taskIndexInPhase = localTaskIndex;
+                    phaseTaskIds = currentPhaseTaskIds;
                   }
                   globalTaskIndex++;
+                  localTaskIndex++;
                 }
-                if (foundTask) break;
               }
-              if (foundTask) break;
+              
+              // If we found the task, finalize phase task IDs
+              if (foundTask && foundPhase) {
+                // Continue collecting remaining task IDs for this phase
+                for (const cluster of (phaseData.skill_clusters || [])) {
+                  for (const skill of (cluster.skills || [])) {
+                    const remainingId = `phase${phaseIdx}-task${globalTaskIndex}`;
+                    if (!phaseTaskIds.includes(remainingId)) {
+                      // Already collected during the main loop
+                    }
+                  }
+                }
+                break;
+              }
             }
 
             if (foundTask && foundPhase) {
+              // Recalculate phase tasks correctly
+              let correctPhaseTaskIds: string[] = [];
+              let idx = 0;
+              const phaseNum = parseInt(foundPhase.id.replace('phase', ''));
+              
+              for (const cluster of ((skillPlan.skill_development_plan || [])[phaseNum]?.skill_clusters || [])) {
+                for (const skill of (cluster.skills || [])) {
+                  correctPhaseTaskIds.push(`phase${phaseNum}-task${idx}`);
+                  idx++;
+                }
+              }
+              
+              // Actually we need global index, let me fix this
+              correctPhaseTaskIds = [];
+              let gIdx = 0;
+              for (const [pIdx, pData] of (skillPlan.skill_development_plan || []).entries()) {
+                if (pIdx < phaseNum) {
+                  for (const c of (pData.skill_clusters || [])) {
+                    gIdx += (c.skills || []).length;
+                  }
+                } else if (pIdx === phaseNum) {
+                  for (const c of (pData.skill_clusters || [])) {
+                    for (const s of (c.skills || [])) {
+                      correctPhaseTaskIds.push(`phase${pIdx}-task${gIdx}`);
+                      gIdx++;
+                    }
+                  }
+                  break;
+                }
+              }
+              
+              const completedInThisPhase = correctPhaseTaskIds.filter(tid => completedTasks.includes(tid)).length;
+              const currentIndex = correctPhaseTaskIds.indexOf(id) + 1;
+              
+              setPhaseTaskCount(correctPhaseTaskIds.length);
+              setCompletedInPhase(completedInThisPhase);
+              setCurrentTaskIndex(currentIndex);
               setTask(foundTask);
               setPhase(foundPhase);
             } else {
@@ -293,14 +367,17 @@ export default function TaskPage() {
         <div className="hidden md:flex items-center gap-3 text-sm">
           <div className="flex items-center gap-1.5">
             <div className="flex gap-0.5">
-              {[...Array(5)].map((_, i) => (
+              {[...Array(Math.min(phaseTaskCount, 10))].map((_, i) => (
                 <div 
                   key={i} 
-                  className={`w-2 h-2 rounded-full ${i < 2 ? 'bg-primary' : 'bg-muted'}`}
+                  className={`w-2 h-2 rounded-full ${i < completedInPhase ? 'bg-primary' : i === completedInPhase ? 'bg-primary/50' : 'bg-muted'}`}
                 />
               ))}
+              {phaseTaskCount > 10 && (
+                <span className="text-xs text-muted-foreground ml-1">...</span>
+              )}
             </div>
-            <span className="text-muted-foreground text-xs">2 of 5 tasks</span>
+            <span className="text-muted-foreground text-xs">{completedInPhase} of {phaseTaskCount} completed</span>
           </div>
         </div>
 
