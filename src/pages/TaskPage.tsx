@@ -4,25 +4,23 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
-import { UserHeader } from '@/components/UserHeader';
 import { toast } from 'sonner';
 import { Json } from '@/integrations/supabase/types';
 import {
   ArrowLeft,
   Brain,
-  Target,
   CheckCircle,
-  Lightbulb,
-  MessageSquare,
-  Send,
   BookOpen,
   Wrench,
   FileText,
   Folder,
   Clock,
   RefreshCw,
+  Send,
+  ArrowRight,
+  Sparkles,
 } from 'lucide-react';
 import type { PathPhase, PathTask, UserProfile } from '@/types/skillPath';
 
@@ -97,14 +95,11 @@ export default function TaskPage() {
           if (strategyData.skill_development_plan) {
             const skillPlan = strategyData.skill_development_plan as any;
             
-            // Find the task
             let foundTask: PathTask | null = null;
             let foundPhase: PathPhase | null = null;
             let globalTaskIndex = 0;
 
             for (const [phaseIdx, phaseData] of (skillPlan.skill_development_plan || []).entries()) {
-              const phaseTasks: PathTask[] = [];
-              
               for (const cluster of (phaseData.skill_clusters || [])) {
                 for (const [skillIdx, skill] of (cluster.skills || []).entries()) {
                   const taskId = `phase${phaseIdx}-task${globalTaskIndex}`;
@@ -189,7 +184,6 @@ export default function TaskPage() {
 
       toast.success('Task completed!');
       
-      // Navigate back to phase
       if (phaseId) {
         navigate(`/path/phase/${phaseId}`);
       } else {
@@ -254,6 +248,13 @@ export default function TaskPage() {
     return "This task aligns with your assessment results and will help build skills for your career goal.";
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleAskQuestion();
+    }
+  };
+
   if (loading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -269,53 +270,134 @@ export default function TaskPage() {
   const TaskIcon = taskTypeIcons[task.type];
 
   return (
-    <div className="min-h-screen bg-background">
-      <UserHeader />
-      
-      <div className="flex">
-        {/* Main Content */}
-        <main className="flex-1 lg:mr-[400px]">
-          <div className="container max-w-3xl py-8 px-4 md:px-8">
-            {/* Breadcrumb */}
-            <Link 
-              to={phaseId ? `/path/phase/${phaseId}` : '/path'} 
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to {phase.title}
-            </Link>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Top Header Bar */}
+      <header className="h-14 border-b border-border bg-card flex items-center px-4 gap-4">
+        <Link 
+          to={phaseId ? `/path/phase/${phaseId}` : '/path'} 
+          className="p-2 hover:bg-muted rounded-lg transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+        </Link>
+        
+        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+          <TaskIcon className="w-5 h-5 text-primary" />
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <h1 className="font-semibold truncate">{task.title}</h1>
+        </div>
 
-            {/* Task Header */}
-            <div className="chamfer bg-card p-6 mb-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <TaskIcon className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="secondary">{taskTypeLabels[task.type]}</Badge>
-                    <Badge variant="outline" className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {task.estimatedMinutes} min
-                    </Badge>
-                  </div>
-                  <h1 className="text-xl md:text-2xl font-serif font-bold">{task.title}</h1>
-                </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="hidden sm:flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            {task.estimatedMinutes} min
+          </Badge>
+          <Badge variant="outline">{taskTypeLabels[task.type]}</Badge>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Panel - AI Coach */}
+        <aside className="hidden lg:flex w-[340px] border-r border-border bg-card flex-col">
+          {/* Coach Header */}
+          <div className="p-4 flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <Brain className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm">Coach</span>
+                <span className="text-xs text-muted-foreground">Now</span>
               </div>
-              
-              <p className="text-muted-foreground mb-4">{task.description}</p>
-              
-              <div className="text-xs text-muted-foreground">
-                Phase {phase.phaseNumber}: {phase.title}
+              <p className="text-sm mt-1 text-muted-foreground leading-relaxed">
+                {getPersonalityInsight()}
+              </p>
+              {userProfile.careerGoal && (
+                <p className="text-sm mt-2 text-muted-foreground">
+                  Building skills for: <strong className="text-foreground">{userProfile.careerGoal}</strong>
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* AI Response */}
+          {aiResponse && (
+            <div className="px-4 pb-4">
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                <p className="text-sm">{aiResponse}</p>
               </div>
+            </div>
+          )}
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Suggestions */}
+          <div className="px-4 pb-4">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+              <Sparkles className="w-3 h-3" />
+              Suggestions
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button 
+                className="text-xs px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full transition-colors"
+                onClick={() => setQuestion("Summarize this task for me")}
+              >
+                Summarize this task
+              </button>
+              <button 
+                className="text-xs px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full transition-colors"
+                onClick={() => setQuestion("What resources should I use?")}
+              >
+                What resources should I use?
+              </button>
+            </div>
+          </div>
+
+          {/* Chat Input */}
+          <div className="p-4 border-t border-border">
+            <div className="relative">
+              <Input
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Ask me anything"
+                className="pr-10"
+                disabled={isAsking}
+              />
+              <button
+                onClick={handleAskQuestion}
+                disabled={isAsking || !question.trim()}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-primary disabled:opacity-50 transition-colors"
+              >
+                {isAsking ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        {/* Right Panel - Main Content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-3xl mx-auto p-6 lg:p-10">
+            {/* Task Summary */}
+            <div className="mb-8">
+              <h2 className="text-2xl lg:text-3xl font-serif font-bold mb-4">Task Summary</h2>
+              <p className="text-muted-foreground leading-relaxed text-base lg:text-lg">
+                {task.description}. This task is part of <strong>Phase {phase.phaseNumber}: {phase.title}</strong>. 
+                Focus on understanding the core concepts and applying them to your career context
+                {userProfile.careerGoal ? ` as a future ${userProfile.careerGoal}` : ''}.
+              </p>
             </div>
 
             {/* What You Need To Do */}
-            <div className="chamfer bg-card p-6 mb-6">
-              <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-                <Target className="w-5 h-5 text-primary" />
-                What You Need To Do
-              </h2>
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold mb-4">What You Need To Do</h3>
               <ol className="space-y-3">
                 <li className="flex items-start gap-3">
                   <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary flex-shrink-0">1</span>
@@ -323,7 +405,7 @@ export default function TaskPage() {
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary flex-shrink-0">2</span>
-                  <span>Research best practices and examples relevant to your career goal as a <strong>{userProfile.careerGoal || 'professional'}</strong></span>
+                  <span>Research best practices and examples relevant to your career goal</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary flex-shrink-0">3</span>
@@ -337,142 +419,54 @@ export default function TaskPage() {
             </div>
 
             {/* Success Criteria */}
-            <div className="chamfer bg-green-500/10 border border-green-500/20 p-6 mb-6">
-              <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">
+            <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-5">
+              <h3 className="font-semibold flex items-center gap-2 mb-2">
                 <CheckCircle className="w-5 h-5 text-green-500" />
                 Success Criteria
-              </h2>
-              <p>{task.successCriteria}</p>
-            </div>
-
-            {/* Complete Button (Mobile) */}
-            <div className="lg:hidden">
-              <Button 
-                size="lg"
-                className="w-full gradient-primary text-primary-foreground"
-                onClick={handleComplete}
-                disabled={isCompleting}
-              >
-                {isCompleting ? (
-                  <>
-                    <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-5 h-5 mr-2" />
-                    Mark Task Complete
-                  </>
-                )}
-              </Button>
+              </h3>
+              <p className="text-muted-foreground">{task.successCriteria}</p>
             </div>
           </div>
         </main>
+      </div>
 
-        {/* AI Coach Side Panel */}
-        <aside className="hidden lg:block fixed right-0 top-0 h-screen w-[400px] bg-card border-l border-border shadow-xl flex-col z-40">
-          {/* Panel Header */}
-          <div className="flex items-center gap-3 p-4 border-b border-border">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Brain className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-semibold">AI Coach</h3>
-              <p className="text-xs text-muted-foreground">Personalized guidance</p>
-            </div>
-          </div>
+      {/* Bottom Action Bar */}
+      <footer className="h-16 border-t border-border bg-card flex items-center justify-between px-4 lg:px-6">
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="hidden sm:flex">
+            Phase {phase.phaseNumber}
+          </Badge>
+          <span className="text-sm text-muted-foreground hidden md:block">{phase.title}</span>
+        </div>
 
-          {/* Panel Content */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-6" style={{ maxHeight: 'calc(100vh - 180px)' }}>
-            {/* Why This Matters */}
-            <div>
-              <h4 className="font-medium text-sm flex items-center gap-2 mb-3">
-                <Lightbulb className="w-4 h-4 text-amber-500" />
-                Why This Matters For You
-              </h4>
-              <div className="chamfer-sm bg-amber-500/10 p-3">
-                <p className="text-sm">{getPersonalityInsight()}</p>
-                {userProfile.careerGoal && (
-                  <p className="text-sm mt-2 text-muted-foreground">
-                    This builds skills directly relevant to your goal: <strong>{userProfile.careerGoal}</strong>
-                  </p>
-                )}
-                {userProfile.topStrengths && userProfile.topStrengths.length > 0 && (
-                  <p className="text-sm mt-2 text-muted-foreground">
-                    Leverage your strengths: <strong>{userProfile.topStrengths.join(', ')}</strong>
-                  </p>
-                )}
-              </div>
-            </div>
+        <Button 
+          onClick={handleComplete}
+          disabled={isCompleting}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground px-6"
+        >
+          {isCompleting ? (
+            <>
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              Mark Complete
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </>
+          )}
+        </Button>
+      </footer>
 
-            {/* AI Response */}
-            {aiResponse && (
-              <div className="chamfer-sm bg-primary/5 border border-primary/20 p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Brain className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">Coach Response</span>
-                </div>
-                <p className="text-sm">{aiResponse}</p>
-              </div>
-            )}
-
-            {/* Ask AI */}
-            <div>
-              <h4 className="font-medium text-sm flex items-center gap-2 mb-3">
-                <MessageSquare className="w-4 h-4 text-primary" />
-                Ask a Question
-              </h4>
-              <div className="space-y-2">
-                <Textarea 
-                  placeholder="Need help with this task? Ask your AI coach..."
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  className="min-h-[80px] resize-none"
-                />
-                <Button 
-                  size="sm" 
-                  onClick={handleAskQuestion}
-                  disabled={isAsking || !question.trim()}
-                  className="w-full"
-                >
-                  {isAsking ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Thinking...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Ask Coach
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Panel Footer */}
-          <div className="p-4 border-t border-border">
-            <Button 
-              size="lg"
-              className="w-full gradient-primary text-primary-foreground"
-              onClick={handleComplete}
-              disabled={isCompleting}
-            >
-              {isCompleting ? (
-                <>
-                  <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="w-5 h-5 mr-2" />
-                  Mark Task Complete
-                </>
-              )}
-            </Button>
-          </div>
-        </aside>
+      {/* Mobile AI Coach Drawer Trigger */}
+      <div className="lg:hidden fixed bottom-20 right-4 z-40">
+        <Button
+          size="icon"
+          className="w-12 h-12 rounded-full shadow-lg bg-primary text-primary-foreground"
+          onClick={() => toast.info('AI Coach coming soon on mobile!')}
+        >
+          <Brain className="w-5 h-5" />
+        </Button>
       </div>
     </div>
   );
