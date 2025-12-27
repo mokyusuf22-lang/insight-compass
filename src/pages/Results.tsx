@@ -11,7 +11,10 @@ import {
   Users,
   TrendingUp,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Briefcase,
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -25,12 +28,21 @@ interface AssessmentResult {
   };
 }
 
+interface CareerGoals {
+  currentRole?: string;
+  targetRole?: string;
+  timeHorizon?: string;
+  biggestChallenge?: string;
+}
+
 export default function Results() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [results, setResults] = useState<AssessmentResult>({});
+  const [goals, setGoals] = useState<CareerGoals>({});
   const [loadingResults, setLoadingResults] = useState(true);
   const [completedCount, setCompletedCount] = useState(0);
+  const [animationReady, setAnimationReady] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -43,10 +55,10 @@ export default function Results() {
       if (!user) return;
       
       try {
-        // Fetch Step1 assessment
+        // Fetch Step1 assessment with goals
         const { data: step1Data } = await supabase
           .from('step1_assessments')
-          .select('axis_scores, ai_hypothesis')
+          .select('axis_scores, ai_hypothesis, user_current_role, user_target_role, time_horizon, biggest_challenge')
           .eq('user_id', user.id)
           .eq('is_complete', true)
           .maybeSingle();
@@ -93,10 +105,19 @@ export default function Results() {
           topStrengths: strengthsResult?.topStrengths?.slice(0, 3).map(s => s.name),
           step1Hypothesis: step1Hypothesis || undefined,
         });
+
+        setGoals({
+          currentRole: step1Data?.user_current_role || undefined,
+          targetRole: step1Data?.user_target_role || undefined,
+          timeHorizon: step1Data?.time_horizon || undefined,
+          biggestChallenge: step1Data?.biggest_challenge || undefined,
+        });
       } catch (error) {
         console.error('Error fetching results:', error);
       } finally {
         setLoadingResults(false);
+        // Trigger animations after data loads
+        setTimeout(() => setAnimationReady(true), 100);
       }
     };
 
@@ -142,11 +163,16 @@ export default function Results() {
             </Button>
           </div>
         ) : (
-          /* Bento Grid Layout */
+          /* Bento Grid Layout with staggered animations */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             
             {/* Hero Card - Personality Type */}
-            <div className="md:col-span-2 lg:col-span-2 chamfer bg-gradient-to-br from-primary/20 via-primary/10 to-background p-8 md:p-10 relative overflow-hidden">
+            <div 
+              className={`md:col-span-2 lg:col-span-2 chamfer bg-gradient-to-br from-primary/20 via-primary/10 to-background p-8 md:p-10 relative overflow-hidden transition-all duration-700 ${
+                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+              style={{ transitionDelay: '0ms' }}
+            >
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
               
               <p className="text-primary text-sm font-medium mb-2">Your Personality Profile</p>
@@ -168,7 +194,12 @@ export default function Results() {
             </div>
 
             {/* Design Persona Card */}
-            <div className="chamfer bg-card border border-border p-6 flex flex-col">
+            <div 
+              className={`chamfer bg-card border border-border p-6 flex flex-col transition-all duration-700 ${
+                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+              style={{ transitionDelay: '100ms' }}
+            >
               <div className="flex items-center justify-between mb-6">
                 <span className="text-xs bg-primary text-primary-foreground px-3 py-1 rounded-full">
                   Design Persona
@@ -196,8 +227,60 @@ export default function Results() {
               </div>
             </div>
 
+            {/* Career Goals Card */}
+            <div 
+              className={`md:col-span-2 chamfer bg-gradient-to-br from-secondary via-secondary/80 to-secondary/60 p-6 transition-all duration-700 ${
+                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+              style={{ transitionDelay: '150ms' }}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Briefcase className="w-5 h-5 text-secondary-foreground" />
+                <p className="text-xs text-secondary-foreground/80 uppercase tracking-wide">
+                  Career Goals
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <p className="text-xs text-secondary-foreground/60 mb-1">Current Role</p>
+                  <p className="text-lg font-semibold text-secondary-foreground">
+                    {goals.currentRole || 'Not specified'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-secondary-foreground/60 mb-1">Target Role</p>
+                  <p className="text-lg font-semibold text-secondary-foreground">
+                    {goals.targetRole || 'Not specified'}
+                  </p>
+                </div>
+              </div>
+
+              {(goals.timeHorizon || goals.biggestChallenge) && (
+                <div className="mt-4 pt-4 border-t border-secondary-foreground/10 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {goals.timeHorizon && (
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-secondary-foreground/60" />
+                      <span className="text-sm text-secondary-foreground/80">{goals.timeHorizon}</span>
+                    </div>
+                  )}
+                  {goals.biggestChallenge && (
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-secondary-foreground/60 mt-0.5" />
+                      <span className="text-sm text-secondary-foreground/80 line-clamp-2">{goals.biggestChallenge}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Assessments Completed */}
-            <div className="chamfer bg-card border border-border p-6">
+            <div 
+              className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
+                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+              style={{ transitionDelay: '200ms' }}
+            >
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
                 Total Assessments
               </p>
@@ -210,7 +293,12 @@ export default function Results() {
             </div>
 
             {/* Top Strengths */}
-            <div className="chamfer bg-card border border-border p-6">
+            <div 
+              className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
+                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+              style={{ transitionDelay: '250ms' }}
+            >
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4">
                 Top Strengths
               </p>
@@ -237,7 +325,12 @@ export default function Results() {
             </div>
 
             {/* DISC Profile Bar */}
-            <div className="chamfer bg-gradient-to-r from-amber-500 to-orange-500 p-6 text-white">
+            <div 
+              className={`chamfer bg-gradient-to-r from-amber-500 to-orange-500 p-6 text-white transition-all duration-700 ${
+                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+              style={{ transitionDelay: '300ms' }}
+            >
               <p className="text-xs uppercase tracking-wide opacity-80 mb-2">
                 Behavioral Style
               </p>
@@ -253,7 +346,12 @@ export default function Results() {
             </div>
 
             {/* Confidence Score */}
-            <div className="chamfer bg-card border border-border p-6">
+            <div 
+              className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
+                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+              style={{ transitionDelay: '350ms' }}
+            >
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
                 Profile Confidence
               </p>
@@ -274,7 +372,12 @@ export default function Results() {
             </div>
 
             {/* Team Dynamics */}
-            <div className="chamfer bg-card border border-border p-6">
+            <div 
+              className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
+                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+              style={{ transitionDelay: '400ms' }}
+            >
               <div className="flex items-center gap-3 mb-4">
                 <Users className="w-5 h-5 text-primary" />
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">
@@ -290,7 +393,12 @@ export default function Results() {
             </div>
 
             {/* Growth Potential */}
-            <div className="chamfer bg-card border border-border p-6">
+            <div 
+              className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
+                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+              style={{ transitionDelay: '450ms' }}
+            >
               <div className="flex items-center gap-3 mb-4">
                 <TrendingUp className="w-5 h-5 text-primary" />
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">
