@@ -19,7 +19,7 @@ import {
   Folder,
   Clock
 } from 'lucide-react';
-import type { PathPhase, PathWeek, PathTask } from '@/pages/SkillPath';
+import type { PathPhase, PathTask } from '@/types/skillPath';
 
 interface PhaseSectionProps {
   phase: PathPhase;

@@ -18,7 +18,7 @@ import {
   Folder,
   RefreshCw
 } from 'lucide-react';
-import type { PathTask, PathPhase, PathWeek, UserProfile } from '@/pages/SkillPath';
+import type { PathTask, PathPhase, UserProfile } from '@/types/skillPath';
 
 interface AICoachPanelProps {
   task: PathTask;
