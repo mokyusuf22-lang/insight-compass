@@ -7,7 +7,6 @@ import { UserHeader } from '@/components/UserHeader';
 import { GoalReview } from '@/components/GoalReview';
 import { 
   Brain, 
-  Target, 
   Zap, 
   Users,
   TrendingUp,
@@ -22,13 +21,42 @@ import { Button } from '@/components/ui/button';
 
 interface AssessmentResult {
   mbtiType?: string;
-  discProfile?: { primary: string; secondary?: string };
+  discProfile?: { primary: string; secondary?: string; scores?: Record<string, number> };
   topStrengths?: string[];
   step1Hypothesis?: {
     mbtiTendency?: string;
     confidence?: number;
   };
 }
+
+// DISC color mapping
+const discColors: Record<string, { bg: string; text: string; gradient: string }> = {
+  D: { bg: 'bg-red-500', text: 'text-white', gradient: 'from-red-500 to-red-600' },
+  I: { bg: 'bg-yellow-500', text: 'text-black', gradient: 'from-yellow-400 to-yellow-500' },
+  S: { bg: 'bg-green-500', text: 'text-white', gradient: 'from-green-500 to-green-600' },
+  C: { bg: 'bg-blue-500', text: 'text-white', gradient: 'from-blue-500 to-blue-600' },
+};
+
+// MBTI color mapping by temperament
+const getMBTIColor = (type?: string): { bg: string; gradient: string } => {
+  if (!type) return { bg: 'from-primary/20 via-primary/10 to-background', gradient: 'from-primary/20' };
+  
+  const lastTwo = type.slice(-2);
+  if (['NT'].includes(type.slice(1, 3))) {
+    // Analysts (INTJ, INTP, ENTJ, ENTP) - Purple
+    return { bg: 'from-purple-500/20 via-purple-500/10 to-background', gradient: 'from-purple-500/30' };
+  } else if (['NF'].includes(type.slice(1, 3))) {
+    // Diplomats (INFJ, INFP, ENFJ, ENFP) - Green
+    return { bg: 'from-emerald-500/20 via-emerald-500/10 to-background', gradient: 'from-emerald-500/30' };
+  } else if (type.includes('S') && type.includes('J')) {
+    // Sentinels (ISTJ, ISFJ, ESTJ, ESFJ) - Blue
+    return { bg: 'from-blue-500/20 via-blue-500/10 to-background', gradient: 'from-blue-500/30' };
+  } else if (type.includes('S') && type.includes('P')) {
+    // Explorers (ISTP, ISFP, ESTP, ESFP) - Orange
+    return { bg: 'from-orange-500/20 via-orange-500/10 to-background', gradient: 'from-orange-500/30' };
+  }
+  return { bg: 'from-primary/20 via-primary/10 to-background', gradient: 'from-primary/20' };
+};
 
 export default function Results() {
   const { user, loading } = useAuth();
@@ -95,7 +123,11 @@ export default function Results() {
 
         setResults({
           mbtiType: mbtiResult?.type,
-          discProfile: discResult ? { primary: discResult.primary || '', secondary: discResult.secondary } : undefined,
+          discProfile: discResult ? { 
+            primary: discResult.primary || '', 
+            secondary: discResult.secondary,
+            scores: discResult.scores 
+          } : undefined,
           topStrengths: strengthsResult?.ranked_strengths?.slice(0, 5).map(s => s.name),
           step1Hypothesis: step1Hypothesis || undefined,
         });
@@ -153,68 +185,95 @@ export default function Results() {
             {/* Bento Grid Layout with staggered animations */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
               
-              {/* Hero Card - Personality Type */}
-              <button 
-                onClick={() => navigate('/assessment/mbti/results')}
-                className={`md:col-span-2 lg:col-span-2 chamfer bg-gradient-to-br from-primary/20 via-primary/10 to-background p-8 md:p-10 relative overflow-hidden transition-all duration-700 hover:from-primary/30 text-left ${
-                  animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                }`}
-                style={{ transitionDelay: '0ms' }}
-              >
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                
-                <p className="text-primary text-sm font-medium mb-2">Your Personality Profile</p>
-                
-                <h2 className="text-5xl md:text-7xl font-serif font-bold text-foreground mb-6">
-                  {results.mbtiType || results.step1Hypothesis?.mbtiTendency || '????'}
-                </h2>
-                
-                <div className="chamfer-sm bg-background/80 backdrop-blur-sm p-4 max-w-md">
-                  <p className="text-foreground text-sm">
-                    {results.mbtiType 
-                      ? "Your complete personality type based on 93 questions."
-                      : results.step1Hypothesis?.mbtiTendency
-                        ? "Preliminary type based on quick assessment. Complete full MBTI for accuracy."
-                        : "Complete assessments to discover your type."
-                    }
-                  </p>
-                </div>
-              </button>
+            {/* Hero Card - Personality Type */}
+              {(() => {
+                const mbtiColor = getMBTIColor(results.mbtiType || results.step1Hypothesis?.mbtiTendency);
+                return (
+                  <button 
+                    onClick={() => navigate('/assessment/mbti/results')}
+                    className={`md:col-span-2 lg:col-span-2 chamfer bg-gradient-to-br ${mbtiColor.bg} p-8 md:p-10 relative overflow-hidden transition-all duration-700 hover:${mbtiColor.gradient} text-left ${
+                      animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                    }`}
+                    style={{ transitionDelay: '0ms' }}
+                  >
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                    
+                    <p className="text-primary text-sm font-medium mb-2">Your Personality Profile</p>
+                    
+                    <h2 className="text-5xl md:text-7xl font-serif font-bold text-foreground mb-6">
+                      {results.mbtiType || results.step1Hypothesis?.mbtiTendency || '????'}
+                    </h2>
+                    
+                    <div className="chamfer-sm bg-background/80 backdrop-blur-sm p-4 max-w-md">
+                      <p className="text-foreground text-sm">
+                        {results.mbtiType 
+                          ? "Your complete personality type based on 93 questions."
+                          : results.step1Hypothesis?.mbtiTendency
+                            ? "Preliminary type based on quick assessment. Complete full MBTI for accuracy."
+                            : "Complete assessments to discover your type."
+                        }
+                      </p>
+                    </div>
+                  </button>
+                );
+              })()}
 
-              {/* Design Persona Card */}
-              <button 
-                onClick={() => navigate('/assessment/disc/results')}
-                className={`chamfer bg-card border border-border p-6 flex flex-col transition-all duration-700 hover:border-primary/50 text-left ${
-                  animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                }`}
-                style={{ transitionDelay: '100ms' }}
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <span className="text-xs bg-primary text-primary-foreground px-3 py-1 rounded-full">
-                    Design Persona
-                  </span>
-                  <Sparkles className="w-4 h-4 text-muted-foreground" />
-                </div>
+              {/* Design Persona Card - DISC colored */}
+              {(() => {
+                const primaryType = results.discProfile?.primary?.charAt(0) || '';
+                const discColor = discColors[primaryType] || { bg: 'bg-card', text: 'text-foreground', gradient: 'from-muted to-muted' };
+                const hasDisc = !!results.discProfile;
                 
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="w-20 h-20 chamfer-sm bg-foreground flex items-center justify-center mb-4">
-                    <Target className="w-10 h-10 text-background" />
-                  </div>
-                </div>
-                
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">You are a</p>
-                  <h3 className="text-2xl font-serif font-semibold text-foreground mb-2">
-                    {results.discProfile?.primary || 'Strategist'}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {results.discProfile 
-                      ? `${results.discProfile.primary} with ${results.discProfile.secondary || 'balanced'} tendencies.`
-                      : 'Complete DISC assessment to reveal your behavioral style.'
-                    }
-                  </p>
-                </div>
-              </button>
+                return (
+                  <button 
+                    onClick={() => navigate('/assessment/disc/results')}
+                    className={`chamfer ${hasDisc ? `bg-gradient-to-br ${discColor.gradient}` : 'bg-card border border-border'} p-6 flex flex-col transition-all duration-700 hover:opacity-90 text-left ${
+                      animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                    }`}
+                    style={{ transitionDelay: '100ms' }}
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <span className={`text-xs ${hasDisc ? 'bg-white/20 text-white' : 'bg-primary text-primary-foreground'} px-3 py-1 rounded-full`}>
+                        Behavioral Style
+                      </span>
+                      <Sparkles className={`w-4 h-4 ${hasDisc ? 'text-white/70' : 'text-muted-foreground'}`} />
+                    </div>
+                    
+                    <div className="flex-1 flex flex-col items-center justify-center">
+                      <div className={`w-16 h-16 chamfer-sm ${hasDisc ? 'bg-white/20' : 'bg-foreground'} flex items-center justify-center mb-3`}>
+                        <span className={`text-3xl font-bold ${hasDisc ? 'text-white' : 'text-background'}`}>
+                          {primaryType || '?'}
+                        </span>
+                      </div>
+                      
+                      <h3 className={`text-2xl font-serif font-semibold ${hasDisc ? 'text-white' : 'text-foreground'} mb-1`}>
+                        {results.discProfile?.primary || 'DISC'}
+                      </h3>
+                      
+                      {results.discProfile?.scores && (
+                        <div className="flex gap-2 mt-3">
+                          {['D', 'I', 'S', 'C'].map((dim) => {
+                            const score = results.discProfile?.scores?.[dim] || 0;
+                            return (
+                              <div key={dim} className="text-center">
+                                <span className={`text-xs ${hasDisc ? 'text-white/70' : 'text-muted-foreground'}`}>{dim}</span>
+                                <div className={`text-sm font-bold ${hasDisc ? 'text-white' : 'text-foreground'}`}>{score}%</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <p className={`text-xs text-center ${hasDisc ? 'text-white/80' : 'text-muted-foreground'} mt-2`}>
+                      {results.discProfile 
+                        ? `${results.discProfile.secondary ? `Secondary: ${results.discProfile.secondary}` : 'Your dominant style'}`
+                        : 'Complete DISC assessment'
+                      }
+                    </p>
+                  </button>
+                );
+              })()}
 
               {/* Assessments Completed */}
               <div 
@@ -267,27 +326,35 @@ export default function Results() {
                 )}
               </button>
 
-              {/* DISC Profile Bar */}
-              <button 
-                onClick={() => navigate('/assessment/disc/results')}
-                className={`chamfer bg-gradient-to-r from-amber-500 to-orange-500 p-6 text-white transition-all duration-700 hover:from-amber-600 hover:to-orange-600 text-left ${
-                  animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                }`}
-                style={{ transitionDelay: '250ms' }}
-              >
-                <p className="text-xs uppercase tracking-wide opacity-80 mb-2">
-                  Behavioral Style
-                </p>
-                <h3 className="text-3xl font-serif font-bold mb-2">
-                  {results.discProfile?.primary || 'DISC'}
-                </h3>
-                <p className="text-sm opacity-90">
-                  {results.discProfile 
-                    ? 'Your dominant behavioral profile'
-                    : 'Discover your DISC profile'
-                  }
-                </p>
-              </button>
+              {/* DISC Scores Bar */}
+              {(() => {
+                const primaryType = results.discProfile?.primary?.charAt(0) || '';
+                const discColor = discColors[primaryType] || { bg: 'bg-muted', text: 'text-foreground', gradient: 'from-muted to-muted' };
+                const hasDisc = !!results.discProfile;
+                
+                return (
+                  <button 
+                    onClick={() => navigate('/assessment/disc/results')}
+                    className={`chamfer bg-gradient-to-r ${hasDisc ? discColor.gradient : 'from-amber-500 to-orange-500'} p-6 text-white transition-all duration-700 hover:opacity-90 text-left ${
+                      animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                    }`}
+                    style={{ transitionDelay: '250ms' }}
+                  >
+                    <p className="text-xs uppercase tracking-wide opacity-80 mb-2">
+                      DISC Profile
+                    </p>
+                    <h3 className="text-3xl font-serif font-bold mb-2">
+                      {results.discProfile?.primary || 'DISC'}
+                    </h3>
+                    <p className="text-sm opacity-90">
+                      {results.discProfile 
+                        ? `Score: ${results.discProfile.scores?.[primaryType] || 0}%`
+                        : 'Discover your DISC profile'
+                      }
+                    </p>
+                  </button>
+                );
+              })()}
 
               {/* Confidence Score */}
               <div 
