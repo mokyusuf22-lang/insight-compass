@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { UserHeader } from '@/components/UserHeader';
+import { GoalReview } from '@/components/GoalReview';
 import { 
   Brain, 
   Target, 
@@ -14,7 +15,8 @@ import {
   ArrowRight,
   Briefcase,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -28,18 +30,10 @@ interface AssessmentResult {
   };
 }
 
-interface CareerGoals {
-  currentRole?: string;
-  targetRole?: string;
-  timeHorizon?: string;
-  biggestChallenge?: string;
-}
-
 export default function Results() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [results, setResults] = useState<AssessmentResult>({});
-  const [goals, setGoals] = useState<CareerGoals>({});
   const [loadingResults, setLoadingResults] = useState(true);
   const [completedCount, setCompletedCount] = useState(0);
   const [animationReady, setAnimationReady] = useState(false);
@@ -55,10 +49,10 @@ export default function Results() {
       if (!user) return;
       
       try {
-        // Fetch Step1 assessment with goals
+        // Fetch Step1 assessment
         const { data: step1Data } = await supabase
           .from('step1_assessments')
-          .select('axis_scores, ai_hypothesis, user_current_role, user_target_role, time_horizon, biggest_challenge')
+          .select('ai_hypothesis')
           .eq('user_id', user.id)
           .eq('is_complete', true)
           .maybeSingle();
@@ -102,21 +96,13 @@ export default function Results() {
         setResults({
           mbtiType: mbtiResult?.type,
           discProfile: discResult ? { primary: discResult.primary || '', secondary: discResult.secondary } : undefined,
-          topStrengths: strengthsResult?.topStrengths?.slice(0, 3).map(s => s.name),
+          topStrengths: strengthsResult?.topStrengths?.slice(0, 5).map(s => s.name),
           step1Hypothesis: step1Hypothesis || undefined,
-        });
-
-        setGoals({
-          currentRole: step1Data?.user_current_role || undefined,
-          targetRole: step1Data?.user_target_role || undefined,
-          timeHorizon: step1Data?.time_horizon || undefined,
-          biggestChallenge: step1Data?.biggest_challenge || undefined,
         });
       } catch (error) {
         console.error('Error fetching results:', error);
       } finally {
         setLoadingResults(false);
-        // Trigger animations after data loads
         setTimeout(() => setAnimationReady(true), 100);
       }
     };
@@ -163,275 +149,257 @@ export default function Results() {
             </Button>
           </div>
         ) : (
-          /* Bento Grid Layout with staggered animations */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            
-            {/* Hero Card - Personality Type */}
-            <div 
-              className={`md:col-span-2 lg:col-span-2 chamfer bg-gradient-to-br from-primary/20 via-primary/10 to-background p-8 md:p-10 relative overflow-hidden transition-all duration-700 ${
-                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}
-              style={{ transitionDelay: '0ms' }}
-            >
-              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <>
+            {/* Bento Grid Layout with staggered animations */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
               
-              <p className="text-primary text-sm font-medium mb-2">Your Personality Profile</p>
-              
-              <h2 className="text-5xl md:text-7xl font-serif font-bold text-foreground mb-6">
-                {results.mbtiType || results.step1Hypothesis?.mbtiTendency || '????'}
-              </h2>
-              
-              <div className="chamfer-sm bg-background/80 backdrop-blur-sm p-4 max-w-md">
-                <p className="text-foreground text-sm">
-                  {results.mbtiType 
-                    ? "Your complete personality type based on 93 questions."
-                    : results.step1Hypothesis?.mbtiTendency
-                      ? "Preliminary type based on quick assessment. Complete full MBTI for accuracy."
-                      : "Complete assessments to discover your type."
-                  }
+              {/* Hero Card - Personality Type */}
+              <button 
+                onClick={() => navigate('/assessment/mbti/results')}
+                className={`md:col-span-2 lg:col-span-2 chamfer bg-gradient-to-br from-primary/20 via-primary/10 to-background p-8 md:p-10 relative overflow-hidden transition-all duration-700 hover:from-primary/30 text-left ${
+                  animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: '0ms' }}
+              >
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                
+                <p className="text-primary text-sm font-medium mb-2">Your Personality Profile</p>
+                
+                <h2 className="text-5xl md:text-7xl font-serif font-bold text-foreground mb-6">
+                  {results.mbtiType || results.step1Hypothesis?.mbtiTendency || '????'}
+                </h2>
+                
+                <div className="chamfer-sm bg-background/80 backdrop-blur-sm p-4 max-w-md">
+                  <p className="text-foreground text-sm">
+                    {results.mbtiType 
+                      ? "Your complete personality type based on 93 questions."
+                      : results.step1Hypothesis?.mbtiTendency
+                        ? "Preliminary type based on quick assessment. Complete full MBTI for accuracy."
+                        : "Complete assessments to discover your type."
+                    }
+                  </p>
+                </div>
+              </button>
+
+              {/* Design Persona Card */}
+              <button 
+                onClick={() => navigate('/assessment/disc/results')}
+                className={`chamfer bg-card border border-border p-6 flex flex-col transition-all duration-700 hover:border-primary/50 text-left ${
+                  animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: '100ms' }}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <span className="text-xs bg-primary text-primary-foreground px-3 py-1 rounded-full">
+                    Design Persona
+                  </span>
+                  <Sparkles className="w-4 h-4 text-muted-foreground" />
+                </div>
+                
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="w-20 h-20 chamfer-sm bg-foreground flex items-center justify-center mb-4">
+                    <Target className="w-10 h-10 text-background" />
+                  </div>
+                </div>
+                
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">You are a</p>
+                  <h3 className="text-2xl font-serif font-semibold text-foreground mb-2">
+                    {results.discProfile?.primary || 'Strategist'}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {results.discProfile 
+                      ? `${results.discProfile.primary} with ${results.discProfile.secondary || 'balanced'} tendencies.`
+                      : 'Complete DISC assessment to reveal your behavioral style.'
+                    }
+                  </p>
+                </div>
+              </button>
+
+              {/* Assessments Completed */}
+              <div 
+                className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
+                  animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: '150ms' }}
+              >
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+                  Total Assessments
+                </p>
+                <p className="text-5xl font-serif font-bold text-primary mb-4">
+                  {completedCount}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  of 4 assessments completed
                 </p>
               </div>
-            </div>
 
-            {/* Design Persona Card */}
-            <div 
-              className={`chamfer bg-card border border-border p-6 flex flex-col transition-all duration-700 ${
-                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}
-              style={{ transitionDelay: '100ms' }}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <span className="text-xs bg-primary text-primary-foreground px-3 py-1 rounded-full">
-                  Design Persona
-                </span>
-                <Sparkles className="w-4 h-4 text-muted-foreground" />
-              </div>
-              
-              <div className="flex-1 flex items-center justify-center">
-                <div className="w-20 h-20 chamfer-sm bg-foreground flex items-center justify-center mb-4">
-                  <Target className="w-10 h-10 text-background" />
+              {/* Top Strengths */}
+              <button 
+                onClick={() => navigate('/assessment/strengths/results')}
+                className={`chamfer bg-card border border-border p-6 transition-all duration-700 hover:border-primary/50 text-left ${
+                  animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: '200ms' }}
+              >
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4">
+                  Top Strengths
+                </p>
+                
+                {results.topStrengths && results.topStrengths.length > 0 ? (
+                  <div className="space-y-3">
+                    {results.topStrengths.slice(0, 3).map((strength, index) => (
+                      <div key={strength} className="flex items-center gap-3">
+                        <div className={`w-8 h-8 chamfer-sm flex items-center justify-center text-sm font-bold ${
+                          index === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <span className="text-foreground font-medium">{strength}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <Zap className="w-5 h-5" />
+                    <span className="text-sm">Complete Strengths assessment</span>
+                  </div>
+                )}
+              </button>
+
+              {/* DISC Profile Bar */}
+              <button 
+                onClick={() => navigate('/assessment/disc/results')}
+                className={`chamfer bg-gradient-to-r from-amber-500 to-orange-500 p-6 text-white transition-all duration-700 hover:from-amber-600 hover:to-orange-600 text-left ${
+                  animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: '250ms' }}
+              >
+                <p className="text-xs uppercase tracking-wide opacity-80 mb-2">
+                  Behavioral Style
+                </p>
+                <h3 className="text-3xl font-serif font-bold mb-2">
+                  {results.discProfile?.primary || 'DISC'}
+                </h3>
+                <p className="text-sm opacity-90">
+                  {results.discProfile 
+                    ? 'Your dominant behavioral profile'
+                    : 'Discover your DISC profile'
+                  }
+                </p>
+              </button>
+
+              {/* Confidence Score */}
+              <div 
+                className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
+                  animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: '300ms' }}
+              >
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+                  Profile Confidence
+                </p>
+                <div className="flex items-baseline gap-2 mb-4">
+                  <span className="text-4xl font-serif font-bold text-foreground">
+                    {results.step1Hypothesis?.confidence 
+                      ? `${Math.round(results.step1Hypothesis.confidence * 100)}%`
+                      : '—'
+                    }
+                  </span>
+                </div>
+                <div className="h-2 bg-muted chamfer-sm overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-500"
+                    style={{ width: `${(results.step1Hypothesis?.confidence || 0) * 100}%` }}
+                  />
                 </div>
               </div>
-              
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">You are a</p>
-                <h3 className="text-2xl font-serif font-semibold text-foreground mb-2">
-                  {results.discProfile?.primary || 'Strategist'}
-                </h3>
+
+              {/* Team Dynamics */}
+              <div 
+                className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
+                  animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: '350ms' }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <Users className="w-5 h-5 text-primary" />
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    Team Dynamics
+                  </p>
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {results.discProfile 
-                    ? `${results.discProfile.primary} with ${results.discProfile.secondary || 'balanced'} tendencies.`
-                    : 'Complete DISC assessment to reveal your behavioral style.'
+                    ? `As a ${results.discProfile.primary}, you excel in collaborative environments.`
+                    : 'Complete DISC to understand your team role.'
                   }
                 </p>
               </div>
-            </div>
 
-            {/* Career Goals Card */}
-            <div 
-              className={`md:col-span-2 chamfer bg-gradient-to-br from-secondary via-secondary/80 to-secondary/60 p-6 transition-all duration-700 ${
-                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}
-              style={{ transitionDelay: '150ms' }}
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <Briefcase className="w-5 h-5 text-secondary-foreground" />
-                <p className="text-xs text-secondary-foreground/80 uppercase tracking-wide">
-                  Career Goals
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-xs text-secondary-foreground/60 mb-1">Current Role</p>
-                  <p className="text-lg font-semibold text-secondary-foreground">
-                    {goals.currentRole || 'Not specified'}
+              {/* Growth Potential */}
+              <div 
+                className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
+                  animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: '400ms' }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <TrendingUp className="w-5 h-5 text-primary" />
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    Growth Path
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs text-secondary-foreground/60 mb-1">Target Role</p>
-                  <p className="text-lg font-semibold text-secondary-foreground">
-                    {goals.targetRole || 'Not specified'}
-                  </p>
-                </div>
-              </div>
-
-              {(goals.timeHorizon || goals.biggestChallenge) && (
-                <div className="mt-4 pt-4 border-t border-secondary-foreground/10 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {goals.timeHorizon && (
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-secondary-foreground/60" />
-                      <span className="text-sm text-secondary-foreground/80">{goals.timeHorizon}</span>
-                    </div>
-                  )}
-                  {goals.biggestChallenge && (
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="w-4 h-4 text-secondary-foreground/60 mt-0.5" />
-                      <span className="text-sm text-secondary-foreground/80 line-clamp-2">{goals.biggestChallenge}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Assessments Completed */}
-            <div 
-              className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
-                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}
-              style={{ transitionDelay: '200ms' }}
-            >
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                Total Assessments
-              </p>
-              <p className="text-5xl font-serif font-bold text-primary mb-4">
-                {completedCount}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                of 4 assessments completed
-              </p>
-            </div>
-
-            {/* Top Strengths */}
-            <div 
-              className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
-                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}
-              style={{ transitionDelay: '250ms' }}
-            >
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4">
-                Top Strengths
-              </p>
-              
-              {results.topStrengths && results.topStrengths.length > 0 ? (
-                <div className="space-y-3">
-                  {results.topStrengths.map((strength, index) => (
-                    <div key={strength} className="flex items-center gap-3">
-                      <div className={`w-8 h-8 chamfer-sm flex items-center justify-center text-sm font-bold ${
-                        index === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {index + 1}
-                      </div>
-                      <span className="text-foreground font-medium">{strength}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 text-muted-foreground">
-                  <Zap className="w-5 h-5" />
-                  <span className="text-sm">Complete Strengths assessment</span>
-                </div>
-              )}
-            </div>
-
-            {/* DISC Profile Bar */}
-            <div 
-              className={`chamfer bg-gradient-to-r from-amber-500 to-orange-500 p-6 text-white transition-all duration-700 ${
-                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}
-              style={{ transitionDelay: '300ms' }}
-            >
-              <p className="text-xs uppercase tracking-wide opacity-80 mb-2">
-                Behavioral Style
-              </p>
-              <h3 className="text-3xl font-serif font-bold mb-2">
-                {results.discProfile?.primary || 'DISC'}
-              </h3>
-              <p className="text-sm opacity-90">
-                {results.discProfile 
-                  ? 'Your dominant behavioral profile'
-                  : 'Discover your DISC profile'
-                }
-              </p>
-            </div>
-
-            {/* Confidence Score */}
-            <div 
-              className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
-                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}
-              style={{ transitionDelay: '350ms' }}
-            >
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                Profile Confidence
-              </p>
-              <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-4xl font-serif font-bold text-foreground">
-                  {results.step1Hypothesis?.confidence 
-                    ? `${Math.round(results.step1Hypothesis.confidence * 100)}%`
-                    : '—'
+                <p className="text-sm text-muted-foreground">
+                  {completedCount >= 4 
+                    ? 'All assessments complete. View your full strategy.'
+                    : `Complete ${4 - completedCount} more assessment${4 - completedCount > 1 ? 's' : ''} for personalized growth plan.`
                   }
-                </span>
-              </div>
-              <div className="h-2 bg-muted chamfer-sm overflow-hidden">
-                <div 
-                  className="h-full bg-primary transition-all duration-500"
-                  style={{ width: `${(results.step1Hypothesis?.confidence || 0) * 100}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Team Dynamics */}
-            <div 
-              className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
-                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}
-              style={{ transitionDelay: '400ms' }}
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <Users className="w-5 h-5 text-primary" />
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Team Dynamics
                 </p>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {results.discProfile 
-                  ? `As a ${results.discProfile.primary}, you excel in collaborative environments.`
-                  : 'Complete DISC to understand your team role.'
-                }
-              </p>
+
             </div>
 
-            {/* Growth Potential */}
+            {/* Career Goals Section - Editable */}
             <div 
-              className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
+              className={`chamfer bg-card p-6 mb-8 transition-all duration-700 ${
                 animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}
               style={{ transitionDelay: '450ms' }}
             >
-              <div className="flex items-center gap-3 mb-4">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Growth Path
-                </p>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {completedCount >= 4 
-                  ? 'All assessments complete. View your full strategy.'
-                  : `Complete ${4 - completedCount} more assessment${4 - completedCount > 1 ? 's' : ''} for personalized growth plan.`
-                }
-              </p>
+              <GoalReview showTitle={true} />
             </div>
 
-          </div>
-        )}
+            {/* CTA to continue */}
+            {completedCount < 4 && (
+              <div className="text-center">
+                <Button 
+                  size="lg" 
+                  className="rounded-full"
+                  onClick={() => {
+                    if (!results.mbtiType) navigate('/assessment/mbti');
+                    else if (!results.discProfile) navigate('/assessment/disc');
+                    else navigate('/assessment/strengths');
+                  }}
+                >
+                  Continue to Next Assessment
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            )}
 
-        {/* CTA to continue */}
-        {hasResults && completedCount < 4 && (
-          <div className="mt-8 text-center">
-            <Button 
-              size="lg" 
-              className="rounded-full"
-              onClick={() => {
-                if (!results.mbtiType) navigate('/assessment/mbti');
-                else if (!results.discProfile) navigate('/assessment/disc');
-                else navigate('/assessment/strengths');
-              }}
-            >
-              Continue Assessments
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
+            {completedCount >= 4 && (
+              <div className="text-center">
+                <Button 
+                  size="lg" 
+                  className="rounded-full"
+                  onClick={() => navigate('/strategy')}
+                >
+                  View Career Strategy
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>

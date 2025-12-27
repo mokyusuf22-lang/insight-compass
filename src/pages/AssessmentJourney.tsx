@@ -185,12 +185,54 @@ export default function AssessmentJourney() {
           </div>
         </section>
 
-        {/* Career Goals Section */}
+        {/* Career Goals Section - Read Only Display */}
         <section className="mb-10 animate-fade-up" style={{ animationDelay: '50ms' }}>
-          <GoalReview 
-            onSave={(goals) => setCareerGoals(goals)} 
-            showTitle={true}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary" />
+                Career Goals
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {careerGoals?.target_role ? (
+                <div className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Current Role</p>
+                      <p className="font-medium">{careerGoals.current_role || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Target Role</p>
+                      <p className="font-medium">{careerGoals.target_role}</p>
+                    </div>
+                  </div>
+                  {careerGoals.challenge && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Biggest Challenge</p>
+                      <p>{careerGoals.challenge}</p>
+                    </div>
+                  )}
+                  {careerGoals.timeline && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Timeline</p>
+                      <p className="font-medium">{careerGoals.timeline.replace('-', ' ')}</p>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-4">
+                    To edit your goals, go to the Welcome page or Results page.
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground mb-3">No career goals set yet.</p>
+                  <Button variant="outline" onClick={() => navigate('/welcome')}>
+                    Set Goals on Welcome Page
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </section>
 
         {/* Assessment Cards */}

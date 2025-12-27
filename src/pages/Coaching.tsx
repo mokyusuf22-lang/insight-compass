@@ -153,7 +153,28 @@ export default function Coaching() {
   }
 
   if (!strategy) {
-    return null;
+    return (
+      <div className="min-h-screen bg-background">
+        <UserHeader />
+        <main className="container max-w-3xl py-8 px-4 md:px-8">
+          <div className="text-center animate-fade-up">
+            <div className="inline-flex items-center justify-center p-3 rounded-xl bg-muted mb-4">
+              <MessageSquare className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-3">
+              Personal Coaching
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
+              Generate your career strategy first to unlock personalized coaching.
+            </p>
+            <Button onClick={() => navigate('/strategy')} className="rounded-full">
+              Generate Strategy First
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   const currentPhaseData = strategy.roadmap[currentPhase];
