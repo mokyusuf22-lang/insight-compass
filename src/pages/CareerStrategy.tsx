@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { UserHeader } from '@/components/UserHeader';
 import { Progress } from '@/components/ui/progress';
@@ -211,7 +210,7 @@ export default function CareerStrategy() {
         <UserHeader />
         <main className="container max-w-3xl py-8 px-4 md:px-8">
           <div className="text-center animate-fade-up">
-            <div className="inline-flex items-center justify-center p-3 rounded-xl bg-primary/10 mb-4">
+            <div className="inline-flex items-center justify-center p-3 chamfer bg-primary/10 mb-4">
               <Sparkles className="w-8 h-8 text-primary" />
             </div>
             <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-3">
@@ -222,55 +221,53 @@ export default function CareerStrategy() {
             </p>
 
             {!canGenerate ? (
-              <Card className="mb-8">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Complete these assessments first:</h3>
-                  <div className="space-y-2 text-left max-w-sm mx-auto">
-                    <div className="flex items-center gap-2">
-                      {profileData?.mbti ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      ) : (
-                        <div className="w-5 h-5 rounded-full border-2 border-muted" />
-                      )}
-                      <span>MBTI Assessment</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {profileData?.disc ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      ) : (
-                        <div className="w-5 h-5 rounded-full border-2 border-muted" />
-                      )}
-                      <span>DISC Assessment</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {profileData?.strengths ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      ) : (
-                        <div className="w-5 h-5 rounded-full border-2 border-muted" />
-                      )}
-                      <span>Strengths Assessment</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {profileData?.goals?.target_role ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      ) : (
-                        <div className="w-5 h-5 rounded-full border-2 border-muted" />
-                      )}
-                      <span>Career Goals</span>
-                    </div>
+              <div className="chamfer bg-card p-6 mb-8">
+                <h3 className="font-semibold mb-4">Complete these assessments first:</h3>
+                <div className="space-y-2 text-left max-w-sm mx-auto">
+                  <div className="flex items-center gap-2">
+                    {profileData?.mbti ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full border-2 border-muted" />
+                    )}
+                    <span>MBTI Assessment</span>
                   </div>
-                  <Button className="mt-6" onClick={() => navigate('/history')}>
-                    Complete Assessments
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </CardContent>
-              </Card>
+                  <div className="flex items-center gap-2">
+                    {profileData?.disc ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full border-2 border-muted" />
+                    )}
+                    <span>DISC Assessment</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {profileData?.strengths ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full border-2 border-muted" />
+                    )}
+                    <span>Strengths Assessment</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {profileData?.goals?.target_role ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full border-2 border-muted" />
+                    )}
+                    <span>Career Goals</span>
+                  </div>
+                </div>
+                <Button className="mt-6 rounded-full" onClick={() => navigate('/history')}>
+                  Complete Assessments
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
             ) : (
               <Button 
                 size="lg" 
                 onClick={generateStrategy}
                 disabled={isGenerating}
-                className="gradient-primary text-primary-foreground"
+                className="gradient-primary text-primary-foreground rounded-full"
               >
                 {isGenerating ? (
                   <>
@@ -302,7 +299,7 @@ export default function CareerStrategy() {
       <main className="container max-w-3xl py-8 px-4 md:px-8">
         {/* Header */}
         <div className="text-center mb-10 animate-fade-up">
-          <div className="inline-flex items-center justify-center p-3 rounded-xl bg-primary/10 mb-4">
+          <div className="inline-flex items-center justify-center p-3 chamfer bg-primary/10 mb-4">
             <Target className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-3">
@@ -315,115 +312,100 @@ export default function CareerStrategy() {
 
         {/* Key Metrics */}
         <div className="grid gap-4 md:grid-cols-2 mb-8 animate-fade-up" style={{ animationDelay: '50ms' }}>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                <span className="text-sm text-muted-foreground">Success Likelihood</span>
-              </div>
-              <p className="text-2xl font-bold text-primary mb-2">{strategy.success_likelihood}</p>
-              <Progress value={likelihoodValue} className="h-2" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <Calendar className="w-5 h-5 text-secondary" />
-                <span className="text-sm text-muted-foreground">Estimated Timeline</span>
-              </div>
-              <p className="text-2xl font-bold">{strategy.estimated_timeline_months} months</p>
-              <p className="text-sm text-muted-foreground">{strategy.insight}</p>
-            </CardContent>
-          </Card>
+          <div className="chamfer bg-card p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              <span className="text-sm text-muted-foreground">Success Likelihood</span>
+            </div>
+            <p className="text-2xl font-bold text-primary mb-2">{strategy.success_likelihood}</p>
+            <Progress value={likelihoodValue} className="h-2" />
+          </div>
+          <div className="chamfer bg-card p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <Calendar className="w-5 h-5 text-primary" />
+              <span className="text-sm text-muted-foreground">Estimated Timeline</span>
+            </div>
+            <p className="text-2xl font-bold">{strategy.estimated_timeline_months} months</p>
+            <p className="text-sm text-muted-foreground">{strategy.insight}</p>
+          </div>
         </div>
 
         {/* Roadmap */}
-        <Card className="mb-6 animate-fade-up" style={{ animationDelay: '100ms' }}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Target className="w-5 h-5 text-primary" />
-              Career Roadmap
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {strategy.roadmap.map((phase, index) => (
-                <div key={index} className="relative pl-8 pb-6 last:pb-0">
-                  {/* Timeline line */}
-                  {index < strategy.roadmap.length - 1 && (
-                    <div className="absolute left-3 top-8 w-0.5 h-full bg-border" />
-                  )}
-                  {/* Phase marker */}
-                  <div className="absolute left-0 top-1 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-xs font-bold text-primary">{index + 1}</span>
-                  </div>
-                  {/* Phase content */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold">{phase.phase}</h3>
-                      <Badge variant="secondary" className="text-xs">
-                        Months {phase.duration_months}
-                      </Badge>
-                    </div>
-                    <p className="text-muted-foreground">{phase.focus}</p>
-                  </div>
+        <div className="chamfer bg-card p-6 mb-6 animate-fade-up" style={{ animationDelay: '100ms' }}>
+          <h3 className="flex items-center gap-2 text-lg font-semibold mb-4">
+            <Target className="w-5 h-5 text-primary" />
+            Career Roadmap
+          </h3>
+          <div className="space-y-6">
+            {strategy.roadmap.map((phase, index) => (
+              <div key={index} className="relative pl-8 pb-6 last:pb-0">
+                {/* Timeline line */}
+                {index < strategy.roadmap.length - 1 && (
+                  <div className="absolute left-3 top-8 w-0.5 h-full bg-border" />
+                )}
+                {/* Phase marker */}
+                <div className="absolute left-0 top-1 w-6 h-6 chamfer-sm bg-primary/10 flex items-center justify-center">
+                  <span className="text-xs font-bold text-primary">{index + 1}</span>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                {/* Phase content */}
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold">{phase.phase}</h3>
+                    <Badge variant="secondary" className="text-xs">
+                      Months {phase.duration_months}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground">{phase.focus}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Execution Rules */}
-        <Card className="mb-6 animate-fade-up" style={{ animationDelay: '150ms' }}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              Execution Rules (Based on Your Personality)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              {strategy.execution_rules.map((rule, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <CheckCircle className="w-4 h-4 text-green-500 mt-1 flex-shrink-0" />
-                  <span>{rule}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <div className="chamfer bg-card p-6 mb-6 animate-fade-up" style={{ animationDelay: '150ms' }}>
+          <h3 className="flex items-center gap-2 text-lg font-semibold mb-4">
+            <CheckCircle className="w-5 h-5 text-green-500" />
+            Execution Rules (Based on Your Personality)
+          </h3>
+          <ul className="space-y-3">
+            {strategy.execution_rules.map((rule, index) => (
+              <li key={index} className="flex items-start gap-3">
+                <CheckCircle className="w-4 h-4 text-green-500 mt-1 flex-shrink-0" />
+                <span>{rule}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         {/* Risk Factors */}
-        <Card className="mb-8 animate-fade-up" style={{ animationDelay: '200ms' }}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <AlertTriangle className="w-5 h-5 text-amber-500" />
-              Risk Factors to Monitor
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              {strategy.risk_factors.map((risk, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <AlertTriangle className="w-4 h-4 text-amber-500 mt-1 flex-shrink-0" />
-                  <span>{risk}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <div className="chamfer bg-card p-6 mb-8 animate-fade-up" style={{ animationDelay: '200ms' }}>
+          <h3 className="flex items-center gap-2 text-lg font-semibold mb-4">
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
+            Risk Factors to Monitor
+          </h3>
+          <ul className="space-y-3">
+            {strategy.risk_factors.map((risk, index) => (
+              <li key={index} className="flex items-start gap-3">
+                <AlertTriangle className="w-4 h-4 text-amber-500 mt-1 flex-shrink-0" />
+                <span>{risk}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         {/* Navigation */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up" style={{ animationDelay: '250ms' }}>
           <Button 
             variant="outline"
             onClick={() => navigate('/history')}
+            className="rounded-full"
           >
             Back to Journey
           </Button>
           <Button 
             onClick={() => navigate('/skill-plan')}
-            className="gradient-primary text-primary-foreground"
+            className="gradient-primary text-primary-foreground rounded-full"
           >
             Generate Skill Plan
             <ArrowRight className="w-4 h-4 ml-2" />

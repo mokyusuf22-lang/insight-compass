@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { UserHeader } from '@/components/UserHeader';
 import { Brain, Heart, Target, ArrowRight, Crown } from 'lucide-react';
@@ -50,19 +49,17 @@ export default function Welcome() {
             { icon: Heart, title: 'Emotional Insights', description: 'Discover your emotional patterns and strengths' },
             { icon: Target, title: 'Actionable Guidance', description: 'Get personalized recommendations for growth' },
           ].map((feature, index) => (
-            <Card 
+            <div 
               key={feature.title} 
-              className="shadow-soft animate-fade-up" 
+              className="chamfer bg-card p-6 text-center animate-fade-up" 
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <feature.icon className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground text-sm">{feature.description}</p>
-              </CardContent>
-            </Card>
+              <div className="w-12 h-12 chamfer-sm bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <feature.icon className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+              <p className="text-muted-foreground text-sm">{feature.description}</p>
+            </div>
           ))}
         </div>
 
@@ -70,7 +67,7 @@ export default function Welcome() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-up" style={{ animationDelay: '300ms' }}>
           <Button
             size="lg"
-            className="gradient-primary text-primary-foreground hover:opacity-90 px-8 py-6 text-lg"
+            className="gradient-primary text-primary-foreground hover:opacity-90 px-8 py-6 text-lg rounded-full"
             onClick={() => navigate('/assessment/step1')}
           >
             Start Free Assessment
@@ -81,7 +78,7 @@ export default function Welcome() {
             <Button
               size="lg"
               variant="outline"
-              className="border-secondary text-secondary hover:bg-secondary/10 px-8 py-6 text-lg"
+              className="border-secondary text-secondary hover:bg-secondary/10 px-8 py-6 text-lg rounded-full"
               onClick={() => navigate('/assessment/mbti')}
             >
               <Crown className="w-5 h-5 mr-2" />
@@ -91,7 +88,7 @@ export default function Welcome() {
             <Button
               size="lg"
               variant="outline"
-              className="border-secondary text-secondary hover:bg-secondary/10 px-8 py-6 text-lg"
+              className="border-secondary text-secondary hover:bg-secondary/10 px-8 py-6 text-lg rounded-full"
               onClick={() => navigate('/paywall')}
             >
               <Crown className="w-5 h-5 mr-2" />
@@ -104,58 +101,54 @@ export default function Welcome() {
         <div className="mt-16 animate-fade-up" style={{ animationDelay: '400ms' }}>
           <h2 className="text-2xl font-serif font-semibold text-center mb-8">What's Included</h2>
           <div className="grid md:grid-cols-2 gap-8">
-            <Card className="shadow-soft">
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                  <span className="text-primary">Free</span> Quick Assessment
-                </h3>
-                <ul className="space-y-3 text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    5 core personality questions
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    Basic personality overview
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    Key trait highlights
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
+            <div className="chamfer bg-card p-6">
+              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                <span className="text-primary">Free</span> Quick Assessment
+              </h3>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-primary chamfer-sm" />
+                  5 core personality questions
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-primary chamfer-sm" />
+                  Basic personality overview
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-primary chamfer-sm" />
+                  Key trait highlights
+                </li>
+              </ul>
+            </div>
 
-            <Card className="shadow-card border-secondary/50">
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                  <Crown className="w-5 h-5 text-secondary" />
-                  <span className="text-secondary">Premium</span> MBTI Assessment
-                </h3>
-                <ul className="space-y-3 text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    93 research-backed questions
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    4-axis personality analysis
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    Confidence scoring per dimension
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    Inconsistency detection for accuracy
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    Lifetime access to results
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
+            <div className="chamfer bg-secondary p-6">
+              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                <Crown className="w-5 h-5 text-foreground" />
+                <span className="text-foreground">Premium</span> MBTI Assessment
+              </h3>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-foreground chamfer-sm" />
+                  93 research-backed questions
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-foreground chamfer-sm" />
+                  4-axis personality analysis
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-foreground chamfer-sm" />
+                  Confidence scoring per dimension
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-foreground chamfer-sm" />
+                  Inconsistency detection for accuracy
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-foreground chamfer-sm" />
+                  Lifetime access to results
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </main>

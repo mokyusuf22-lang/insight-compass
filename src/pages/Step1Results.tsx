@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { UserHeader } from '@/components/UserHeader';
 import { ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
@@ -69,7 +68,7 @@ export default function Step1Results() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">No results found.</p>
-          <Button onClick={() => navigate('/assessment/step1')}>
+          <Button onClick={() => navigate('/assessment/step1')} className="rounded-full">
             Take Assessment
           </Button>
         </div>
@@ -94,7 +93,7 @@ export default function Step1Results() {
       {/* Content */}
       <main className="container max-w-4xl py-8 px-4 md:px-8">
         <div className="text-center mb-8 animate-fade-up">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 chamfer bg-primary/10 flex items-center justify-center mx-auto mb-4">
             <Sparkles className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-3xl md:text-4xl font-serif font-semibold text-foreground mb-3">
@@ -106,22 +105,20 @@ export default function Step1Results() {
         </div>
 
         {/* MBTI Tendency Card */}
-        <Card className="mb-6 animate-fade-up" style={{ animationDelay: '100ms' }}>
-          <CardContent className="p-6 md:p-8 text-center">
-            <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
-              Likely Personality Type
-            </p>
-            <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-4">
-              {hypothesis.mbti_tendency}
-            </h2>
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <span>Confidence:</span>
-              <span className="font-medium text-foreground">
-                {Math.round(hypothesis.confidence * 100)}%
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="chamfer bg-card p-6 md:p-8 text-center mb-6 animate-fade-up" style={{ animationDelay: '100ms' }}>
+          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
+            Likely Personality Type
+          </p>
+          <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-4">
+            {hypothesis.mbti_tendency}
+          </h2>
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <span>Confidence:</span>
+            <span className="font-medium text-foreground">
+              {Math.round(hypothesis.confidence * 100)}%
+            </span>
+          </div>
+        </div>
 
         {/* Traits */}
         <div className="mb-6 animate-fade-up" style={{ animationDelay: '150ms' }}>
@@ -130,7 +127,7 @@ export default function Step1Results() {
             {hypothesis.traits.map((trait, index) => (
               <span
                 key={index}
-                className="px-4 py-2 rounded-full bg-secondary/50 text-secondary-foreground font-medium"
+                className="px-4 py-2 chamfer-sm bg-secondary text-secondary-foreground font-medium"
               >
                 {trait}
               </span>
@@ -139,17 +136,15 @@ export default function Step1Results() {
         </div>
 
         {/* Summary */}
-        <Card className="mb-8 animate-fade-up" style={{ animationDelay: '200ms' }}>
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-3">Summary</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              {hypothesis.summary}
-            </p>
-          </CardContent>
-        </Card>
+        <div className="chamfer bg-card p-6 mb-8 animate-fade-up" style={{ animationDelay: '200ms' }}>
+          <h3 className="text-lg font-semibold mb-3">Summary</h3>
+          <p className="text-muted-foreground leading-relaxed">
+            {hypothesis.summary}
+          </p>
+        </div>
 
         {/* Disclaimer */}
-        <div className="bg-muted/50 rounded-xl p-6 mb-8 animate-fade-up" style={{ animationDelay: '250ms' }}>
+        <div className="chamfer bg-muted/50 p-6 mb-8 animate-fade-up" style={{ animationDelay: '250ms' }}>
           <div className="flex gap-4">
             <AlertCircle className="w-6 h-6 text-muted-foreground flex-shrink-0 mt-0.5" />
             <div>
@@ -167,7 +162,7 @@ export default function Step1Results() {
         <div className="text-center animate-fade-up" style={{ animationDelay: '300ms' }}>
           <Button
             size="lg"
-            className="gradient-primary text-primary-foreground hover:opacity-90 px-8"
+            className="gradient-primary text-primary-foreground hover:opacity-90 px-8 rounded-full"
             onClick={handleContinue}
           >
             Continue to Deep Assessment
