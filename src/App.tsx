@@ -29,7 +29,6 @@ import FullResults from "./pages/FullResults";
 import Results from "./pages/Results";
 import Account from "./pages/Account";
 import HumanCoaching from "./pages/HumanCoaching";
-import InterviewPreparation from "./pages/InterviewPreparation";
 import SuccessGrowth from "./pages/SuccessGrowth";
 import NotFound from "./pages/NotFound";
 
@@ -75,7 +74,6 @@ const App = () => (
             <Route path="/results" element={<Results />} />
             <Route path="/account" element={<Account />} />
             <Route path="/human-coaching" element={<HumanCoaching />} />
-            <Route path="/interview-prep" element={<InterviewPreparation />} />
             <Route path="/success-growth" element={<SuccessGrowth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
