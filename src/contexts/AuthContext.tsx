@@ -20,6 +20,7 @@ interface SubscriptionState {
   subscriptionEnd: string | null;
   cancelAtPeriodEnd: boolean;
   loading: boolean;
+  isAdmin: boolean;
 }
 
 interface AuthContextType {
@@ -28,6 +29,7 @@ interface AuthContextType {
   profile: Profile | null;
   subscription: SubscriptionState;
   loading: boolean;
+  isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
@@ -46,6 +48,7 @@ const defaultSubscription: SubscriptionState = {
   subscriptionEnd: null,
   cancelAtPeriodEnd: false,
   loading: true,
+  isAdmin: false,
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionState>(defaultSubscription);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -69,9 +73,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const checkAdminRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      if (!error && data) {
+        setIsAdmin(true);
+        return true;
+      }
+      setIsAdmin(false);
+      return false;
+    } catch (err) {
+      console.error('Error checking admin role:', err);
+      setIsAdmin(false);
+      return false;
+    }
+  };
+
   const fetchSubscription = useCallback(async () => {
-    if (!session?.access_token) {
+    if (!session?.access_token || !user) {
       setSubscription({ ...defaultSubscription, loading: false });
+      return;
+    }
+
+    // Check if user is admin first
+    const userIsAdmin = await checkAdminRole(user.id);
+    
+    // If admin, grant full access without checking Stripe
+    if (userIsAdmin) {
+      setSubscription({
+        subscribed: true,
+        tier: 'premium',
+        tierName: 'Admin (Full Access)',
+        productId: null,
+        subscriptionEnd: null,
+        cancelAtPeriodEnd: false,
+        loading: false,
+        isAdmin: true,
+      });
       return;
     }
 
@@ -92,12 +136,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         subscriptionEnd: data.subscription_end || null,
         cancelAtPeriodEnd: data.cancel_at_period_end || false,
         loading: false,
+        isAdmin: false,
       });
     } catch (err) {
       console.error('Error fetching subscription:', err);
       setSubscription({ ...defaultSubscription, loading: false });
     }
-  }, [session?.access_token]);
+  }, [session?.access_token, user]);
 
   const refreshProfile = async () => {
     if (user) {
@@ -119,9 +164,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           setTimeout(() => {
             fetchProfile(session.user.id);
+            checkAdminRole(session.user.id);
           }, 0);
         } else {
           setProfile(null);
+          setIsAdmin(false);
           setSubscription({ ...defaultSubscription, loading: false });
         }
       }
@@ -134,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (session?.user) {
         fetchProfile(session.user.id);
+        checkAdminRole(session.user.id);
       }
       setLoading(false);
     });
@@ -199,6 +247,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
+    setIsAdmin(false);
     setSubscription({ ...defaultSubscription, loading: false });
   };
 
@@ -209,6 +258,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       subscription,
       loading,
+      isAdmin,
       signIn,
       signUp,
       signInWithGoogle,
