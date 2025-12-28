@@ -17,6 +17,8 @@ import {
   RefreshCw,
   Lock,
   Target,
+  Trophy,
+  Briefcase,
 } from 'lucide-react';
 import { Json } from '@/integrations/supabase/types';
 import type { PathPhase, PathTask, SkillPathData, UserProfile } from '@/types/skillPath';
@@ -31,6 +33,7 @@ const phaseImageMap: Record<number, string> = {
   1: phaseFoundation,
   2: phaseApplication,
   3: phaseMastery,
+  4: phaseAnalysis, // Interview Prep phase
 };
 
 export default function SkillPath() {
@@ -45,6 +48,8 @@ export default function SkillPath() {
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [showAssessmentChangeModal, setShowAssessmentChangeModal] = useState(false);
   const [assessmentHashMismatch, setAssessmentHashMismatch] = useState(false);
+  const [careerGoal, setCareerGoal] = useState<string>('');
+  const [needsJobTransition, setNeedsJobTransition] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -107,7 +112,13 @@ export default function SkillPath() {
           const mbti = strategyData.mbti_result as { type?: string } | null;
           const disc = strategyData.disc_result as { primaryStyle?: string } | null;
           const strengths = strategyData.strengths_result as { ranked_strengths?: { name: string }[] } | null;
-          const goals = strategyData.career_goals as { target_role?: string } | null;
+          const goals = strategyData.career_goals as { target_role?: string; career_goal?: string } | null;
+
+          // Check if career goal requires job transition
+          const goalType = goals?.career_goal?.toLowerCase() || '';
+          const requiresJobTransition = goalType.includes('new job') || goalType.includes('job change') || goalType.includes('transition');
+          setNeedsJobTransition(requiresJobTransition);
+          setCareerGoal(goals?.career_goal || '');
 
           setUserProfile({
             mbtiType: mbti?.type,
@@ -153,7 +164,8 @@ export default function SkillPath() {
               skillPlan,
               goals?.target_role || 'Career Transition',
               completedTaskIds,
-              strategyData.id
+              strategyData.id,
+              requiresJobTransition
             );
             setPathData(convertedPath);
           }
@@ -173,7 +185,8 @@ export default function SkillPath() {
     skillPlan: any,
     targetRole: string,
     completedTaskIds: string[],
-    strategyId: string
+    strategyId: string,
+    includeInterviewPhase: boolean = false
   ): SkillPathData => {
     let globalTaskIndex = 0;
     
@@ -224,6 +237,63 @@ export default function SkillPath() {
         tasks,
       };
     });
+
+    // Add Interview Preparation phase if job transition is needed
+    if (includeInterviewPhase) {
+      const interviewPhaseIdx = phases.length;
+      const interviewTasks: PathTask[] = [
+        {
+          id: `phase${interviewPhaseIdx}-task0`,
+          title: 'Build STAR Story Library',
+          description: 'Create 5-7 STAR stories mapped to your verified skills and target role requirements',
+          type: 'practice',
+          estimatedMinutes: 60,
+          status: completedTaskIds.includes(`phase${interviewPhaseIdx}-task0`) ? 'completed' : 'locked',
+          successCriteria: 'Complete 5-7 polished STAR stories with evidence from your skill work',
+        },
+        {
+          id: `phase${interviewPhaseIdx}-task1`,
+          title: 'Strategic Scenario Preparation',
+          description: 'Practice system trade-off analysis and roadmap prioritization scenarios',
+          type: 'practice',
+          estimatedMinutes: 45,
+          status: completedTaskIds.includes(`phase${interviewPhaseIdx}-task1`) ? 'completed' : 'locked',
+          successCriteria: 'Articulate 3 strategic scenarios with structured responses',
+        },
+        {
+          id: `phase${interviewPhaseIdx}-task2`,
+          title: 'Confidence Framework Practice',
+          description: 'Practice calm, evidence-first communication style for interviews',
+          type: 'reflection',
+          estimatedMinutes: 30,
+          status: completedTaskIds.includes(`phase${interviewPhaseIdx}-task2`) ? 'completed' : 'locked',
+          successCriteria: 'Complete mock interview with pauses and assumption-stating',
+        },
+        {
+          id: `phase${interviewPhaseIdx}-task3`,
+          title: 'Interview Simulation',
+          description: 'Complete a full interview simulation using your prepared materials',
+          type: 'project',
+          estimatedMinutes: 60,
+          status: completedTaskIds.includes(`phase${interviewPhaseIdx}-task3`) ? 'completed' : 'locked',
+          successCriteria: 'Successfully complete mock interview with positive feedback',
+        },
+      ];
+
+      const completedInInterview = interviewTasks.filter(t => t.status === 'completed').length;
+
+      phases.push({
+        id: `phase${interviewPhaseIdx}`,
+        phaseNumber: interviewPhaseIdx + 1,
+        title: 'Interview Preparation',
+        duration: '2-4 weeks',
+        goal: 'Pass interviews with evidence-based, structured responses',
+        successDefinition: 'Clearly articulate 5-7 verified stories mapped to role requirements',
+        progress: interviewTasks.length > 0 ? Math.round((completedInInterview / interviewTasks.length) * 100) : 0,
+        image: phaseImageMap[4],
+        tasks: interviewTasks,
+      });
+    }
 
     // Update phase locking - phases are unlocked when previous is 100% complete
     for (let i = 1; i < phases.length; i++) {
@@ -335,12 +405,17 @@ export default function SkillPath() {
 
         await supabase.from('profiles').update({ strategy_generated: true }).eq('user_id', user.id);
 
-        const goals = profileRes.data?.career_goals as { target_role?: string } | null;
+        const goals = profileRes.data?.career_goals as { target_role?: string; career_goal?: string } | null;
+        const goalType = goals?.career_goal?.toLowerCase() || '';
+        const requiresJobTransition = goalType.includes('new job') || goalType.includes('job change') || goalType.includes('transition');
+        setNeedsJobTransition(requiresJobTransition);
+        
         const convertedPath = convertSkillPlanToPath(
           skillPlanResult.skill_plan,
           goals?.target_role || 'Career Transition',
           [],
-          newStrategy?.id || ''
+          newStrategy?.id || '',
+          requiresJobTransition
         );
         setPathData(convertedPath);
         toast.success('Your Skill Path has been generated!');
@@ -362,12 +437,17 @@ export default function SkillPath() {
           skill_development_plan: skillPlanResult.skill_plan as unknown as Json,
         }).eq('id', strategyData.id);
 
-        const goals = strategyData.career_goals as { target_role?: string } | null;
+        const goals = strategyData.career_goals as { target_role?: string; career_goal?: string } | null;
+        const goalType = goals?.career_goal?.toLowerCase() || '';
+        const requiresJobTransition = goalType.includes('new job') || goalType.includes('job change') || goalType.includes('transition');
+        setNeedsJobTransition(requiresJobTransition);
+        
         const convertedPath = convertSkillPlanToPath(
           skillPlanResult.skill_plan,
           goals?.target_role || 'Career Transition',
           [],
-          strategyData.id
+          strategyData.id,
+          requiresJobTransition
         );
         setPathData(convertedPath);
         toast.success('Your Skill Path has been generated!');
@@ -438,12 +518,17 @@ export default function SkillPath() {
         skill_development_plan: skillPlanResult.skill_plan as unknown as Json,
       }).eq('id', newStrategy?.id);
 
-      const goals = profileRes.data?.career_goals as { target_role?: string } | null;
+      const goals = profileRes.data?.career_goals as { target_role?: string; career_goal?: string } | null;
+      const goalType = goals?.career_goal?.toLowerCase() || '';
+      const requiresJobTransition = goalType.includes('new job') || goalType.includes('job change') || goalType.includes('transition');
+      setNeedsJobTransition(requiresJobTransition);
+      
       const convertedPath = convertSkillPlanToPath(
         skillPlanResult.skill_plan,
         goals?.target_role || 'Career Transition',
         [],
-        newStrategy?.id || ''
+        newStrategy?.id || '',
+        requiresJobTransition
       );
       
       setPathData(convertedPath);
@@ -625,8 +710,39 @@ export default function SkillPath() {
       </div>
 
       <main className="container max-w-5xl py-8 px-4 md:px-8">
+        {/* Success Growth Card - Shows when 100% complete */}
+        {pathData.totalProgress === 100 && (
+          <div className="mb-8 p-6 chamfer bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 animate-fade-up">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-full bg-primary/20">
+                <Trophy className="w-8 h-8 text-primary" />
+              </div>
+              <div className="flex-1">
+                <Badge className="mb-2 bg-primary/20 text-primary border-0">
+                  Path Complete
+                </Badge>
+                <h2 className="text-xl font-serif font-bold text-foreground mb-2">
+                  Congratulations! Ready for Continuous Growth?
+                </h2>
+                <p className="text-muted-foreground mb-4">
+                  You've completed your skill development path. Unlock your personalized 90-day onboarding plan 
+                  and leadership development track to accelerate your career.
+                </p>
+                <Button 
+                  onClick={() => navigate('/success-growth')}
+                  className="gradient-primary text-primary-foreground rounded-full"
+                >
+                  <Trophy className="w-4 h-4 mr-2" />
+                  View Growth Plan
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Today's Focus */}
-        {pathData.todaysFocus && (
+        {pathData.todaysFocus && pathData.totalProgress < 100 && (
           <TodayFocus 
             pathData={pathData}
             onTaskClick={handleTodayFocusClick}

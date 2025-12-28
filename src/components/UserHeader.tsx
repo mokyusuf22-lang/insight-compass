@@ -31,8 +31,7 @@ import {
   Settings,
   Crown,
   Users,
-  MessageCircle,
-  Briefcase
+  MessageCircle
 } from 'lucide-react';
 
 interface UserHeaderProps {
@@ -155,12 +154,6 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
             </Button>
           </Link>
 
-          <Link to="/interview-prep">
-            <Button variant="ghost" size="sm">
-              <Briefcase className="w-4 h-4 mr-2" />
-              Interview
-            </Button>
-          </Link>
 
           {/* Account Dropdown */}
           <DropdownMenu>
