@@ -139,6 +139,14 @@
     font-family: 'Instrument Serif', Georgia, serif;
     font-style: italic;
   }
+  
+  .how-it-works-gradient {
+    background: linear-gradient(180deg, 
+      hsl(27 38% 88%) 0%,
+      hsl(165 25% 75%) 50%,
+      hsl(170 30% 65%) 100%
+    );
+  }
 }
 
 @layer utilities {
