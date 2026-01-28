@@ -98,8 +98,8 @@ export default function GoalsReality() {
         });
       }
 
-      // Navigate to next step (recommendations or further assessments)
-      navigate('/welcome');
+      // Navigate to AI-powered recommendations
+      navigate('/assessment-recommendations');
     } catch (error) {
       console.error('Error saving goals:', error);
       toast({
