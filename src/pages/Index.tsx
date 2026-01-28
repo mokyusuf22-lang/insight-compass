@@ -14,11 +14,8 @@ export default function Index() {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    if (user) {
-      navigate('/welcome');
-    } else {
-      navigate('/auth');
-    }
+    // Login-free initial assessment for everyone
+    navigate('/initial-assessment');
   };
 
   return (
