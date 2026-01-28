@@ -33,6 +33,7 @@ import SuccessGrowth from "./pages/SuccessGrowth";
 import InitialAssessment from "./pages/InitialAssessment";
 import InitialResults from "./pages/InitialResults";
 import GoalsReality from "./pages/GoalsReality";
+import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/welcome" element={<Welcome />} />
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/initial-assessment" element={<InitialAssessment />} />
             <Route path="/initial-results" element={<InitialResults />} />
             <Route path="/goals-reality" element={<GoalsReality />} />
