@@ -198,7 +198,31 @@ export default function InitialResults() {
         <div className="space-y-4">
           {!user ? (
             <>
-              {/* Sign up CTA for non-logged-in users */}
+              {/* Continue to Goals & Reality */}
+              <div className="chamfer gradient-primary p-6 md:p-8">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 chamfer-sm bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
+                    <ArrowRight className="w-5 h-5 text-primary-foreground" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-primary-foreground mb-2">
+                      Next Step: Define Your Goals
+                    </h3>
+                    <p className="text-primary-foreground/80 text-sm mb-4">
+                      Share your life goals, career objectives, and current challenges to receive personalised guidance.
+                    </p>
+                    <Button 
+                      className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 rounded-full"
+                      onClick={() => navigate('/goals-reality')}
+                    >
+                      Continue
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sign up CTA */}
               <div className="chamfer bg-secondary p-6 md:p-8">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 chamfer-sm bg-secondary-foreground/10 flex items-center justify-center flex-shrink-0">
@@ -206,17 +230,17 @@ export default function InitialResults() {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-secondary-foreground mb-2">
-                      Save Your Results
+                      Save Your Progress
                     </h3>
                     <p className="text-secondary-foreground/80 text-sm mb-4">
-                      Create a free account to save your results and continue your journey with personalized coaching.
+                      Create a free account to save your results permanently and access your personalised path.
                     </p>
                     <Button 
-                      className="bg-secondary-foreground text-secondary hover:bg-secondary-foreground/90 rounded-full"
+                      variant="outline"
+                      className="border-secondary-foreground/30 text-secondary-foreground hover:bg-secondary-foreground/10 rounded-full"
                       onClick={() => navigate('/auth?from=assessment')}
                     >
                       Create Free Account
-                      <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
                 </div>
@@ -243,14 +267,14 @@ export default function InitialResults() {
               </div>
             </>
           ) : (
-            /* Logged-in user - go to dashboard */
+            /* Logged-in user - continue to goals */
             <div className="text-center">
               <Button 
                 size="lg"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8"
-                onClick={() => navigate('/welcome')}
+                className="gradient-primary text-primary-foreground hover:opacity-90 rounded-full px-8"
+                onClick={() => navigate('/goals-reality')}
               >
-                Continue to Dashboard
+                Continue: Define Your Goals
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
