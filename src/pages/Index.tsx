@@ -57,10 +57,10 @@ export default function Index() {
           <div className="flex items-center px-6 md:px-12 lg:px-16 py-16 lg:py-24 order-2 lg:order-1 bg-amber-100">
             <ScrollReveal animation="fade-up" className="max-w-md space-y-6">
               <h1 className="text-3xl md:text-4xl lg:text-5xl leading-tight font-serif">
-                Structured career coaching for people who want real execution.
+                Intelligent, personalised coaching for real execution.
               </h1>
               <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-                AI-powered coaching combined with personality insight to help you plan, decide, and move forward with confidence.
+                AI-powered coaching combined with personality insight to craft your personalised path to success.
               </p>
               <div className="space-y-3 pt-4">
                 <Button 
@@ -127,7 +127,7 @@ export default function Index() {
               },
               {
                 icon: Target,
-                title: 'Career Strategy',
+                title: 'Personalised Strategy',
                 description: 'A structured roadmap that shows what to focus on now — and what to ignore.',
               },
               {
@@ -220,7 +220,7 @@ export default function Index() {
                   Real progress.
                 </h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  Our platform combines AI coaching with evidence-based assessments to give you a personalized career strategy. No generic advice. No vague promises. Just clear thinking and practical steps.
+                  Our platform combines AI coaching with evidence-based assessments to craft your personalised path to success. No generic advice. No vague promises. Just clear thinking and practical steps.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <Button className="rounded-full" onClick={handleGetStarted}>
