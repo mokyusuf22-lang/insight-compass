@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowRight, MessageSquare, Brain, Target, BarChart3, Check } from 'lucide-react';
 import { ScrollReveal } from '@/components/ScrollReveal';
-import heroImage from '@/assets/hero-professional-1.jpg';
-import quoteImage from '@/assets/quote-professional.jpg';
-import collaborationImage from '@/assets/collaboration-1.jpg';
-import workspaceImage from '@/assets/professional-workspace.jpg';
+import heroImage from '@/assets/hero-gen-z.jpg';
+import quoteImage from '@/assets/professional-nurse.jpg';
+import collaborationImage from '@/assets/collaboration-diverse.jpg';
+import builderImage from '@/assets/professional-builder.jpg';
+import teacherImage from '@/assets/professional-teacher.jpg';
 
 export default function Index() {
   const { user } = useAuth();
@@ -23,7 +24,7 @@ export default function Index() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border">
         <div className="container max-w-6xl py-4 flex justify-between items-center">
-          <span className="font-sans font-semibold tracking-wide text-lg">CLARITY</span>
+          <span className="font-serif font-semibold tracking-wide text-lg">BE: More</span>
           <div className="flex items-center gap-4">
             {user ? (
               <Link to="/welcome">
@@ -203,8 +204,8 @@ export default function Index() {
             {/* Image */}
             <ScrollReveal animation="fade-right">
               <img
-                src={workspaceImage}
-                alt="Professional in workspace"
+                src={teacherImage}
+                alt="Professional educator"
                 className="w-full chamfer"
               />
             </ScrollReveal>
@@ -347,9 +348,9 @@ export default function Index() {
           <div className="grid md:grid-cols-3 gap-12 mb-12">
             {/* Brand */}
             <div className="md:col-span-1">
-              <span className="font-sans font-semibold tracking-wide text-lg block mb-4">CLARITY</span>
+              <span className="font-serif font-semibold tracking-wide text-lg block mb-4">BE: More</span>
               <p className="text-background/70 text-sm leading-relaxed">
-                A structured career coaching platform for professionals who want direction, not noise.
+                Empower your journey with intelligent, personalised coaching for real execution.
               </p>
             </div>
             
@@ -383,7 +384,7 @@ export default function Index() {
           <div className="pt-8 border-t border-background/20">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-xs text-background/50">
-                © 2024 Clarity. All rights reserved.
+                © 2026 BE: More. All rights reserved.
               </p>
               <div className="text-xs text-background/50 flex gap-4">
                 <a href="#" className="hover:text-background/70">Terms of Service</a>
@@ -394,8 +395,8 @@ export default function Index() {
           
           {/* Large Brand Name */}
           <div className="mt-12 pt-8">
-            <span className="text-6xl md:text-8xl lg:text-9xl font-sans font-bold tracking-tight text-background/10">
-              CLARITY
+            <span className="text-6xl md:text-8xl lg:text-9xl font-serif font-bold tracking-tight text-background/10">
+              BE: More
             </span>
           </div>
         </div>
