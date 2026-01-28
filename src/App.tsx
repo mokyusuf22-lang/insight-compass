@@ -30,6 +30,8 @@ import Results from "./pages/Results";
 import Account from "./pages/Account";
 import HumanCoaching from "./pages/HumanCoaching";
 import SuccessGrowth from "./pages/SuccessGrowth";
+import InitialAssessment from "./pages/InitialAssessment";
+import InitialResults from "./pages/InitialResults";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +47,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/welcome" element={<Welcome />} />
+            <Route path="/initial-assessment" element={<InitialAssessment />} />
+            <Route path="/initial-results" element={<InitialResults />} />
             <Route path="/assessment/step1" element={<Step1Assessment />} />
             <Route path="/assessment/step1/results" element={<Step1Results />} />
             <Route path="/assessment/mbti" element={<MBTIAssessment />} />
