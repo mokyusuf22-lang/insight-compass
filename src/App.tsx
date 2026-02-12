@@ -57,11 +57,12 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<Onboarding />} />
-            {/* Flow-gated routes */}
-            <Route path="/assessment/blob-tree" element={<RequireStep><BlobTreeAssessment /></RequireStep>} />
-            <Route path="/assessment/blob-tree/results" element={<RequireStep><BlobTreeResults /></RequireStep>} />
-            <Route path="/assessment/value-map" element={<RequireStep><ValueMapAssessment /></RequireStep>} />
-            <Route path="/assessment/value-map/results" element={<RequireStep><ValueMapResults /></RequireStep>} />
+            {/* Flow-gated routes — no auth required until dashboard */}
+            <Route path="/assessment/blob-tree" element={<RequireStep requireAuth={false}><BlobTreeAssessment /></RequireStep>} />
+            <Route path="/assessment/blob-tree/results" element={<RequireStep requireAuth={false}><BlobTreeResults /></RequireStep>} />
+            <Route path="/assessment/value-map" element={<RequireStep requireAuth={false}><ValueMapAssessment /></RequireStep>} />
+            <Route path="/assessment/value-map/results" element={<RequireStep requireAuth={false}><ValueMapResults /></RequireStep>} />
+            {/* Auth required from dashboard onward */}
             <Route path="/welcome" element={<RequireStep><Welcome /></RequireStep>} />
             <Route path="/path" element={<RequireStep><SkillPath /></RequireStep>} />
             <Route path="/path/phase/:id" element={<RequireStep><PhasePage /></RequireStep>} />
