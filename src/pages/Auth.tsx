@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { SignInConfirmation } from '@/components/SignInConfirmation';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 import { Eye, EyeOff } from 'lucide-react';
 import { z } from 'zod';
+import { lovable } from '@/integrations/lovable/index';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -36,19 +37,21 @@ export default function Auth() {
   const [confirmedEmail, setConfirmedEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const { signIn, signUp, signInWithGoogle, resetPassword, user, loading } = useAuth();
+  const { signIn, signUp, resetPassword, user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const returnTo = (location.state as any)?.from || '/assessment/blob-tree';
 
   const handleConfirmationComplete = useCallback(() => {
-    navigate('/welcome');
-  }, [navigate]);
+    navigate(returnTo);
+  }, [navigate, returnTo]);
 
   useEffect(() => {
     if (!loading && user && !showConfirmation) {
-      navigate('/welcome');
+      navigate(returnTo);
     }
-  }, [user, loading, navigate, showConfirmation]);
+  }, [user, loading, navigate, showConfirmation, returnTo]);
 
   const validateForm = () => {
     try {
@@ -75,7 +78,9 @@ export default function Auth() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      const { error } = await signInWithGoogle();
+      const { error } = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: window.location.origin,
+      });
       if (error) {
         toast({
           title: 'Google sign in failed',
