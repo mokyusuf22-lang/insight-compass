@@ -35,6 +35,8 @@ import InitialResults from "./pages/InitialResults";
 import GoalsReality from "./pages/GoalsReality";
 import Onboarding from "./pages/Onboarding";
 import AssessmentRecommendations from "./pages/AssessmentRecommendations";
+import WheelOfLifeAssessment from "./pages/WheelOfLifeAssessment";
+import WheelOfLifeResults from "./pages/WheelOfLifeResults";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +65,8 @@ const App = () => (
             <Route path="/assessment/disc/results" element={<DISCResults />} />
             <Route path="/assessment/strengths" element={<StrengthsAssessment />} />
             <Route path="/assessment/strengths/results" element={<StrengthsResults />} />
+            <Route path="/assessment/wheel-of-life" element={<WheelOfLifeAssessment />} />
+            <Route path="/assessment/wheel-of-life/results" element={<WheelOfLifeResults />} />
             <Route path="/path" element={<SkillPath />} />
             <Route path="/path/phase/:id" element={<PhasePage />} />
             <Route path="/path/task/:id" element={<TaskPage />} />
