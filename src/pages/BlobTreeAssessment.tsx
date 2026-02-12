@@ -26,8 +26,14 @@ export default function BlobTreeAssessment() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setIsLoading(false);
+      navigate('/auth', { state: { from: '/assessment/blob-tree' } });
+      return;
+    }
+
     const init = async () => {
-      if (!user) return;
       setIsLoading(true);
       try {
         const { data: existing } = await supabase
@@ -60,13 +66,8 @@ export default function BlobTreeAssessment() {
         setIsLoading(false);
       }
     };
-    if (!authLoading && user) init();
+    init();
   }, [user, authLoading]);
-
-  useEffect(() => {
-    if (!authLoading && !user) navigate('/auth');
-  }, [user, authLoading, navigate]);
-
   const handleBlobClick = async (num: number) => {
     if (step === 'current') {
       setCurrentBlob(num);

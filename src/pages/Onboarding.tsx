@@ -136,8 +136,12 @@ export default function Onboarding() {
       // Always mark onboarding complete locally for non-auth flow
       setLocalProgress('onboarding_complete', true);
 
-      // Navigate to Blob Tree (next step in new flow)
-      navigate('/assessment/blob-tree');
+      // If not logged in, send to auth first (assessments need DB access)
+      if (!user) {
+        navigate('/auth', { state: { from: '/assessment/blob-tree' } });
+      } else {
+        navigate('/assessment/blob-tree');
+      }
     } catch (error) {
       console.error('Error saving onboarding data:', error);
       toast({
