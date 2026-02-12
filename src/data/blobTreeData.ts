@@ -182,7 +182,7 @@ export const blobPositions: Record<number, { x: number; y: number }> = {
   11: { x: 50, y: 45 },
   12: { x: 57, y: 45 },
   13: { x: 32, y: 36 },
-  14: { x: 27, y: 18 },
+  14: { x: 22, y: 18 },
   15: { x: 47, y: 20 },
   16: { x: 61, y: 20 },
   17: { x: 59, y: 25 },
