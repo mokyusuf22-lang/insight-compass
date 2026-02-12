@@ -359,6 +359,39 @@ export type Database = {
         }
         Relationships: []
       }
+      value_map_assessments: {
+        Row: {
+          created_at: string
+          id: string
+          is_complete: boolean
+          ranked_values: Json
+          selected_values: Json
+          top_five: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          ranked_values?: Json
+          selected_values?: Json
+          top_five?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          ranked_values?: Json
+          selected_values?: Json
+          top_five?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       weekly_execution_plans: {
         Row: {
           coaching_notes: string | null
