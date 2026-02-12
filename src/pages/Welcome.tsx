@@ -5,7 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { UserHeader } from '@/components/UserHeader';
-import { GoalReview } from '@/components/GoalReview';
 import { 
   ArrowRight, 
   Lock, 
@@ -422,10 +421,6 @@ export default function Welcome() {
           </div>
         )}
 
-        {/* Career Goals Section */}
-        <div className="chamfer bg-card p-6 mb-8">
-          <GoalReview showTitle={true} />
-        </div>
 
         {/* Progress Overview */}
         <div className="chamfer bg-card p-6 mb-8">
