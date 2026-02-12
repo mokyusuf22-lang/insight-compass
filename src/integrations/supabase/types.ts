@@ -382,6 +382,36 @@ export type Database = {
           },
         ]
       }
+      wheel_of_life_assessments: {
+        Row: {
+          created_at: string
+          id: string
+          is_complete: boolean
+          notes: string | null
+          scores: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          notes?: string | null
+          scores?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          notes?: string | null
+          scores?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
