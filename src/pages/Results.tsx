@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { UserHeader } from '@/components/UserHeader';
-import { GoalReview } from '@/components/GoalReview';
 import { 
   Brain, 
   Zap, 
@@ -12,10 +11,9 @@ import {
   TrendingUp,
   Sparkles,
   ArrowRight,
-  Briefcase,
-  Clock,
-  AlertCircle,
-  Star
+  Star,
+  TreePine,
+  Heart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -27,6 +25,8 @@ interface AssessmentResult {
     mbtiTendency?: string;
     confidence?: number;
   };
+  blobTree?: { currentBlob: number | null; desiredBlob: number | null };
+  valueMap?: { topFive: string[] };
 }
 
 // DISC color mapping
@@ -115,6 +115,26 @@ export default function Results() {
           .limit(1)
           .maybeSingle();
 
+        // Fetch Blob Tree result
+        const { data: blobData } = await supabase
+          .from('blob_tree_assessments')
+          .select('current_blob, desired_blob')
+          .eq('user_id', user.id)
+          .eq('is_complete', true)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        // Fetch Value Map result
+        const { data: valueData } = await supabase
+          .from('value_map_assessments')
+          .select('top_five')
+          .eq('user_id', user.id)
+          .eq('is_complete', true)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
         const mbtiResult = mbtiData?.result as { type?: string; axisResults?: Record<string, { percentage: number }> } | null;
         const discResult = discData?.result as { D?: number; I?: number; S?: number; C?: number; primaryStyle?: string; secondaryStyle?: string | null } | null;
         const strengthsResult = strengthsData?.result as { ranked_strengths?: { name: string; score: number }[] } | null;
@@ -125,11 +145,15 @@ export default function Results() {
         if (mbtiData) count++;
         if (discData) count++;
         if (strengthsData) count++;
+        if (blobData) count++;
+        if (valueData) count++;
         setCompletedCount(count);
 
         // Extract primary letter from "High C" -> "C"
         const primaryLetter = discResult?.primaryStyle?.replace('High ', '').split(' ')[0] || '';
         const secondaryLetter = discResult?.secondaryStyle?.replace('High ', '') || undefined;
+
+        const topFiveValues = (valueData?.top_five as any[]) || [];
 
         setResults({
           mbtiType: mbtiResult?.type,
@@ -140,6 +164,8 @@ export default function Results() {
           } : undefined,
           topStrengths: strengthsResult?.ranked_strengths?.slice(0, 5).map(s => s.name),
           step1Hypothesis: step1Hypothesis || undefined,
+          blobTree: blobData ? { currentBlob: (blobData as any).current_blob, desiredBlob: (blobData as any).desired_blob } : undefined,
+          valueMap: topFiveValues.length > 0 ? { topFive: topFiveValues.map((v: any) => typeof v === 'string' ? v : v.name || v.label || String(v)) } : undefined,
         });
       } catch (error) {
         console.error('Error fetching results:', error);
@@ -434,16 +460,64 @@ export default function Results() {
                 </p>
               </div>
 
-            </div>
+              {/* Blob Tree Card */}
+              <button 
+                onClick={() => navigate('/assessment/blob-tree/results')}
+                className={`chamfer bg-card border border-border p-6 transition-all duration-700 hover:border-primary/50 text-left ${
+                  animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: '450ms' }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <TreePine className="w-5 h-5 text-primary" />
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    Blob Tree
+                  </p>
+                </div>
+                {results.blobTree ? (
+                  <div className="space-y-2">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-serif font-bold text-foreground">#{results.blobTree.currentBlob}</span>
+                      <span className="text-muted-foreground">→</span>
+                      <span className="text-3xl font-serif font-bold text-primary">#{results.blobTree.desiredBlob}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Current → Desired position</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Complete Blob Tree assessment</p>
+                )}
+              </button>
 
-            {/* Career Goals Section - Editable */}
-            <div 
-              className={`chamfer bg-card p-6 mb-8 transition-all duration-700 ${
-                animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}
-              style={{ transitionDelay: '450ms' }}
-            >
-              <GoalReview showTitle={true} />
+              {/* Value Map Card */}
+              <button 
+                onClick={() => navigate('/assessment/value-map/results')}
+                className={`chamfer bg-card border border-border p-6 transition-all duration-700 hover:border-primary/50 text-left ${
+                  animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: '500ms' }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <Heart className="w-5 h-5 text-primary" />
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    Core Values
+                  </p>
+                </div>
+                {results.valueMap ? (
+                  <div className="space-y-1">
+                    {results.valueMap.topFive.slice(0, 3).map((value, i) => (
+                      <p key={value} className={`text-sm ${i === 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                        {i + 1}. {value}
+                      </p>
+                    ))}
+                    {results.valueMap.topFive.length > 3 && (
+                      <p className="text-xs text-muted-foreground">+{results.valueMap.topFive.length - 3} more</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Complete Value Map assessment</p>
+                )}
+              </button>
+
             </div>
 
             {/* CTA to continue */}
