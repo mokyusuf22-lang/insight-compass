@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { setLocalProgress } from '@/components/RequireStep';
 import { blobPositions } from '@/data/blobTreeData';
 import { UserHeader } from '@/components/UserHeader';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
@@ -93,6 +94,7 @@ export default function BlobTreeAssessment() {
             .update({ blob_tree_complete: true } as any)
             .eq('user_id', user.id);
         }
+        setLocalProgress('blob_tree_complete', true);
       }
       navigate(`/assessment/blob-tree/results?id=${assessmentId}`);
     }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { setLocalProgress } from '@/components/RequireStep';
 import { coreValues, categoryLabels, categoryColors, type CoreValue } from '@/data/valueMapData';
 import { UserHeader } from '@/components/UserHeader';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
@@ -133,6 +134,7 @@ export default function ValueMapAssessment() {
         .update({ value_map_complete: true } as any)
         .eq('user_id', user.id);
     }
+    setLocalProgress('value_map_complete', true);
     navigate(`/assessment/value-map/results?id=${assessmentId}`);
   };
 

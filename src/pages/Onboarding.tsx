@@ -10,6 +10,7 @@ import { ArrowRight, User, Briefcase, Heart, GraduationCap, MapPin, Sparkles } f
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { setLocalProgress } from '@/components/RequireStep';
 
 const STORAGE_KEY = 'onboarding_data';
 
@@ -131,6 +132,9 @@ export default function Onboarding() {
           description: 'Your information has been saved.',
         });
       }
+
+      // Always mark onboarding complete locally for non-auth flow
+      setLocalProgress('onboarding_complete', true);
 
       // Navigate to Blob Tree (next step in new flow)
       navigate('/assessment/blob-tree');

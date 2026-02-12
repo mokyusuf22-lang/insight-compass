@@ -6,6 +6,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { toast } from 'sonner';
 
+const LOCAL_PROGRESS_KEY = 'flow_progress';
+
+/** Read flow progress flags from localStorage (for non-authenticated users). */
+function getLocalProgress(): FlowProgress {
+  try {
+    const raw = localStorage.getItem(LOCAL_PROGRESS_KEY);
+    if (raw) return { ...defaultFlowProgress, ...JSON.parse(raw) };
+  } catch { /* ignore */ }
+  return defaultFlowProgress;
+}
+
+/** Write a flow progress flag to localStorage. */
+export function setLocalProgress(flag: keyof FlowProgress, value: boolean) {
+  const current = getLocalProgress();
+  current[flag] = value;
+  localStorage.setItem(LOCAL_PROGRESS_KEY, JSON.stringify(current));
+}
+
 interface RequireStepProps {
   children: ReactNode;
   /** If true, also requires authentication (redirects to /auth if not logged in) */
@@ -21,7 +39,8 @@ export function RequireStep({ children, requireAuth = true }: RequireStepProps) 
   useEffect(() => {
     const fetchProgress = async () => {
       if (!user) {
-        setProgress(defaultFlowProgress);
+        // Use localStorage progress for non-authenticated users
+        setProgress(getLocalProgress());
         setLoading(false);
         return;
       }
@@ -68,9 +87,7 @@ export function RequireStep({ children, requireAuth = true }: RequireStepProps) 
   if (progress) {
     const check = checkPrerequisites(location.pathname, progress);
     if (!check.allowed && check.redirectTo) {
-      // Show banner message via toast
       if (check.bannerMessage) {
-        // Use setTimeout to avoid calling toast during render
         setTimeout(() => toast.info(check.bannerMessage), 0);
       }
       return <Navigate to={check.redirectTo} replace />;
