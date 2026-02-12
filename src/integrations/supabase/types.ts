@@ -74,6 +74,36 @@ export type Database = {
         }
         Relationships: []
       }
+      blob_tree_assessments: {
+        Row: {
+          created_at: string
+          current_blob: number | null
+          desired_blob: number | null
+          id: string
+          is_complete: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_blob?: number | null
+          desired_blob?: number | null
+          id?: string
+          is_complete?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_blob?: number | null
+          desired_blob?: number | null
+          id?: string
+          is_complete?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       career_strategies: {
         Row: {
           career_goals: Json | null
