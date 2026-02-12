@@ -86,6 +86,13 @@ export default function BlobTreeAssessment() {
           .from('blob_tree_assessments' as any)
           .update({ desired_blob: num, is_complete: true } as any)
           .eq('id', assessmentId);
+        // Set flow progress flag
+        if (user) {
+          await supabase
+            .from('profiles')
+            .update({ blob_tree_complete: true } as any)
+            .eq('user_id', user.id);
+        }
       }
       navigate(`/assessment/blob-tree/results?id=${assessmentId}`);
     }

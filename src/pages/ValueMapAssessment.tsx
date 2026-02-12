@@ -126,6 +126,13 @@ export default function ValueMapAssessment() {
   const handleComplete = async () => {
     setStep('saving');
     await saveProgress({ ranked_values: rankedValues, is_complete: true });
+    // Set flow progress flag
+    if (user) {
+      await supabase
+        .from('profiles')
+        .update({ value_map_complete: true } as any)
+        .eq('user_id', user.id);
+    }
     navigate(`/assessment/value-map/results?id=${assessmentId}`);
   };
 

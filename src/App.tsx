@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { RequireStep } from "@/components/RequireStep";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Welcome from "./pages/Welcome";
@@ -55,8 +56,17 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/welcome" element={<Welcome />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            {/* Flow-gated routes */}
+            <Route path="/assessment/blob-tree" element={<RequireStep><BlobTreeAssessment /></RequireStep>} />
+            <Route path="/assessment/blob-tree/results" element={<RequireStep><BlobTreeResults /></RequireStep>} />
+            <Route path="/assessment/value-map" element={<RequireStep><ValueMapAssessment /></RequireStep>} />
+            <Route path="/assessment/value-map/results" element={<RequireStep><ValueMapResults /></RequireStep>} />
+            <Route path="/welcome" element={<RequireStep><Welcome /></RequireStep>} />
+            <Route path="/path" element={<RequireStep><SkillPath /></RequireStep>} />
+            <Route path="/path/phase/:id" element={<RequireStep><PhasePage /></RequireStep>} />
+            <Route path="/path/task/:id" element={<RequireStep><TaskPage /></RequireStep>} />
+            {/* Legacy assessment routes (no flow gating) */}
             <Route path="/initial-assessment" element={<InitialAssessment />} />
             <Route path="/initial-results" element={<InitialResults />} />
             <Route path="/goals-reality" element={<GoalsReality />} />
@@ -71,13 +81,6 @@ const App = () => (
             <Route path="/assessment/strengths/results" element={<StrengthsResults />} />
             <Route path="/assessment/wheel-of-life" element={<WheelOfLifeAssessment />} />
             <Route path="/assessment/wheel-of-life/results" element={<WheelOfLifeResults />} />
-            <Route path="/assessment/blob-tree" element={<BlobTreeAssessment />} />
-            <Route path="/assessment/blob-tree/results" element={<BlobTreeResults />} />
-            <Route path="/assessment/value-map" element={<ValueMapAssessment />} />
-            <Route path="/assessment/value-map/results" element={<ValueMapResults />} />
-            <Route path="/path" element={<SkillPath />} />
-            <Route path="/path/phase/:id" element={<PhasePage />} />
-            <Route path="/path/task/:id" element={<TaskPage />} />
             {/* Redirects for deprecated routes */}
             <Route path="/strategy" element={<Navigate to="/path" replace />} />
             <Route path="/skill-plan" element={<Navigate to="/path" replace />} />

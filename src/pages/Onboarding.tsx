@@ -119,8 +119,9 @@ export default function Onboarding() {
             career_goals: JSON.parse(JSON.stringify({
               onboarding: formData,
               updated_at: new Date().toISOString()
-            }))
-          })
+            })),
+            onboarding_complete: true,
+          } as any)
           .eq('user_id', user.id);
 
         if (error) throw error;
@@ -131,8 +132,8 @@ export default function Onboarding() {
         });
       }
 
-      // Navigate to initial assessment
-      navigate('/initial-assessment');
+      // Navigate to Blob Tree (next step in new flow)
+      navigate('/assessment/blob-tree');
     } catch (error) {
       console.error('Error saving onboarding data:', error);
       toast({

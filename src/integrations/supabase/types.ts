@@ -209,8 +209,108 @@ export type Database = {
         }
         Relationships: []
       }
+      path_commitments: {
+        Row: {
+          chosen_path: Json
+          constraints: string | null
+          created_at: string
+          focus_area: string | null
+          id: string
+          intent: string | null
+          time_budget: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chosen_path: Json
+          constraints?: string | null
+          created_at?: string
+          focus_area?: string | null
+          id?: string
+          intent?: string | null
+          time_budget?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chosen_path?: Json
+          constraints?: string | null
+          created_at?: string
+          focus_area?: string | null
+          id?: string
+          intent?: string | null
+          time_budget?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      path_recommendations: {
+        Row: {
+          created_at: string
+          id: string
+          recommendations: Json
+          selected_path_index: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          recommendations?: Json
+          selected_path_index?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          recommendations?: Json
+          selected_path_index?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      personal_paths: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          phases: Json
+          title: string
+          total_progress: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          phases?: Json
+          title: string
+          total_progress?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          phases?: Json
+          title?: string
+          total_progress?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          blob_tree_complete: boolean
           career_goals: Json | null
           created_at: string
           disc_completed: boolean
@@ -219,6 +319,11 @@ export type Database = {
           id: string
           last_payment_date: string | null
           mbti_completed: boolean
+          onboarding_complete: boolean
+          path_committed: boolean
+          path_options_shown: boolean
+          personal_path_generated: boolean
+          reality_report_generated: boolean
           step1_completed: boolean
           strategy_generated: boolean
           strengths_completed: boolean
@@ -226,8 +331,10 @@ export type Database = {
           subscription_tier: string | null
           updated_at: string
           user_id: string
+          value_map_complete: boolean
         }
         Insert: {
+          blob_tree_complete?: boolean
           career_goals?: Json | null
           created_at?: string
           disc_completed?: boolean
@@ -236,6 +343,11 @@ export type Database = {
           id?: string
           last_payment_date?: string | null
           mbti_completed?: boolean
+          onboarding_complete?: boolean
+          path_committed?: boolean
+          path_options_shown?: boolean
+          personal_path_generated?: boolean
+          reality_report_generated?: boolean
           step1_completed?: boolean
           strategy_generated?: boolean
           strengths_completed?: boolean
@@ -243,8 +355,10 @@ export type Database = {
           subscription_tier?: string | null
           updated_at?: string
           user_id: string
+          value_map_complete?: boolean
         }
         Update: {
+          blob_tree_complete?: boolean
           career_goals?: Json | null
           created_at?: string
           disc_completed?: boolean
@@ -253,6 +367,11 @@ export type Database = {
           id?: string
           last_payment_date?: string | null
           mbti_completed?: boolean
+          onboarding_complete?: boolean
+          path_committed?: boolean
+          path_options_shown?: boolean
+          personal_path_generated?: boolean
+          reality_report_generated?: boolean
           step1_completed?: boolean
           strategy_generated?: boolean
           strengths_completed?: boolean
@@ -260,6 +379,46 @@ export type Database = {
           subscription_tier?: string | null
           updated_at?: string
           user_id?: string
+          value_map_complete?: boolean
+        }
+        Relationships: []
+      }
+      reality_reports: {
+        Row: {
+          blob_tree_summary: Json | null
+          created_at: string
+          generated_summary: string | null
+          id: string
+          key_constraints: Json | null
+          risks: Json | null
+          strengths: Json | null
+          updated_at: string
+          user_id: string
+          value_map_summary: Json | null
+        }
+        Insert: {
+          blob_tree_summary?: Json | null
+          created_at?: string
+          generated_summary?: string | null
+          id?: string
+          key_constraints?: Json | null
+          risks?: Json | null
+          strengths?: Json | null
+          updated_at?: string
+          user_id: string
+          value_map_summary?: Json | null
+        }
+        Update: {
+          blob_tree_summary?: Json | null
+          created_at?: string
+          generated_summary?: string | null
+          id?: string
+          key_constraints?: Json | null
+          risks?: Json | null
+          strengths?: Json | null
+          updated_at?: string
+          user_id?: string
+          value_map_summary?: Json | null
         }
         Relationships: []
       }
