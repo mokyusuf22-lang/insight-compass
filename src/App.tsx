@@ -39,6 +39,8 @@ import WheelOfLifeAssessment from "./pages/WheelOfLifeAssessment";
 import WheelOfLifeResults from "./pages/WheelOfLifeResults";
 import BlobTreeAssessment from "./pages/BlobTreeAssessment";
 import BlobTreeResults from "./pages/BlobTreeResults";
+import ValueMapAssessment from "./pages/ValueMapAssessment";
+import ValueMapResults from "./pages/ValueMapResults";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -71,6 +73,8 @@ const App = () => (
             <Route path="/assessment/wheel-of-life/results" element={<WheelOfLifeResults />} />
             <Route path="/assessment/blob-tree" element={<BlobTreeAssessment />} />
             <Route path="/assessment/blob-tree/results" element={<BlobTreeResults />} />
+            <Route path="/assessment/value-map" element={<ValueMapAssessment />} />
+            <Route path="/assessment/value-map/results" element={<ValueMapResults />} />
             <Route path="/path" element={<SkillPath />} />
             <Route path="/path/phase/:id" element={<PhasePage />} />
             <Route path="/path/task/:id" element={<TaskPage />} />
