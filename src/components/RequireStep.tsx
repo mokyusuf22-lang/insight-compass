@@ -48,7 +48,7 @@ export function RequireStep({ children, requireAuth = true }: RequireStepProps) 
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('onboarding_complete, blob_tree_complete, value_map_complete, reality_report_generated, path_options_shown, path_committed, personal_path_generated')
+          .select('onboarding_complete, step1_completed, challenges_complete, wheel_of_life_complete, blob_tree_complete, value_map_complete, reality_report_generated, path_options_shown, path_committed, personal_path_generated')
           .eq('user_id', user.id)
           .maybeSingle();
 

@@ -1,8 +1,12 @@
 // Flow prerequisite system — single source of truth for route access gating
 // Each route defines what progress flags must be true before access is allowed.
+// CLARITY Flow: Onboarding → Initial Personality → Challenges → Wheel of Life → Blob Tree → Value Map → Reality → Options → Will
 
 export interface FlowProgress {
   onboarding_complete: boolean;
+  step1_completed: boolean;
+  challenges_complete: boolean;
+  wheel_of_life_complete: boolean;
   blob_tree_complete: boolean;
   value_map_complete: boolean;
   reality_report_generated: boolean;
@@ -13,6 +17,9 @@ export interface FlowProgress {
 
 export const defaultFlowProgress: FlowProgress = {
   onboarding_complete: false,
+  step1_completed: false,
+  challenges_complete: false,
+  wheel_of_life_complete: false,
   blob_tree_complete: false,
   value_map_complete: false,
   reality_report_generated: false,
@@ -24,8 +31,12 @@ export const defaultFlowProgress: FlowProgress = {
 // Ordered flow steps — each entry maps a route prefix to its required flags
 const FLOW_STEPS: { route: string; requires: (keyof FlowProgress)[]; label: string }[] = [
   { route: '/onboarding', requires: [], label: 'Onboarding' },
-  { route: '/assessment/blob-tree', requires: ['onboarding_complete'], label: 'Blob Tree Assessment' },
-  { route: '/assessment/value-map', requires: ['onboarding_complete'], label: 'Value Map Assessment' },
+  { route: '/initial-assessment', requires: ['onboarding_complete'], label: 'Initial Personality Hypothesis' },
+  { route: '/initial-results', requires: ['onboarding_complete'], label: 'Initial Personality Results' },
+  { route: '/goals-reality', requires: ['step1_completed'], label: 'Current Challenges & Barriers' },
+  { route: '/assessment/wheel-of-life', requires: ['challenges_complete'], label: 'Wheel of Life Assessment' },
+  { route: '/assessment/blob-tree', requires: ['wheel_of_life_complete'], label: 'Blob Tree Assessment' },
+  { route: '/assessment/value-map', requires: ['blob_tree_complete'], label: 'Value Map Assessment' },
   { route: '/reality', requires: ['blob_tree_complete', 'value_map_complete'], label: 'Reality Report' },
   { route: '/path-options', requires: ['reality_report_generated'], label: 'Path Options' },
   { route: '/commit', requires: ['path_options_shown'], label: 'Commitment' },
@@ -33,13 +44,12 @@ const FLOW_STEPS: { route: string; requires: (keyof FlowProgress)[]; label: stri
   { route: '/path', requires: ['personal_path_generated'], label: 'Personal Path' },
 ];
 
-// Route-to-label map for readable step names
-const STEP_LABELS: Record<string, string> = {};
-FLOW_STEPS.forEach(s => { STEP_LABELS[s.route] = s.label; });
-
 // Map a flag to the route that fulfills it
 const FLAG_TO_ROUTE: Record<keyof FlowProgress, string> = {
   onboarding_complete: '/onboarding',
+  step1_completed: '/initial-assessment',
+  challenges_complete: '/goals-reality',
+  wheel_of_life_complete: '/assessment/wheel-of-life',
   blob_tree_complete: '/assessment/blob-tree',
   value_map_complete: '/assessment/value-map',
   reality_report_generated: '/reality',
@@ -50,6 +60,9 @@ const FLAG_TO_ROUTE: Record<keyof FlowProgress, string> = {
 
 const FLAG_TO_LABEL: Record<keyof FlowProgress, string> = {
   onboarding_complete: 'Onboarding',
+  step1_completed: 'Initial Personality Hypothesis',
+  challenges_complete: 'Current Challenges & Barriers',
+  wheel_of_life_complete: 'Wheel of Life Assessment',
   blob_tree_complete: 'Blob Tree Assessment',
   value_map_complete: 'Value Map Assessment',
   reality_report_generated: 'Reality Report',
@@ -106,6 +119,9 @@ export function checkPrerequisites(
  */
 export function getNextRequiredRoute(progress: FlowProgress): string | null {
   if (!progress.onboarding_complete) return '/onboarding';
+  if (!progress.step1_completed) return '/initial-assessment';
+  if (!progress.challenges_complete) return '/goals-reality';
+  if (!progress.wheel_of_life_complete) return '/assessment/wheel-of-life';
   if (!progress.blob_tree_complete) return '/assessment/blob-tree';
   if (!progress.value_map_complete) return '/assessment/value-map';
   if (!progress.reality_report_generated) return '/reality';

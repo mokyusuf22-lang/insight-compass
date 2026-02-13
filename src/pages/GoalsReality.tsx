@@ -8,6 +8,7 @@ import { ArrowRight, ArrowLeft, Target, Heart, AlertTriangle } from 'lucide-reac
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { setLocalProgress } from '@/components/RequireStep';
 
 interface GoalsRealityData {
   lifeGoals: string;
@@ -92,14 +93,20 @@ export default function GoalsReality() {
 
         if (error) throw error;
 
+        // Set challenges_complete flag in DB
+        await supabase.from('profiles').update({ challenges_complete: true }).eq('user_id', user.id);
+
         toast({
           title: 'Goals Saved',
           description: 'Your goals and challenges have been saved to your profile.',
         });
       }
 
-      // Navigate to AI-powered recommendations
-      navigate('/assessment-recommendations');
+      // Set progress flag (localStorage for non-auth users)
+      setLocalProgress('challenges_complete', true);
+
+      // Navigate to Wheel of Life (next step in CLARITY flow)
+      navigate('/assessment/wheel-of-life');
     } catch (error) {
       console.error('Error saving goals:', error);
       toast({
