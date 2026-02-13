@@ -13,7 +13,8 @@ import {
   ArrowRight,
   Star,
   TreePine,
-  Heart
+  Heart,
+  Target
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -27,6 +28,7 @@ interface AssessmentResult {
   };
   blobTree?: { currentBlob: number | null; desiredBlob: number | null };
   valueMap?: { topFive: string[] };
+  wheelOfLife?: { scores: Record<string, number>; average: number };
 }
 
 // DISC color mapping
@@ -135,6 +137,16 @@ export default function Results() {
           .limit(1)
           .maybeSingle();
 
+        // Fetch Wheel of Life result
+        const { data: wolData } = await supabase
+          .from('wheel_of_life_assessments')
+          .select('scores')
+          .eq('user_id', user.id)
+          .eq('is_complete', true)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
         const mbtiResult = mbtiData?.result as { type?: string; axisResults?: Record<string, { percentage: number }> } | null;
         const discResult = discData?.result as { D?: number; I?: number; S?: number; C?: number; primaryStyle?: string; secondaryStyle?: string | null } | null;
         const strengthsResult = strengthsData?.result as { ranked_strengths?: { name: string; score: number }[] } | null;
@@ -147,6 +159,7 @@ export default function Results() {
         if (strengthsData) count++;
         if (blobData) count++;
         if (valueData) count++;
+        if (wolData) count++;
         setCompletedCount(count);
 
         // Extract primary letter from "High C" -> "C"
@@ -154,6 +167,15 @@ export default function Results() {
         const secondaryLetter = discResult?.secondaryStyle?.replace('High ', '') || undefined;
 
         const topFiveValues = (valueData?.top_five as any[]) || [];
+
+        // Process Wheel of Life scores
+        const wolScores = wolData?.scores as Record<string, number> | null;
+        let wolResult: AssessmentResult['wheelOfLife'] = undefined;
+        if (wolScores) {
+          const keys = Object.keys(wolScores);
+          const avg = keys.length > 0 ? Math.round((keys.reduce((s, k) => s + (wolScores[k] || 0), 0) / keys.length) * 10) / 10 : 0;
+          wolResult = { scores: wolScores, average: avg };
+        }
 
         setResults({
           mbtiType: mbtiResult?.type,
@@ -166,6 +188,7 @@ export default function Results() {
           step1Hypothesis: step1Hypothesis || undefined,
           blobTree: blobData ? { currentBlob: (blobData as any).current_blob, desiredBlob: (blobData as any).desired_blob } : undefined,
           valueMap: topFiveValues.length > 0 ? { topFive: topFiveValues.map((v: any) => typeof v === 'string' ? v : v.name || v.label || String(v)) } : undefined,
+          wheelOfLife: wolResult,
         });
       } catch (error) {
         console.error('Error fetching results:', error);
@@ -515,6 +538,45 @@ export default function Results() {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">Complete Value Map assessment</p>
+                )}
+              </button>
+
+              {/* Wheel of Life Card */}
+              <button 
+                onClick={() => navigate('/assessment/wheel-of-life/results')}
+                className={`chamfer bg-card border border-border p-6 transition-all duration-700 hover:border-primary/50 text-left ${
+                  animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: '550ms' }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <Target className="w-5 h-5 text-primary" />
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    Wheel of Life
+                  </p>
+                </div>
+                {results.wheelOfLife ? (
+                  <div className="space-y-3">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-serif font-bold text-foreground">{results.wheelOfLife.average}</span>
+                      <span className="text-sm text-muted-foreground">/10 avg</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1">
+                      {Object.entries(results.wheelOfLife.scores).slice(0, 8).map(([key, score]) => (
+                        <div key={key} className="text-center">
+                          <div className="h-8 bg-muted rounded-sm overflow-hidden flex items-end">
+                            <div 
+                              className="w-full bg-primary/70 rounded-sm transition-all"
+                              style={{ height: `${(score / 10) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Life balance across 8 areas</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Complete Wheel of Life assessment</p>
                 )}
               </button>
 
