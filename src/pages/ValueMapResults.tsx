@@ -26,14 +26,22 @@ export default function ValueMapResults() {
 
   useEffect(() => {
     const load = async () => {
-      if (!user || !assessmentId) return;
+      if (!user) return;
       setIsLoading(true);
       try {
-        const { data } = await supabase
+        let query = supabase
           .from('value_map_assessments' as any)
           .select('*')
-          .eq('id', assessmentId)
-          .single();
+          .eq('user_id', user.id)
+          .eq('is_complete', true);
+
+        if (assessmentId) {
+          query = query.eq('id', assessmentId);
+        } else {
+          query = query.order('updated_at', { ascending: false }).limit(1);
+        }
+
+        const { data } = await query.maybeSingle();
         if (data) {
           const d = data as any;
           setRankedValues(d.ranked_values || []);
