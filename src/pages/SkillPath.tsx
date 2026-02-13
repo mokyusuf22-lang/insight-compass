@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,21 +7,15 @@ import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { UserHeader } from '@/components/UserHeader';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { toast } from 'sonner';
 import { PhaseCard } from '@/components/path/PhaseCard';
 import { TodayFocus } from '@/components/path/TodayFocus';
-import { AssessmentChangeModal } from '@/components/path/AssessmentChangeModal';
 import { 
   ArrowRight, 
-  Sparkles,
-  RefreshCw,
-  Lock,
   Target,
   Trophy,
-  Briefcase,
+  Compass,
 } from 'lucide-react';
-import { Json } from '@/integrations/supabase/types';
-import type { PathPhase, PathTask, SkillPathData, UserProfile } from '@/types/skillPath';
+import type { PathPhase, PathTask, SkillPathData } from '@/types/skillPath';
 
 import phaseAnalysis from '@/assets/phase-analysis.jpg';
 import phaseFoundation from '@/assets/phase-foundation.jpg';
@@ -33,291 +27,79 @@ const phaseImageMap: Record<number, string> = {
   1: phaseFoundation,
   2: phaseApplication,
   3: phaseMastery,
-  4: phaseAnalysis, // Interview Prep phase
 };
 
 export default function SkillPath() {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
-  
   const [pathData, setPathData] = useState<SkillPathData | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [assessmentsComplete, setAssessmentsComplete] = useState(false);
-  const [completedTasks, setCompletedTasks] = useState<string[]>([]);
-  const [showAssessmentChangeModal, setShowAssessmentChangeModal] = useState(false);
-  const [assessmentHashMismatch, setAssessmentHashMismatch] = useState(false);
-  const [careerGoal, setCareerGoal] = useState<string>('');
-  const [needsJobTransition, setNeedsJobTransition] = useState(false);
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        navigate('/auth');
-      } else if (!profile?.has_paid) {
-        navigate('/paywall');
-      }
+    if (!loading && !user) {
+      navigate('/auth');
     }
-  }, [user, profile, loading, navigate]);
-
-  const generateAssessmentHash = useCallback((mbti: any, disc: any, strengths: any): string => {
-    const mbtiType = mbti?.type || '';
-    const discStyle = disc?.primaryStyle || '';
-    const strengthsList = strengths?.ranked_strengths?.slice(0, 5).map((s: any) => s.name).join(',') || '';
-    return `${mbtiType}-${discStyle}-${strengthsList}`;
-  }, []);
+  }, [user, loading, navigate]);
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadPath = async () => {
       if (!user) return;
       setIsLoading(true);
-      
+
       try {
-        // Load career strategy with all data
-        const { data: strategyData } = await supabase
-          .from('career_strategies')
+        const { data: personalPath } = await supabase
+          .from('personal_paths')
           .select('*')
           .eq('user_id', user.id)
+          .eq('is_active', true)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        // Check if assessments are complete
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('mbti_completed, disc_completed, strengths_completed, career_goals')
-          .eq('user_id', user.id)
-          .single();
-
-        const allComplete = profileData?.mbti_completed && 
-                           profileData?.disc_completed && 
-                           profileData?.strengths_completed;
-        setAssessmentsComplete(allComplete || false);
-
-        // Load current assessment data to check for changes
-        const [mbtiRes, discRes, strengthsRes] = await Promise.all([
-          supabase.from('mbti_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
-          supabase.from('disc_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
-          supabase.from('strengths_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
-        ]);
-
-        const currentHash = generateAssessmentHash(
-          mbtiRes.data?.result,
-          discRes.data?.result,
-          strengthsRes.data?.result
-        );
-
-        if (strategyData) {
-          const mbti = strategyData.mbti_result as { type?: string } | null;
-          const disc = strategyData.disc_result as { primaryStyle?: string } | null;
-          const strengths = strategyData.strengths_result as { ranked_strengths?: { name: string }[] } | null;
-          const goals = strategyData.career_goals as { target_role?: string; career_goal?: string } | null;
-
-          // Check if career goal requires job transition
-          const goalType = goals?.career_goal?.toLowerCase() || '';
-          const requiresJobTransition = goalType.includes('new job') || goalType.includes('job change') || goalType.includes('transition');
-          setNeedsJobTransition(requiresJobTransition);
-          setCareerGoal(goals?.career_goal || '');
-
-          setUserProfile({
-            mbtiType: mbti?.type,
-            discStyle: disc?.primaryStyle?.replace('High ', ''),
-            topStrengths: strengths?.ranked_strengths?.slice(0, 3).map(s => s.name),
-            careerGoal: goals?.target_role,
-          });
-
-          // Check if assessment has changed since strategy was generated
-          const storedHash = generateAssessmentHash(
-            strategyData.mbti_result,
-            strategyData.disc_result,
-            strategyData.strengths_result
-          );
-
-          if (currentHash !== storedHash && strategyData.skill_development_plan) {
-            setAssessmentHashMismatch(true);
-            setShowAssessmentChangeModal(true);
-          }
-
-          // Check for existing skill path
-          if (strategyData.skill_development_plan) {
-            const skillPlan = strategyData.skill_development_plan as any;
-            
-            // Load weekly execution plans for completion status
-            const { data: weeklyPlans } = await supabase
-              .from('weekly_execution_plans')
-              .select('*')
-              .eq('user_id', user.id)
-              .order('week_number', { ascending: true });
-
-            const completedTaskIds: string[] = [];
-            weeklyPlans?.forEach(plan => {
-              const tasks = plan.completed_tasks as string[] | null;
-              if (tasks) {
-                completedTaskIds.push(...tasks.map(t => String(t)));
-              }
-            });
-            setCompletedTasks(completedTaskIds);
-
-            // Convert existing skill plan to path format
-            const convertedPath = convertSkillPlanToPath(
-              skillPlan,
-              goals?.target_role || 'Career Transition',
-              completedTaskIds,
-              strategyData.id,
-              requiresJobTransition
-            );
-            setPathData(convertedPath);
-          }
+        if (personalPath) {
+          const converted = convertPersonalPathToSkillPath(personalPath);
+          setPathData(converted);
         }
       } catch (error) {
-        console.error('Error loading data:', error);
-        toast.error('Failed to load skill path');
+        console.error('Error loading path:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (user) loadData();
-  }, [user, navigate, generateAssessmentHash]);
+    if (user) loadPath();
+  }, [user]);
 
-  const convertSkillPlanToPath = (
-    skillPlan: any,
-    targetRole: string,
-    completedTaskIds: string[],
-    strategyId: string,
-    includeInterviewPhase: boolean = false
-  ): SkillPathData => {
-    let globalTaskIndex = 0;
-    
-    const phases: PathPhase[] = (skillPlan.skill_development_plan || []).map((phaseData: any, phaseIdx: number) => {
-      const tasks: PathTask[] = [];
-      
-      phaseData.skill_clusters?.forEach((cluster: any) => {
-        cluster.skills?.forEach((skill: string, skillIdx: number) => {
-          const taskId = `phase${phaseIdx}-task${globalTaskIndex}`;
-          const isCompleted = completedTaskIds.includes(taskId);
-          
-          tasks.push({
-            id: taskId,
-            title: skill,
-            description: `Develop competency in ${skill.toLowerCase()}`,
-            type: skillIdx % 4 === 0 ? 'reading' : skillIdx % 4 === 1 ? 'practice' : skillIdx % 4 === 2 ? 'reflection' : 'project',
-            estimatedMinutes: 30 + (skillIdx * 10),
-            status: isCompleted ? 'completed' : 'locked',
-            successCriteria: `Complete ${skill.toLowerCase()} and document your learnings`,
-          });
-          
-          globalTaskIndex++;
-        });
-      });
+  const convertPersonalPathToSkillPath = (dbPath: any): SkillPathData => {
+    const phases: PathPhase[] = ((dbPath.phases as any[]) || []).map((phase: any, idx: number) => {
+      const tasks: PathTask[] = (phase.tasks || []).map((task: any) => ({
+        id: task.id,
+        title: task.title,
+        description: task.description || '',
+        type: task.type || 'practice',
+        estimatedMinutes: task.estimatedMinutes || 30,
+        status: task.status || 'locked',
+        successCriteria: task.successCriteria || '',
+        instructions: task.instructions,
+      }));
 
-      // Update task statuses based on sequential completion
-      for (let i = 0; i < tasks.length; i++) {
-        if (tasks[i].status === 'completed') continue;
-        
-        if (i === 0) {
-          tasks[i].status = phaseIdx === 0 ? 'available' : 'locked';
-        } else if (tasks[i - 1].status === 'completed') {
-          tasks[i].status = 'available';
-        }
-      }
+      const completedTasks = tasks.filter(t => t.status === 'completed').length;
+      const progress = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
 
-      const completedInPhase = tasks.filter(t => t.status === 'completed').length;
-      
       return {
-        id: `phase${phaseIdx}`,
-        phaseNumber: phaseIdx + 1,
-        title: phaseData.phase,
-        duration: phaseData.duration,
-        goal: phaseData.exit_criteria,
-        successDefinition: phaseData.exit_criteria,
-        progress: tasks.length > 0 ? Math.round((completedInPhase / tasks.length) * 100) : 0,
-        image: phaseImageMap[phaseIdx % 4],
+        id: phase.id || `phase${idx}`,
+        phaseNumber: phase.phaseNumber || idx + 1,
+        title: phase.title,
+        duration: phase.duration || '',
+        goal: phase.goal || '',
+        successDefinition: phase.successDefinition || '',
+        progress,
+        image: phaseImageMap[idx % 4],
         tasks,
       };
     });
 
-    // Add Interview Preparation phase if job transition is needed
-    if (includeInterviewPhase) {
-      const interviewPhaseIdx = phases.length;
-      const interviewTasks: PathTask[] = [
-        {
-          id: `phase${interviewPhaseIdx}-task0`,
-          title: 'Build STAR Story Library',
-          description: 'Create 5-7 STAR stories mapped to your verified skills and target role requirements',
-          type: 'practice',
-          estimatedMinutes: 60,
-          status: completedTaskIds.includes(`phase${interviewPhaseIdx}-task0`) ? 'completed' : 'locked',
-          successCriteria: 'Complete 5-7 polished STAR stories with evidence from your skill work',
-        },
-        {
-          id: `phase${interviewPhaseIdx}-task1`,
-          title: 'Strategic Scenario Preparation',
-          description: 'Practice system trade-off analysis and roadmap prioritization scenarios',
-          type: 'practice',
-          estimatedMinutes: 45,
-          status: completedTaskIds.includes(`phase${interviewPhaseIdx}-task1`) ? 'completed' : 'locked',
-          successCriteria: 'Articulate 3 strategic scenarios with structured responses',
-        },
-        {
-          id: `phase${interviewPhaseIdx}-task2`,
-          title: 'Confidence Framework Practice',
-          description: 'Practice calm, evidence-first communication style for interviews',
-          type: 'reflection',
-          estimatedMinutes: 30,
-          status: completedTaskIds.includes(`phase${interviewPhaseIdx}-task2`) ? 'completed' : 'locked',
-          successCriteria: 'Complete mock interview with pauses and assumption-stating',
-        },
-        {
-          id: `phase${interviewPhaseIdx}-task3`,
-          title: 'Interview Simulation',
-          description: 'Complete a full interview simulation using your prepared materials',
-          type: 'project',
-          estimatedMinutes: 60,
-          status: completedTaskIds.includes(`phase${interviewPhaseIdx}-task3`) ? 'completed' : 'locked',
-          successCriteria: 'Successfully complete mock interview with positive feedback',
-        },
-      ];
-
-      const completedInInterview = interviewTasks.filter(t => t.status === 'completed').length;
-
-      phases.push({
-        id: `phase${interviewPhaseIdx}`,
-        phaseNumber: interviewPhaseIdx + 1,
-        title: 'Interview Preparation',
-        duration: '2-4 weeks',
-        goal: 'Pass interviews with evidence-based, structured responses',
-        successDefinition: 'Clearly articulate 5-7 verified stories mapped to role requirements',
-        progress: interviewTasks.length > 0 ? Math.round((completedInInterview / interviewTasks.length) * 100) : 0,
-        image: phaseImageMap[4],
-        tasks: interviewTasks,
-      });
-    }
-
-    // Update phase locking - phases are unlocked when previous is 100% complete
-    for (let i = 1; i < phases.length; i++) {
-      if (phases[i - 1].progress < 100) {
-        phases[i].tasks = phases[i].tasks.map(t => ({ ...t, status: 'locked' as const }));
-      } else {
-        // Unlock first task of next phase
-        if (phases[i].tasks.length > 0 && phases[i].tasks[0].status === 'locked') {
-          phases[i].tasks[0].status = 'available';
-        }
-      }
-    }
-
-    // Recalculate phase progress after locking updates
-    phases.forEach(phase => {
-      const completedInPhase = phase.tasks.filter(t => t.status === 'completed').length;
-      phase.progress = phase.tasks.length > 0 ? Math.round((completedInPhase / phase.tasks.length) * 100) : 0;
-    });
-
-    const allTasks = phases.flatMap(p => p.tasks);
-    const totalCompleted = allTasks.filter(t => t.status === 'completed').length;
-    const totalProgress = allTasks.length > 0 ? Math.round((totalCompleted / allTasks.length) * 100) : 0;
-
-    // Find today's focus - first available task
+    // Find today's focus
     let todaysFocus: SkillPathData['todaysFocus'] = undefined;
     for (const phase of phases) {
       const nextTask = phase.tasks.find(t => t.status === 'available' || t.status === 'in_progress');
@@ -325,233 +107,30 @@ export default function SkillPath() {
         todaysFocus = {
           taskId: nextTask.id,
           phaseId: phase.id,
-          reason: `This task aligns with your current phase: ${phase.title}`,
+          reason: `Continue Phase ${phase.phaseNumber}: ${phase.title}`,
         };
         break;
       }
     }
 
+    const allTasks = phases.flatMap(p => p.tasks);
+    const totalCompleted = allTasks.filter(t => t.status === 'completed').length;
+    const totalProgress = allTasks.length > 0 ? Math.round((totalCompleted / allTasks.length) * 100) : 0;
+
     return {
-      id: strategyId,
-      title: `${targetRole} Path`,
-      description: "A personalized, step-by-step roadmap based on your personality, strengths, and career goals.",
+      id: dbPath.id,
+      title: dbPath.title,
+      description: dbPath.description || '',
       totalProgress,
       phases,
       todaysFocus,
     };
   };
 
-  const generatePath = async () => {
-    if (!user) return;
-    setIsGenerating(true);
-    
-    try {
-      // First generate strategy if not exists
-      const { data: strategyData } = await supabase
-        .from('career_strategies')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (!strategyData?.strategy) {
-        // Generate strategy first
-        const [mbtiRes, discRes, strengthsRes, profileRes] = await Promise.all([
-          supabase.from('mbti_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
-          supabase.from('disc_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
-          supabase.from('strengths_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
-          supabase.from('profiles').select('career_goals').eq('user_id', user.id).single(),
-        ]);
-
-        const { data: strategyResult, error: strategyError } = await supabase.functions.invoke('generate-strategy', {
-          body: {
-            mbti_result: mbtiRes.data?.result,
-            disc_result: discRes.data?.result,
-            strengths_result: strengthsRes.data?.result,
-            career_goals: profileRes.data?.career_goals,
-          },
-        });
-
-        if (strategyError) throw strategyError;
-
-        // Save strategy
-        const { data: newStrategy } = await supabase.from('career_strategies').insert({
-          user_id: user.id,
-          mbti_result: mbtiRes.data?.result as unknown as Json,
-          disc_result: discRes.data?.result as unknown as Json,
-          strengths_result: strengthsRes.data?.result as unknown as Json,
-          career_goals: profileRes.data?.career_goals as unknown as Json,
-          strategy: strategyResult.strategy as unknown as Json,
-        }).select().single();
-
-        // Now generate skill plan
-        const { data: skillPlanResult, error: skillError } = await supabase.functions.invoke('generate-skill-plan', {
-          body: {
-            career_strategy: strategyResult.strategy,
-            mbti_result: mbtiRes.data?.result,
-            disc_result: discRes.data?.result,
-            strengths_result: strengthsRes.data?.result,
-            career_goals: profileRes.data?.career_goals,
-          },
-        });
-
-        if (skillError) throw skillError;
-
-        // Update with skill plan
-        await supabase.from('career_strategies').update({
-          skill_development_plan: skillPlanResult.skill_plan as unknown as Json,
-        }).eq('id', newStrategy?.id);
-
-        await supabase.from('profiles').update({ strategy_generated: true }).eq('user_id', user.id);
-
-        const goals = profileRes.data?.career_goals as { target_role?: string; career_goal?: string } | null;
-        const goalType = goals?.career_goal?.toLowerCase() || '';
-        const requiresJobTransition = goalType.includes('new job') || goalType.includes('job change') || goalType.includes('transition');
-        setNeedsJobTransition(requiresJobTransition);
-        
-        const convertedPath = convertSkillPlanToPath(
-          skillPlanResult.skill_plan,
-          goals?.target_role || 'Career Transition',
-          [],
-          newStrategy?.id || '',
-          requiresJobTransition
-        );
-        setPathData(convertedPath);
-        toast.success('Your Skill Path has been generated!');
-      } else if (!strategyData.skill_development_plan) {
-        // Generate skill plan only
-        const { data: skillPlanResult, error } = await supabase.functions.invoke('generate-skill-plan', {
-          body: {
-            career_strategy: strategyData.strategy,
-            mbti_result: strategyData.mbti_result,
-            disc_result: strategyData.disc_result,
-            strengths_result: strategyData.strengths_result,
-            career_goals: strategyData.career_goals,
-          },
-        });
-
-        if (error) throw error;
-
-        await supabase.from('career_strategies').update({
-          skill_development_plan: skillPlanResult.skill_plan as unknown as Json,
-        }).eq('id', strategyData.id);
-
-        const goals = strategyData.career_goals as { target_role?: string; career_goal?: string } | null;
-        const goalType = goals?.career_goal?.toLowerCase() || '';
-        const requiresJobTransition = goalType.includes('new job') || goalType.includes('job change') || goalType.includes('transition');
-        setNeedsJobTransition(requiresJobTransition);
-        
-        const convertedPath = convertSkillPlanToPath(
-          skillPlanResult.skill_plan,
-          goals?.target_role || 'Career Transition',
-          [],
-          strategyData.id,
-          requiresJobTransition
-        );
-        setPathData(convertedPath);
-        toast.success('Your Skill Path has been generated!');
-      }
-    } catch (error: any) {
-      console.error('Error generating path:', error);
-      if (error.message?.includes('429')) {
-        toast.error('Rate limit exceeded. Please try again in a moment.');
-      } else if (error.message?.includes('402')) {
-        toast.error('Please add credits to continue using AI features.');
-      } else {
-        toast.error('Failed to generate Skill Path');
-      }
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleRegenerate = async () => {
-    if (!user) return;
-    setIsGenerating(true);
-
-    try {
-      // Get fresh assessment data
-      const [mbtiRes, discRes, strengthsRes, profileRes] = await Promise.all([
-        supabase.from('mbti_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
-        supabase.from('disc_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
-        supabase.from('strengths_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
-        supabase.from('profiles').select('career_goals').eq('user_id', user.id).single(),
-      ]);
-
-      // Generate new strategy
-      const { data: strategyResult, error: strategyError } = await supabase.functions.invoke('generate-strategy', {
-        body: {
-          mbti_result: mbtiRes.data?.result,
-          disc_result: discRes.data?.result,
-          strengths_result: strengthsRes.data?.result,
-          career_goals: profileRes.data?.career_goals,
-        },
-      });
-
-      if (strategyError) throw strategyError;
-
-      // Create new strategy record (archive old one by creating new)
-      const { data: newStrategy } = await supabase.from('career_strategies').insert({
-        user_id: user.id,
-        mbti_result: mbtiRes.data?.result as unknown as Json,
-        disc_result: discRes.data?.result as unknown as Json,
-        strengths_result: strengthsRes.data?.result as unknown as Json,
-        career_goals: profileRes.data?.career_goals as unknown as Json,
-        strategy: strategyResult.strategy as unknown as Json,
-      }).select().single();
-
-      // Generate new skill plan
-      const { data: skillPlanResult, error: skillError } = await supabase.functions.invoke('generate-skill-plan', {
-        body: {
-          career_strategy: strategyResult.strategy,
-          mbti_result: mbtiRes.data?.result,
-          disc_result: discRes.data?.result,
-          strengths_result: strengthsRes.data?.result,
-          career_goals: profileRes.data?.career_goals,
-        },
-      });
-
-      if (skillError) throw skillError;
-
-      await supabase.from('career_strategies').update({
-        skill_development_plan: skillPlanResult.skill_plan as unknown as Json,
-      }).eq('id', newStrategy?.id);
-
-      const goals = profileRes.data?.career_goals as { target_role?: string; career_goal?: string } | null;
-      const goalType = goals?.career_goal?.toLowerCase() || '';
-      const requiresJobTransition = goalType.includes('new job') || goalType.includes('job change') || goalType.includes('transition');
-      setNeedsJobTransition(requiresJobTransition);
-      
-      const convertedPath = convertSkillPlanToPath(
-        skillPlanResult.skill_plan,
-        goals?.target_role || 'Career Transition',
-        [],
-        newStrategy?.id || '',
-        requiresJobTransition
-      );
-      
-      setPathData(convertedPath);
-      setCompletedTasks([]);
-      setShowAssessmentChangeModal(false);
-      setAssessmentHashMismatch(false);
-      toast.success('Your Skill Path has been regenerated!');
-    } catch (error: any) {
-      console.error('Error regenerating path:', error);
-      toast.error('Failed to regenerate Skill Path');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleKeepCurrent = () => {
-    setShowAssessmentChangeModal(false);
-  };
-
   const handleTodayFocusClick = () => {
     if (pathData?.todaysFocus) {
-      navigate(`/path/task/${pathData.todaysFocus.taskId}`, { 
-        state: { phaseId: pathData.todaysFocus.phaseId } 
+      navigate(`/path/task/${pathData.todaysFocus.taskId}`, {
+        state: { phaseId: pathData.todaysFocus.phaseId },
       });
     }
   };
@@ -559,59 +138,12 @@ export default function SkillPath() {
   if (loading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <LoadingSpinner size="lg" text="Loading your Skill Path..." />
+        <LoadingSpinner size="lg" text="Loading your path..." />
       </div>
     );
   }
 
-  // Show assessment lock screen
-  if (!assessmentsComplete) {
-    return (
-      <div className="min-h-screen bg-background">
-        <UserHeader />
-        <main className="container max-w-3xl py-16 px-4 md:px-8">
-          <div className="text-center animate-fade-up">
-            <div className="inline-flex items-center justify-center w-20 h-20 chamfer bg-muted mb-6">
-              <Lock className="w-10 h-10 text-muted-foreground" />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">
-              Complete Your Assessment
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-              Complete your assessment to generate your personalized Skill Path.
-            </p>
-            <div className="chamfer bg-card p-6 max-w-md mx-auto mb-8">
-              <h3 className="font-semibold mb-4">Required Assessments:</h3>
-              <ul className="space-y-3 text-left">
-                <li className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full border-2 border-muted" />
-                  <span>MBTI Personality Assessment</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full border-2 border-muted" />
-                  <span>DISC Behavioral Assessment</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full border-2 border-muted" />
-                  <span>Strengths Assessment</span>
-                </li>
-              </ul>
-            </div>
-            <Button 
-              size="lg" 
-              onClick={() => navigate('/welcome')}
-              className="rounded-full"
-            >
-              Complete Assessments
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  // Show generation screen if no path
+  // No path yet
   if (!pathData) {
     return (
       <div className="min-h-screen bg-background">
@@ -619,31 +151,21 @@ export default function SkillPath() {
         <main className="container max-w-3xl py-16 px-4 md:px-8">
           <div className="text-center animate-fade-up">
             <div className="inline-flex items-center justify-center w-20 h-20 chamfer bg-primary/10 mb-6">
-              <Target className="w-10 h-10 text-primary" />
+              <Compass className="w-10 h-10 text-primary" />
             </div>
             <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">
-              Generate Your Skill Path
+              No Path Generated Yet
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-              Based on your personality, strengths, and career goals, we'll create a personalized learning path with phases and actionable tasks.
+              Complete the CLARITY flow and commit to a path to generate your personalized execution plan.
             </p>
             <Button 
               size="lg" 
-              onClick={generatePath}
-              disabled={isGenerating}
-              className="gradient-primary text-primary-foreground rounded-full px-8"
+              onClick={() => navigate('/welcome')}
+              className="rounded-full"
             >
-              {isGenerating ? (
-                <>
-                  <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-                  Generating Your Path...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  Generate My Skill Path
-                </>
-              )}
+              Go to Dashboard
+              <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
         </main>
@@ -654,15 +176,6 @@ export default function SkillPath() {
   return (
     <div className="min-h-screen bg-background">
       <UserHeader />
-
-      {/* Assessment Change Modal */}
-      <AssessmentChangeModal
-        open={showAssessmentChangeModal}
-        onClose={() => setShowAssessmentChangeModal(false)}
-        onRegenerate={handleRegenerate}
-        onKeepCurrent={handleKeepCurrent}
-        isRegenerating={isGenerating}
-      />
 
       {/* Path Header */}
       <div className="border-b border-border bg-card/50">
@@ -710,7 +223,7 @@ export default function SkillPath() {
       </div>
 
       <main className="container max-w-5xl py-8 px-4 md:px-8">
-        {/* Success Growth Card - Shows when 100% complete */}
+        {/* Completion Card */}
         {pathData.totalProgress === 100 && (
           <div className="mb-8 p-6 chamfer bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 animate-fade-up">
             <div className="flex items-start gap-4">
@@ -718,15 +231,12 @@ export default function SkillPath() {
                 <Trophy className="w-8 h-8 text-primary" />
               </div>
               <div className="flex-1">
-                <Badge className="mb-2 bg-primary/20 text-primary border-0">
-                  Path Complete
-                </Badge>
+                <Badge className="mb-2 bg-primary/20 text-primary border-0">Path Complete</Badge>
                 <h2 className="text-xl font-serif font-bold text-foreground mb-2">
-                  Congratulations! Ready for Continuous Growth?
+                  Congratulations! You've completed your path!
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  You've completed your skill development path. Unlock your personalized 90-day onboarding plan 
-                  and leadership development track to accelerate your career.
+                  You've finished all phases and tasks. Consider exploring new growth opportunities.
                 </p>
                 <Button 
                   onClick={() => navigate('/success-growth')}
@@ -743,25 +253,15 @@ export default function SkillPath() {
 
         {/* Today's Focus */}
         {pathData.todaysFocus && pathData.totalProgress < 100 && (
-          <TodayFocus 
-            pathData={pathData}
-            onTaskClick={handleTodayFocusClick}
-          />
+          <TodayFocus pathData={pathData} onTaskClick={handleTodayFocusClick} />
         )}
 
         {/* Phase Cards Grid */}
         <div className="grid md:grid-cols-2 gap-6">
           {pathData.phases.map((phase, index) => {
-            // Phase is locked if previous phase is not 100% complete
             const isLocked = index > 0 && pathData.phases[index - 1].progress < 100;
-            
             return (
-              <PhaseCard 
-                key={phase.id}
-                phase={phase}
-                isLocked={isLocked}
-                index={index}
-              />
+              <PhaseCard key={phase.id} phase={phase} isLocked={isLocked} index={index} />
             );
           })}
         </div>

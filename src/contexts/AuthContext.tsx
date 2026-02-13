@@ -10,6 +10,8 @@ interface Profile {
   has_paid: boolean;
   created_at: string;
   updated_at: string;
+  path_committed?: boolean;
+  personal_path_generated?: boolean;
 }
 
 interface SubscriptionState {
