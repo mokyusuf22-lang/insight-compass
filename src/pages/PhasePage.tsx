@@ -23,7 +23,7 @@ import {
   Clock,
   Target,
 } from 'lucide-react';
-import type { PathPhase, PathTask, SkillPathData } from '@/types/skillPath';
+import type { PathPhase, PathTask } from '@/types/skillPath';
 
 import phaseAnalysis from '@/assets/phase-analysis.jpg';
 import phaseFoundation from '@/assets/phase-foundation.jpg';
@@ -67,22 +67,17 @@ const statusColors = {
 
 export default function PhasePage() {
   const { id } = useParams<{ id: string }>();
-  const { user, profile, loading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   
   const [phase, setPhase] = useState<PathPhase | null>(null);
-  const [pathData, setPathData] = useState<SkillPathData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        navigate('/auth');
-      } else if (!profile?.has_paid) {
-        navigate('/paywall');
-      }
+    if (!loading && !user) {
+      navigate('/auth');
     }
-  }, [user, profile, loading, navigate]);
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     const loadPhase = async () => {
@@ -90,41 +85,45 @@ export default function PhasePage() {
       setIsLoading(true);
 
       try {
-        const { data: strategyData } = await supabase
-          .from('career_strategies')
+        const { data: personalPath } = await supabase
+          .from('personal_paths')
           .select('*')
           .eq('user_id', user.id)
+          .eq('is_active', true)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        if (strategyData?.skill_development_plan) {
-          const { data: weeklyPlans } = await supabase
-            .from('weekly_execution_plans')
-            .select('completed_tasks')
-            .eq('user_id', user.id);
-
-          const completedTaskIds: string[] = [];
-          weeklyPlans?.forEach(plan => {
-            const tasks = plan.completed_tasks as string[] | null;
-            if (tasks) completedTaskIds.push(...tasks.map(t => String(t)));
-          });
-
-          const goals = strategyData.career_goals as { target_role?: string } | null;
-          const skillPlan = strategyData.skill_development_plan as any;
+        if (personalPath?.phases) {
+          const phases = personalPath.phases as any[];
+          const foundPhase = phases.find((p: any) => p.id === id);
           
-          const convertedPath = convertToPathData(
-            skillPlan,
-            goals?.target_role || 'Career Transition',
-            completedTaskIds,
-            strategyData.id
-          );
-          
-          setPathData(convertedPath);
-          
-          const foundPhase = convertedPath.phases.find(p => p.id === id);
           if (foundPhase) {
-            setPhase(foundPhase);
+            const phaseIdx = phases.indexOf(foundPhase);
+            const tasks: PathTask[] = (foundPhase.tasks || []).map((t: any) => ({
+              id: t.id,
+              title: t.title,
+              description: t.description || '',
+              type: t.type || 'practice',
+              estimatedMinutes: t.estimatedMinutes || 30,
+              status: t.status || 'locked',
+              successCriteria: t.successCriteria || '',
+              instructions: t.instructions,
+            }));
+
+            const completedInPhase = tasks.filter(t => t.status === 'completed').length;
+
+            setPhase({
+              id: foundPhase.id,
+              phaseNumber: foundPhase.phaseNumber || phaseIdx + 1,
+              title: foundPhase.title,
+              duration: foundPhase.duration || '',
+              goal: foundPhase.goal || '',
+              successDefinition: foundPhase.successDefinition || '',
+              progress: tasks.length > 0 ? Math.round((completedInPhase / tasks.length) * 100) : 0,
+              image: phaseImageMap[phaseIdx % 4],
+              tasks,
+            });
           } else {
             toast.error('Phase not found');
             navigate('/path');
@@ -143,96 +142,6 @@ export default function PhasePage() {
     if (user) loadPhase();
   }, [user, id, navigate]);
 
-  const convertToPathData = (
-    skillPlan: any,
-    targetRole: string,
-    completedTaskIds: string[],
-    strategyId: string
-  ): SkillPathData => {
-    let globalTaskIndex = 0;
-    
-    const phases: PathPhase[] = (skillPlan.skill_development_plan || []).map((phaseData: any, phaseIdx: number) => {
-      const tasks: PathTask[] = [];
-      
-      phaseData.skill_clusters?.forEach((cluster: any, clusterIdx: number) => {
-        cluster.skills?.forEach((skill: string, skillIdx: number) => {
-          const taskId = `phase${phaseIdx}-task${globalTaskIndex}`;
-          const isCompleted = completedTaskIds.includes(taskId);
-          
-          // Check if previous task is completed for sequential locking
-          const prevTaskCompleted = globalTaskIndex === 0 || 
-            completedTaskIds.includes(`phase${phaseIdx}-task${globalTaskIndex - 1}`) ||
-            tasks[tasks.length - 1]?.status === 'completed';
-          
-          let status: PathTask['status'] = 'locked';
-          if (isCompleted) {
-            status = 'completed';
-          } else if (phaseIdx === 0 && tasks.length === 0) {
-            status = 'available';
-          } else if (prevTaskCompleted && phaseIdx === 0) {
-            status = 'available';
-          }
-          
-          tasks.push({
-            id: taskId,
-            title: skill,
-            description: `Develop competency in ${skill.toLowerCase()}`,
-            type: skillIdx % 4 === 0 ? 'reading' : skillIdx % 4 === 1 ? 'practice' : skillIdx % 4 === 2 ? 'reflection' : 'project',
-            estimatedMinutes: 30 + (skillIdx * 10),
-            status,
-            successCriteria: `Complete ${skill.toLowerCase()} and document your learnings`,
-          });
-          
-          globalTaskIndex++;
-        });
-      });
-
-      // Update task statuses based on sequential completion
-      for (let i = 1; i < tasks.length; i++) {
-        if (tasks[i].status === 'locked' && tasks[i - 1].status === 'completed') {
-          tasks[i].status = 'available';
-        }
-      }
-
-      const completedInPhase = tasks.filter(t => t.status === 'completed').length;
-      
-      return {
-        id: `phase${phaseIdx}`,
-        phaseNumber: phaseIdx + 1,
-        title: phaseData.phase,
-        duration: phaseData.duration,
-        goal: phaseData.exit_criteria,
-        successDefinition: phaseData.exit_criteria,
-        progress: tasks.length > 0 ? Math.round((completedInPhase / tasks.length) * 100) : 0,
-        image: phaseImageMap[phaseIdx % 4],
-        tasks,
-      };
-    });
-
-    // Update phase locking - phases are unlocked when previous is 100% complete
-    for (let i = 1; i < phases.length; i++) {
-      if (phases[i - 1].progress < 100) {
-        phases[i].tasks = phases[i].tasks.map(t => ({ ...t, status: 'locked' as const }));
-      } else {
-        // Unlock first task of next phase
-        if (phases[i].tasks.length > 0 && phases[i].tasks[0].status === 'locked') {
-          phases[i].tasks[0].status = 'available';
-        }
-      }
-    }
-
-    const allTasks = phases.flatMap(p => p.tasks);
-    const totalCompleted = allTasks.filter(t => t.status === 'completed').length;
-
-    return {
-      id: strategyId,
-      title: `${targetRole} Path`,
-      description: "A personalized, step-by-step roadmap based on your personality, strengths, and career goals.",
-      totalProgress: allTasks.length > 0 ? Math.round((totalCompleted / allTasks.length) * 100) : 0,
-      phases,
-    };
-  };
-
   const handleTaskClick = (task: PathTask) => {
     if (task.status === 'locked') {
       toast.error('Complete previous tasks to unlock this one');
@@ -249,11 +158,9 @@ export default function PhasePage() {
     );
   }
 
-  if (!phase) {
-    return null;
-  }
+  if (!phase) return null;
 
-  const phaseIndex = pathData?.phases.findIndex(p => p.id === id) || 0;
+  const phaseIndex = parseInt(phase.id.replace('phase', '')) || 0;
   const imageUrl = phaseImageMap[phaseIndex % 4];
 
   return (
@@ -262,11 +169,7 @@ export default function PhasePage() {
       
       {/* Phase Header */}
       <div className="relative h-48 md:h-64 overflow-hidden">
-        <img 
-          src={imageUrl} 
-          alt={phase.title}
-          className="w-full h-full object-cover"
-        />
+        <img src={imageUrl} alt={phase.title} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
           <div className="container max-w-4xl">
@@ -275,7 +178,7 @@ export default function PhasePage() {
               className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Skill Path
+              Back to Path
             </Link>
           </div>
         </div>
@@ -311,7 +214,6 @@ export default function PhasePage() {
             </div>
           </div>
 
-          {/* Phase Progress */}
           <div>
             <div className="flex items-center justify-between text-sm mb-2">
               <span className="text-muted-foreground">Phase Progress</span>
@@ -326,7 +228,7 @@ export default function PhasePage() {
           <h2 className="text-lg font-semibold mb-4">Tasks ({phase.tasks.length})</h2>
           
           {phase.tasks.map((task, index) => {
-            const TaskTypeIcon = taskTypeIcons[task.type];
+            const TaskTypeIcon = taskTypeIcons[task.type] || Wrench;
             const StatusIcon = statusIcons[task.status];
             const isClickable = task.status !== 'locked';
             
@@ -340,7 +242,6 @@ export default function PhasePage() {
                 }`}
                 onClick={() => handleTaskClick(task)}
               >
-                {/* Task Number & Status */}
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
                     {index + 1}
@@ -357,18 +258,16 @@ export default function PhasePage() {
                   )}
                 </div>
 
-                {/* Task Type Icon */}
                 <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
                   <TaskTypeIcon className="w-4 h-4 text-secondary-foreground" />
                 </div>
 
-                {/* Task Info */}
                 <div className="flex-1 min-w-0">
                   <h3 className={`font-medium ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}`}>
                     {task.title}
                   </h3>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                    <span>{taskTypeLabels[task.type]}</span>
+                    <span>{taskTypeLabels[task.type] || 'Task'}</span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {task.estimatedMinutes} min
@@ -376,17 +275,14 @@ export default function PhasePage() {
                   </div>
                 </div>
 
-                {/* Action Badge */}
                 {task.status === 'in_progress' && (
                   <Badge className="bg-primary text-primary-foreground flex-shrink-0">
-                    Continue
-                    <ArrowRight className="w-3 h-3 ml-1" />
+                    Continue <ArrowRight className="w-3 h-3 ml-1" />
                   </Badge>
                 )}
                 {task.status === 'available' && (
                   <Badge variant="secondary" className="flex-shrink-0">
-                    Start
-                    <ArrowRight className="w-3 h-3 ml-1" />
+                    Start <ArrowRight className="w-3 h-3 ml-1" />
                   </Badge>
                 )}
                 {task.status === 'completed' && (

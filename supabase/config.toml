@@ -23,3 +23,6 @@ verify_jwt = true
 
 [functions.generate-path-options]
 verify_jwt = true
+
+[functions.generate-personal-path]
+verify_jwt = true

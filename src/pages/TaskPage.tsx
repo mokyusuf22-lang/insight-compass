@@ -22,16 +22,16 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
-import type { PathPhase, PathTask, UserProfile } from '@/types/skillPath';
+import type { PathPhase, PathTask } from '@/types/skillPath';
 
-const taskTypeIcons = {
+const taskTypeIcons: Record<string, any> = {
   reading: BookOpen,
   practice: Wrench,
   reflection: FileText,
   project: Folder,
 };
 
-const taskTypeLabels = {
+const taskTypeLabels: Record<string, string> = {
   reading: 'Reading',
   practice: 'Practice',
   reflection: 'Reflection',
@@ -41,12 +41,12 @@ const taskTypeLabels = {
 export default function TaskPage() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
-  const { user, profile, loading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   
   const [task, setTask] = useState<PathTask | null>(null);
   const [phase, setPhase] = useState<PathPhase | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile>({});
+  const [pathId, setPathId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isCompleting, setIsCompleting] = useState(false);
   const [question, setQuestion] = useState('');
@@ -54,19 +54,14 @@ export default function TaskPage() {
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [phaseTaskCount, setPhaseTaskCount] = useState(0);
   const [completedInPhase, setCompletedInPhase] = useState(0);
-  const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
 
   const phaseId = location.state?.phaseId;
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        navigate('/auth');
-      } else if (!profile?.has_paid) {
-        navigate('/paywall');
-      }
+    if (!loading && !user) {
+      navigate('/auth');
     }
-  }, [user, profile, loading, navigate]);
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     const loadTask = async () => {
@@ -74,149 +69,69 @@ export default function TaskPage() {
       setIsLoading(true);
 
       try {
-        // Fetch strategy and completed tasks in parallel
-        const [strategyRes, plansRes] = await Promise.all([
-          supabase
-            .from('career_strategies')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-          supabase
-            .from('weekly_execution_plans')
-            .select('completed_tasks')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-        ]);
+        const { data: personalPath } = await supabase
+          .from('personal_paths')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-        const strategyData = strategyRes.data;
-        const completedTasks = (plansRes.data?.completed_tasks as string[]) || [];
+        if (!personalPath?.phases) {
+          toast.error('No path found');
+          navigate('/path');
+          return;
+        }
 
-        if (strategyData) {
-          const mbti = strategyData.mbti_result as { type?: string } | null;
-          const disc = strategyData.disc_result as { primaryStyle?: string } | null;
-          const strengths = strategyData.strengths_result as { ranked_strengths?: { name: string }[] } | null;
-          const goals = strategyData.career_goals as { target_role?: string } | null;
+        setPathId(personalPath.id);
+        const phases = personalPath.phases as any[];
 
-          setUserProfile({
-            mbtiType: mbti?.type,
-            discStyle: disc?.primaryStyle?.replace('High ', ''),
-            topStrengths: strengths?.ranked_strengths?.slice(0, 3).map(s => s.name),
-            careerGoal: goals?.target_role,
-          });
+        let foundTask: PathTask | null = null;
+        let foundPhase: PathPhase | null = null;
 
-          if (strategyData.skill_development_plan) {
-            const skillPlan = strategyData.skill_development_plan as any;
-            
-            let foundTask: PathTask | null = null;
-            let foundPhase: PathPhase | null = null;
-            let globalTaskIndex = 0;
-            let taskIndexInPhase = 0;
-            let phaseTaskIds: string[] = [];
+        for (const [phaseIdx, phaseData] of phases.entries()) {
+          for (const taskData of (phaseData.tasks || [])) {
+            if (taskData.id === id) {
+              foundTask = {
+                id: taskData.id,
+                title: taskData.title,
+                description: taskData.description || '',
+                type: taskData.type || 'practice',
+                estimatedMinutes: taskData.estimatedMinutes || 30,
+                status: taskData.status || 'available',
+                successCriteria: taskData.successCriteria || '',
+                instructions: taskData.instructions,
+              };
 
-            for (const [phaseIdx, phaseData] of (skillPlan.skill_development_plan || []).entries()) {
-              const currentPhaseTaskIds: string[] = [];
-              let localTaskIndex = 0;
-              
-              for (const cluster of (phaseData.skill_clusters || [])) {
-                for (const [skillIdx, skill] of (cluster.skills || []).entries()) {
-                  const taskId = `phase${phaseIdx}-task${globalTaskIndex}`;
-                  currentPhaseTaskIds.push(taskId);
-                  
-                  if (taskId === id) {
-                    foundTask = {
-                      id: taskId,
-                      title: skill,
-                      description: `Develop competency in ${skill.toLowerCase()}`,
-                      type: skillIdx % 4 === 0 ? 'reading' : skillIdx % 4 === 1 ? 'practice' : skillIdx % 4 === 2 ? 'reflection' : 'project',
-                      estimatedMinutes: 30 + (skillIdx * 10),
-                      status: 'available',
-                      successCriteria: `Complete ${skill.toLowerCase()} and document your learnings`,
-                    };
-                    
-                    foundPhase = {
-                      id: `phase${phaseIdx}`,
-                      phaseNumber: phaseIdx + 1,
-                      title: phaseData.phase,
-                      duration: phaseData.duration,
-                      goal: phaseData.exit_criteria,
-                      successDefinition: phaseData.exit_criteria,
-                      progress: 0,
-                      image: '',
-                      tasks: [],
-                    };
-                    
-                    taskIndexInPhase = localTaskIndex;
-                    phaseTaskIds = currentPhaseTaskIds;
-                  }
-                  globalTaskIndex++;
-                  localTaskIndex++;
-                }
-              }
-              
-              // If we found the task, finalize phase task IDs
-              if (foundTask && foundPhase) {
-                // Continue collecting remaining task IDs for this phase
-                for (const cluster of (phaseData.skill_clusters || [])) {
-                  for (const skill of (cluster.skills || [])) {
-                    const remainingId = `phase${phaseIdx}-task${globalTaskIndex}`;
-                    if (!phaseTaskIds.includes(remainingId)) {
-                      // Already collected during the main loop
-                    }
-                  }
-                }
-                break;
-              }
-            }
+              const phaseTasks = (phaseData.tasks || []);
+              const completed = phaseTasks.filter((t: any) => t.status === 'completed').length;
+              setPhaseTaskCount(phaseTasks.length);
+              setCompletedInPhase(completed);
 
-            if (foundTask && foundPhase) {
-              // Recalculate phase tasks correctly
-              let correctPhaseTaskIds: string[] = [];
-              let idx = 0;
-              const phaseNum = parseInt(foundPhase.id.replace('phase', ''));
-              
-              for (const cluster of ((skillPlan.skill_development_plan || [])[phaseNum]?.skill_clusters || [])) {
-                for (const skill of (cluster.skills || [])) {
-                  correctPhaseTaskIds.push(`phase${phaseNum}-task${idx}`);
-                  idx++;
-                }
-              }
-              
-              // Actually we need global index, let me fix this
-              correctPhaseTaskIds = [];
-              let gIdx = 0;
-              for (const [pIdx, pData] of (skillPlan.skill_development_plan || []).entries()) {
-                if (pIdx < phaseNum) {
-                  for (const c of (pData.skill_clusters || [])) {
-                    gIdx += (c.skills || []).length;
-                  }
-                } else if (pIdx === phaseNum) {
-                  for (const c of (pData.skill_clusters || [])) {
-                    for (const s of (c.skills || [])) {
-                      correctPhaseTaskIds.push(`phase${pIdx}-task${gIdx}`);
-                      gIdx++;
-                    }
-                  }
-                  break;
-                }
-              }
-              
-              const completedInThisPhase = correctPhaseTaskIds.filter(tid => completedTasks.includes(tid)).length;
-              const currentIndex = correctPhaseTaskIds.indexOf(id) + 1;
-              
-              setPhaseTaskCount(correctPhaseTaskIds.length);
-              setCompletedInPhase(completedInThisPhase);
-              setCurrentTaskIndex(currentIndex);
-              setTask(foundTask);
-              setPhase(foundPhase);
-            } else {
-              toast.error('Task not found');
-              navigate('/path');
+              foundPhase = {
+                id: phaseData.id,
+                phaseNumber: phaseData.phaseNumber || phaseIdx + 1,
+                title: phaseData.title,
+                duration: phaseData.duration || '',
+                goal: phaseData.goal || '',
+                successDefinition: phaseData.successDefinition || '',
+                progress: 0,
+                image: '',
+                tasks: [],
+              };
+              break;
             }
           }
+          if (foundTask) break;
+        }
+
+        if (foundTask && foundPhase) {
+          setTask(foundTask);
+          setPhase(foundPhase);
+        } else {
+          toast.error('Task not found');
+          navigate('/path');
         }
       } catch (error) {
         console.error('Error loading task:', error);
@@ -230,31 +145,66 @@ export default function TaskPage() {
   }, [user, id, navigate]);
 
   const handleComplete = async () => {
-    if (!task || !user) return;
+    if (!task || !user || !pathId) return;
     setIsCompleting(true);
 
     try {
-      const { data: existingPlan } = await supabase
-        .from('weekly_execution_plans')
-        .select('id, completed_tasks')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // Load the personal path
+      const { data: personalPath } = await supabase
+        .from('personal_paths')
+        .select('*')
+        .eq('id', pathId)
+        .single();
 
-      if (existingPlan) {
-        const existing = (existingPlan.completed_tasks as string[]) || [];
-        await supabase.from('weekly_execution_plans').update({
-          completed_tasks: [...existing, task.id] as unknown as Json,
-        }).eq('id', existingPlan.id);
-      } else {
-        await supabase.from('weekly_execution_plans').insert({
-          user_id: user.id,
-          completed_tasks: [task.id] as unknown as Json,
-          tasks: [] as unknown as Json,
-          week_start_date: new Date().toISOString().split('T')[0],
-        });
+      if (!personalPath) throw new Error('Path not found');
+
+      const phases = personalPath.phases as any[];
+      let totalTasks = 0;
+      let totalCompleted = 0;
+
+      // Update task status in phases
+      const updatedPhases = phases.map((phase: any) => ({
+        ...phase,
+        tasks: (phase.tasks || []).map((t: any, tIdx: number, arr: any[]) => {
+          if (t.id === task.id) {
+            return { ...t, status: 'completed' };
+          }
+          return t;
+        }),
+      }));
+
+      // After marking complete, unlock next task
+      for (const phase of updatedPhases) {
+        for (let i = 0; i < phase.tasks.length; i++) {
+          const t = phase.tasks[i];
+          if (t.status === 'completed') {
+            // Unlock next task in same phase
+            if (i + 1 < phase.tasks.length && phase.tasks[i + 1].status === 'locked') {
+              phase.tasks[i + 1].status = 'available';
+            }
+          }
+          totalTasks++;
+          if (t.status === 'completed') totalCompleted++;
+        }
       }
+
+      // Unlock first task of next phase if current phase is complete
+      for (let pIdx = 0; pIdx < updatedPhases.length - 1; pIdx++) {
+        const allDone = updatedPhases[pIdx].tasks.every((t: any) => t.status === 'completed');
+        if (allDone && updatedPhases[pIdx + 1].tasks.length > 0 && updatedPhases[pIdx + 1].tasks[0].status === 'locked') {
+          updatedPhases[pIdx + 1].tasks[0].status = 'available';
+        }
+      }
+
+      const totalProgress = totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0;
+
+      await supabase
+        .from('personal_paths')
+        .update({
+          phases: updatedPhases as unknown as Json,
+          total_progress: totalProgress,
+        })
+        .eq('id', pathId);
 
       toast.success('Task completed!');
       
@@ -284,7 +234,7 @@ export default function TaskPage() {
             description: task.description,
             phase: phase.title,
           },
-          user_profile: userProfile,
+          user_profile: {},
         },
       });
 
@@ -295,31 +245,15 @@ export default function TaskPage() {
       } else if (data?.answer) {
         setAiResponse(data.answer);
       } else {
-        setAiResponse("I can help you with this task. Try breaking it down into smaller steps and focus on applying your strengths.");
+        setAiResponse("I can help you with this task. Try breaking it down into smaller steps.");
       }
     } catch (error: any) {
       console.error('Error asking AI:', error);
-      if (error.message?.includes('429')) {
-        toast.error('Rate limit exceeded. Please try again in a moment.');
-      } else {
-        toast.error('Failed to get AI response');
-      }
+      toast.error('Failed to get AI response');
     } finally {
       setIsAsking(false);
       setQuestion('');
     }
-  };
-
-  const getPersonalityInsight = () => {
-    if (userProfile.mbtiType) {
-      const type = userProfile.mbtiType;
-      if (type.includes('I')) {
-        return `As an ${type}, you may prefer to work through this independently first before discussing with others. Take your time to reflect deeply on the material.`;
-      } else if (type.includes('E')) {
-        return `As an ${type}, consider discussing your approach with a mentor or peer for added perspective. Your collaborative nature will help you learn faster.`;
-      }
-    }
-    return "This task aligns with your assessment results and will help build skills for your career goal.";
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -337,11 +271,9 @@ export default function TaskPage() {
     );
   }
 
-  if (!task || !phase) {
-    return null;
-  }
+  if (!task || !phase) return null;
 
-  const TaskIcon = taskTypeIcons[task.type];
+  const TaskIcon = taskTypeIcons[task.type] || Wrench;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -363,7 +295,6 @@ export default function TaskPage() {
           <p className="text-xs text-muted-foreground">Phase {phase.phaseNumber}: {phase.title}</p>
         </div>
 
-        {/* Task Progress Indicator */}
         <div className="hidden md:flex items-center gap-3 text-sm">
           <div className="flex items-center gap-1.5">
             <div className="flex gap-0.5">
@@ -373,11 +304,8 @@ export default function TaskPage() {
                   className={`w-2 h-2 rounded-full ${i < completedInPhase ? 'bg-primary' : i === completedInPhase ? 'bg-primary/50' : 'bg-muted'}`}
                 />
               ))}
-              {phaseTaskCount > 10 && (
-                <span className="text-xs text-muted-foreground ml-1">...</span>
-              )}
             </div>
-            <span className="text-muted-foreground text-xs">{completedInPhase} of {phaseTaskCount} completed</span>
+            <span className="text-muted-foreground text-xs">{completedInPhase} of {phaseTaskCount}</span>
           </div>
         </div>
 
@@ -386,7 +314,7 @@ export default function TaskPage() {
             <Clock className="w-3 h-3" />
             {task.estimatedMinutes} min
           </Badge>
-          <Badge variant="outline">{taskTypeLabels[task.type]}</Badge>
+          <Badge variant="outline">{taskTypeLabels[task.type] || 'Task'}</Badge>
         </div>
       </header>
 
@@ -394,7 +322,6 @@ export default function TaskPage() {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - AI Coach */}
         <aside className="hidden lg:flex w-[340px] border-r border-border bg-card flex-col">
-          {/* Coach Header */}
           <div className="p-4 flex items-start gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
               <Brain className="w-5 h-5 text-primary" />
@@ -405,17 +332,11 @@ export default function TaskPage() {
                 <span className="text-xs text-muted-foreground">Now</span>
               </div>
               <p className="text-sm mt-1 text-muted-foreground leading-relaxed">
-                {getPersonalityInsight()}
+                This task is part of your personal path. Focus on practical application and document your progress.
               </p>
-              {userProfile.careerGoal && (
-                <p className="text-sm mt-2 text-muted-foreground">
-                  Building skills for: <strong className="text-foreground">{userProfile.careerGoal}</strong>
-                </p>
-              )}
             </div>
           </div>
 
-          {/* AI Response */}
           {aiResponse && (
             <div className="px-4 pb-4">
               <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
@@ -424,10 +345,8 @@ export default function TaskPage() {
             </div>
           )}
 
-          {/* Spacer */}
           <div className="flex-1" />
 
-          {/* Suggestions */}
           <div className="px-4 pb-4">
             <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
               <Sparkles className="w-3 h-3" />
@@ -444,12 +363,11 @@ export default function TaskPage() {
                 className="text-xs px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full transition-colors"
                 onClick={() => setQuestion("What resources should I use?")}
               >
-                What resources should I use?
+                What resources?
               </button>
             </div>
           </div>
 
-          {/* Chat Input */}
           <div className="p-4 border-t border-border">
             <div className="relative">
               <Input
@@ -465,11 +383,7 @@ export default function TaskPage() {
                 disabled={isAsking || !question.trim()}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-primary disabled:opacity-50 transition-colors"
               >
-                {isAsking ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
+                {isAsking ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </button>
             </div>
           </div>
@@ -478,38 +392,54 @@ export default function TaskPage() {
         {/* Right Panel - Main Content */}
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-3xl mx-auto p-6 lg:p-10">
-            {/* Task Summary */}
             <div className="mb-8">
               <h2 className="text-2xl lg:text-3xl font-serif font-bold mb-4">Task Summary</h2>
               <p className="text-muted-foreground leading-relaxed text-base lg:text-lg">
-                {task.description}. This task is part of <strong>Phase {phase.phaseNumber}: {phase.title}</strong>. 
-                Focus on understanding the core concepts and applying them to your career context
-                {userProfile.careerGoal ? ` as a future ${userProfile.careerGoal}` : ''}.
+                {task.description}
               </p>
             </div>
 
-            {/* What You Need To Do */}
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold mb-4">What You Need To Do</h3>
-              <ol className="space-y-3">
-                <li className="flex items-start gap-3">
-                  <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary flex-shrink-0">1</span>
-                  <span>Review and understand the skill: <strong>{task.title}</strong></span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary flex-shrink-0">2</span>
-                  <span>Research best practices and examples relevant to your career goal</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary flex-shrink-0">3</span>
-                  <span>Apply what you've learned through practice or documentation</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary flex-shrink-0">4</span>
-                  <span>Reflect on how this skill connects to your overall career development</span>
-                </li>
-              </ol>
-            </div>
+            {/* Instructions */}
+            {task.instructions && task.instructions.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold mb-4">What You Need To Do</h3>
+                <ol className="space-y-3">
+                  {task.instructions.map((step, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary flex-shrink-0">
+                        {i + 1}
+                      </span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {/* Fallback instructions if none provided */}
+            {(!task.instructions || task.instructions.length === 0) && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold mb-4">What You Need To Do</h3>
+                <ol className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary flex-shrink-0">1</span>
+                    <span>Review and understand the task: <strong>{task.title}</strong></span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary flex-shrink-0">2</span>
+                    <span>Research best practices and examples relevant to your goal</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary flex-shrink-0">3</span>
+                    <span>Apply what you've learned through practice or documentation</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary flex-shrink-0">4</span>
+                    <span>Reflect on how this connects to your overall development</span>
+                  </li>
+                </ol>
+              </div>
+            )}
 
             {/* Success Criteria */}
             <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-5">
@@ -526,9 +456,7 @@ export default function TaskPage() {
       {/* Bottom Action Bar */}
       <footer className="h-16 border-t border-border bg-card flex items-center justify-between px-4 lg:px-6">
         <div className="flex items-center gap-3">
-          <Badge variant="outline" className="hidden sm:flex">
-            Phase {phase.phaseNumber}
-          </Badge>
+          <Badge variant="outline" className="hidden sm:flex">Phase {phase.phaseNumber}</Badge>
           <span className="text-sm text-muted-foreground hidden md:block">{phase.title}</span>
         </div>
 
@@ -551,7 +479,7 @@ export default function TaskPage() {
         </Button>
       </footer>
 
-      {/* Mobile AI Coach Drawer Trigger */}
+      {/* Mobile AI Coach Trigger */}
       <div className="lg:hidden fixed bottom-20 right-4 z-40">
         <Button
           size="icon"
