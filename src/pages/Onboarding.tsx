@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, User, Briefcase, Heart, GraduationCap, MapPin, Sparkles } from 'lucide-react';
+import { ArrowRight, User, Briefcase, Heart, GraduationCap, MapPin, Sparkles, Mail } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +22,7 @@ interface OnboardingData {
   hasChildren: string;
   location: string;
   education: string;
+  contactInfo: string;
   hobbies: string;
   personalGoal: string;
   careerGoal: string;
@@ -78,6 +79,7 @@ export default function Onboarding() {
     hasChildren: '',
     location: '',
     education: '',
+    contactInfo: '',
     hobbies: '',
     personalGoal: '',
     careerGoal: '',
@@ -136,12 +138,8 @@ export default function Onboarding() {
       // Always mark onboarding complete locally for non-auth flow
       setLocalProgress('onboarding_complete', true);
 
-      // If not logged in, send to auth first (assessments need DB access)
-      if (!user) {
-        navigate('/auth', { state: { from: '/assessment/blob-tree' } });
-      } else {
-        navigate('/assessment/blob-tree');
-      }
+      // Navigate to Initial Personality Hypothesis (next step in CLARITY flow)
+      navigate('/initial-assessment');
     } catch (error) {
       console.error('Error saving onboarding data:', error);
       toast({
@@ -336,6 +334,20 @@ export default function Onboarding() {
                     placeholder="e.g., Reading, running, cooking, travel"
                     value={formData.hobbies}
                     onChange={(e) => handleChange('hobbies', e.target.value)}
+                    className="h-12"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactInfo" className="flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    Preferred contact information
+                  </Label>
+                  <Input
+                    id="contactInfo"
+                    placeholder="e.g., email@example.com or +44 7700 900000"
+                    value={formData.contactInfo}
+                    onChange={(e) => handleChange('contactInfo', e.target.value)}
                     className="h-12"
                   />
                 </div>
