@@ -60,7 +60,12 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<Onboarding />} />
-            {/* Flow-gated routes — no auth required until dashboard */}
+            {/* CLARITY Flow — gated routes in sequence */}
+            <Route path="/initial-assessment" element={<RequireStep requireAuth={false}><InitialAssessment /></RequireStep>} />
+            <Route path="/initial-results" element={<RequireStep requireAuth={false}><InitialResults /></RequireStep>} />
+            <Route path="/goals-reality" element={<RequireStep requireAuth={false}><GoalsReality /></RequireStep>} />
+            <Route path="/assessment/wheel-of-life" element={<RequireStep><WheelOfLifeAssessment /></RequireStep>} />
+            <Route path="/assessment/wheel-of-life/results" element={<RequireStep><WheelOfLifeResults /></RequireStep>} />
             <Route path="/assessment/blob-tree" element={<RequireStep requireAuth={false}><BlobTreeAssessment /></RequireStep>} />
             <Route path="/assessment/blob-tree/results" element={<RequireStep requireAuth={false}><BlobTreeResults /></RequireStep>} />
             <Route path="/assessment/value-map" element={<RequireStep requireAuth={false}><ValueMapAssessment /></RequireStep>} />
@@ -73,10 +78,7 @@ const App = () => (
             <Route path="/path" element={<RequireStep><SkillPath /></RequireStep>} />
             <Route path="/path/phase/:id" element={<RequireStep><PhasePage /></RequireStep>} />
             <Route path="/path/task/:id" element={<RequireStep><TaskPage /></RequireStep>} />
-            {/* Legacy assessment routes (no flow gating) */}
-            <Route path="/initial-assessment" element={<InitialAssessment />} />
-            <Route path="/initial-results" element={<InitialResults />} />
-            <Route path="/goals-reality" element={<GoalsReality />} />
+            {/* Legacy routes kept for backward compat */}
             <Route path="/assessment-recommendations" element={<AssessmentRecommendations />} />
             <Route path="/assessment/step1" element={<Step1Assessment />} />
             <Route path="/assessment/step1/results" element={<Step1Results />} />
@@ -86,8 +88,6 @@ const App = () => (
             <Route path="/assessment/disc/results" element={<DISCResults />} />
             <Route path="/assessment/strengths" element={<StrengthsAssessment />} />
             <Route path="/assessment/strengths/results" element={<StrengthsResults />} />
-            <Route path="/assessment/wheel-of-life" element={<WheelOfLifeAssessment />} />
-            <Route path="/assessment/wheel-of-life/results" element={<WheelOfLifeResults />} />
             {/* Redirects for deprecated routes */}
             <Route path="/strategy" element={<Navigate to="/path" replace />} />
             <Route path="/skill-plan" element={<Navigate to="/path" replace />} />

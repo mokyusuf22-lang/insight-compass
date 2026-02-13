@@ -251,8 +251,8 @@ export default function WheelOfLifeResults() {
           <Button variant="outline" className="flex-1" onClick={() => navigate('/assessment/wheel-of-life')}>
             Retake Assessment
           </Button>
-          <Button className="flex-1" onClick={() => navigate('/welcome')}>
-            Continue Your Journey
+          <Button className="flex-1" onClick={() => navigate('/assessment/blob-tree')}>
+            Continue to Blob Tree
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>

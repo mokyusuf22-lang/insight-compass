@@ -92,6 +92,10 @@ export default function WheelOfLifeAssessment() {
           .from('wheel_of_life_assessments' as any)
           .update({ scores, is_complete: true } as any)
           .eq('id', assessmentId);
+        // Set progress flag
+        if (user) {
+          await supabase.from('profiles').update({ wheel_of_life_complete: true }).eq('user_id', user.id);
+        }
         navigate(`/assessment/wheel-of-life/results?id=${assessmentId}`);
       }
     } catch (err) {

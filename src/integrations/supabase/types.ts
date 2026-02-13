@@ -312,6 +312,7 @@ export type Database = {
         Row: {
           blob_tree_complete: boolean
           career_goals: Json | null
+          challenges_complete: boolean
           created_at: string
           disc_completed: boolean
           email: string | null
@@ -332,10 +333,12 @@ export type Database = {
           updated_at: string
           user_id: string
           value_map_complete: boolean
+          wheel_of_life_complete: boolean
         }
         Insert: {
           blob_tree_complete?: boolean
           career_goals?: Json | null
+          challenges_complete?: boolean
           created_at?: string
           disc_completed?: boolean
           email?: string | null
@@ -356,10 +359,12 @@ export type Database = {
           updated_at?: string
           user_id: string
           value_map_complete?: boolean
+          wheel_of_life_complete?: boolean
         }
         Update: {
           blob_tree_complete?: boolean
           career_goals?: Json | null
+          challenges_complete?: boolean
           created_at?: string
           disc_completed?: boolean
           email?: string | null
@@ -380,6 +385,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           value_map_complete?: boolean
+          wheel_of_life_complete?: boolean
         }
         Relationships: []
       }

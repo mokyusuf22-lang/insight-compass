@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { setLocalProgress } from '@/components/RequireStep';
 import { Button } from '@/components/ui/button';
 import { QuestionCard } from '@/components/assessment/QuestionCard';
 import { ProgressBar } from '@/components/assessment/ProgressBar';
@@ -259,6 +261,11 @@ export default function InitialAssessment() {
         completed: true,
         timestamp: Date.now(),
       }));
+      // Set progress flag
+      setLocalProgress('step1_completed', true);
+      if (user) {
+        supabase.from('profiles').update({ step1_completed: true }).eq('user_id', user.id).then();
+      }
       navigate('/initial-results');
     }
   };
