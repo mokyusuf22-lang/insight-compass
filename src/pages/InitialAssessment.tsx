@@ -271,7 +271,8 @@ export default function InitialAssessment() {
     }
   };
 
-  const question = initialQuestions[currentQuestion];
+  const safeIndex = Math.min(currentQuestion, initialQuestions.length - 1);
+  const question = initialQuestions[safeIndex];
   const hasAnswer = !!responses[question.id];
 
   return (
