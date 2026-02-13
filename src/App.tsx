@@ -44,6 +44,7 @@ import ValueMapAssessment from "./pages/ValueMapAssessment";
 import ValueMapResults from "./pages/ValueMapResults";
 import RealityReport from "./pages/RealityReport";
 import PathOptions from "./pages/PathOptions";
+import CommitmentPage from "./pages/CommitmentPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,7 @@ const App = () => (
             <Route path="/assessment/value-map/results" element={<RequireStep requireAuth={false}><ValueMapResults /></RequireStep>} />
             <Route path="/reality" element={<RequireStep><RealityReport /></RequireStep>} />
             <Route path="/path-options" element={<RequireStep><PathOptions /></RequireStep>} />
+            <Route path="/commit" element={<RequireStep><CommitmentPage /></RequireStep>} />
             {/* Auth required from dashboard onward */}
             <Route path="/welcome" element={<RequireStep><Welcome /></RequireStep>} />
             <Route path="/path" element={<RequireStep><SkillPath /></RequireStep>} />
