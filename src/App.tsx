@@ -42,6 +42,7 @@ import BlobTreeAssessment from "./pages/BlobTreeAssessment";
 import BlobTreeResults from "./pages/BlobTreeResults";
 import ValueMapAssessment from "./pages/ValueMapAssessment";
 import ValueMapResults from "./pages/ValueMapResults";
+import RealityReport from "./pages/RealityReport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/assessment/blob-tree/results" element={<RequireStep requireAuth={false}><BlobTreeResults /></RequireStep>} />
             <Route path="/assessment/value-map" element={<RequireStep requireAuth={false}><ValueMapAssessment /></RequireStep>} />
             <Route path="/assessment/value-map/results" element={<RequireStep requireAuth={false}><ValueMapResults /></RequireStep>} />
+            <Route path="/reality" element={<RequireStep><RealityReport /></RequireStep>} />
             {/* Auth required from dashboard onward */}
             <Route path="/welcome" element={<RequireStep><Welcome /></RequireStep>} />
             <Route path="/path" element={<RequireStep><SkillPath /></RequireStep>} />

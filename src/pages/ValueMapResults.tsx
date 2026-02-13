@@ -176,8 +176,9 @@ export default function ValueMapResults() {
             <Button variant="outline" onClick={() => navigate('/assessment/value-map')}>
               <RotateCcw className="w-4 h-4 mr-2" /> Retake Assessment
             </Button>
-            <Button onClick={() => navigate('/welcome')}>
-              <Home className="w-4 h-4 mr-2" /> Back to Dashboard
+            <Button onClick={() => navigate('/reality')} className="rounded-full px-8">
+              Continue to Reality Report
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
         </div>

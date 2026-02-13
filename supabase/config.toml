@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.generate-weekly-plan]
 verify_jwt = true
+
+[functions.generate-reality-report]
+verify_jwt = true

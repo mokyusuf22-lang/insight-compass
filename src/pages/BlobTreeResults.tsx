@@ -192,8 +192,8 @@ export default function BlobTreeResults() {
           >
             Retake Assessment
           </Button>
-          <Button className="flex-1" onClick={() => navigate('/welcome')}>
-            Continue Your Journey
+          <Button className="flex-1" onClick={() => navigate('/assessment/value-map')}>
+            Continue to Value Map
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
