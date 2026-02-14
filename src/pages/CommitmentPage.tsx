@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import {
   ArrowRight,
   CheckCircle2,
@@ -18,6 +19,11 @@ import {
   AlertTriangle,
   Loader2,
   Sparkles,
+  Flame,
+  CalendarDays,
+  MapPin,
+  Users,
+  Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -28,6 +34,44 @@ const TIME_OPTIONS = [
   { value: '10+ hours/week', label: '10+ hrs/week', description: 'All-in, maximum momentum' },
 ];
 
+const WILL_QUESTIONS = [
+  {
+    id: 'what',
+    icon: Target,
+    question: 'What will you do about this?',
+    placeholder: 'Be specific — what concrete action will you take first?',
+    required: true,
+  },
+  {
+    id: 'how',
+    icon: Zap,
+    question: 'How will you do it?',
+    placeholder: 'What approach or method will you use?',
+    required: true,
+  },
+  {
+    id: 'when',
+    icon: CalendarDays,
+    question: 'When will you start?',
+    placeholder: 'Set a specific date or timeframe — e.g. "This Monday" or "Within the next 48 hours"',
+    required: true,
+  },
+  {
+    id: 'who',
+    icon: Users,
+    question: 'Who will support you?',
+    placeholder: 'Who will you tell about this commitment? Who can hold you accountable?',
+    required: false,
+  },
+  {
+    id: 'more',
+    icon: Flame,
+    question: 'Could you do more? What else could you commit to?',
+    placeholder: 'Push yourself — is there anything else you could take on to accelerate progress?',
+    required: false,
+  },
+];
+
 export default function CommitmentPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -35,7 +79,8 @@ export default function CommitmentPage() {
 
   const [selectedPath, setSelectedPath] = useState<any>(null);
   const [timeBudget, setTimeBudget] = useState('');
-  const [intent, setIntent] = useState('');
+  const [commitmentLevel, setCommitmentLevel] = useState([7]);
+  const [willAnswers, setWillAnswers] = useState<Record<string, string>>({});
   const [constraints, setConstraints] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,8 +118,20 @@ export default function CommitmentPage() {
           setSelectedPath(commitment.chosen_path);
         }
         setTimeBudget(commitment.time_budget || '');
-        setIntent(commitment.intent || '');
         setConstraints(commitment.constraints || '');
+        // Parse intent back into will answers if possible
+        if (commitment.intent) {
+          try {
+            const parsed = JSON.parse(commitment.intent);
+            if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+              setWillAnswers(parsed);
+            } else {
+              setWillAnswers({ what: commitment.intent });
+            }
+          } catch {
+            setWillAnswers({ what: commitment.intent });
+          }
+        }
       }
 
       // If no path from state or commitment, fetch from recommendations
@@ -103,24 +160,33 @@ export default function CommitmentPage() {
     if (!authLoading && user) load();
   }, [user, authLoading, location.state]);
 
+  const handleWillChange = (id: string, value: string) => {
+    setWillAnswers(prev => ({ ...prev, [id]: value }));
+  };
+
+  const requiredFilled = WILL_QUESTIONS
+    .filter(q => q.required)
+    .every(q => (willAnswers[q.id] || '').trim().length > 0);
+
+  const canSubmit = !!timeBudget && requiredFilled;
+
   const handleSubmit = async () => {
     if (!user || !selectedPath) return;
-    if (!timeBudget) {
-      toast.error('Please select a time budget.');
-      return;
-    }
-    if (!intent.trim()) {
-      toast.error('Please write your intent statement.');
+    if (!canSubmit) {
+      toast.error('Please complete all required fields.');
       return;
     }
 
     setIsSubmitting(true);
     try {
+      // Build a structured intent from all will answers
+      const intentData = JSON.stringify(willAnswers);
+
       const payload = {
         user_id: user.id,
         chosen_path: selectedPath as any,
         time_budget: timeBudget,
-        intent: intent.trim(),
+        intent: intentData,
         constraints: constraints.trim() || null,
         focus_area: (selectedPath as any)?.title || null,
       };
@@ -145,7 +211,7 @@ export default function CommitmentPage() {
         .update({ path_committed: true } as any)
         .eq('user_id', user.id);
 
-      toast.success("Commitment saved! Let's build your path.");
+      toast.success("Commitment locked in! Let's build your path.");
       navigate('/welcome');
     } catch (err: any) {
       console.error('Error saving commitment:', err);
@@ -187,12 +253,12 @@ export default function CommitmentPage() {
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Header */}
           <div className="text-center animate-fade-up">
-            <span className="text-5xl mb-3 block">🎯</span>
-            <Badge variant="secondary" className="mb-3">Commitment</Badge>
-            <h1 className="text-3xl md:text-4xl font-serif mb-2">Lock In Your Path</h1>
+            <span className="text-5xl mb-3 block">🔥</span>
+            <Badge variant="secondary" className="mb-3">Will — Your Commitment</Badge>
+            <h1 className="text-3xl md:text-4xl font-serif mb-2">Lock In Your Actions</h1>
             <p className="text-muted-foreground max-w-md mx-auto">
-              Set your intent, time budget, and constraints so we can generate a
-              personalized execution plan.
+              This is where intention becomes action. Be specific about what you <em>will</em> do, 
+              not just what you <em>could</em> do.
             </p>
           </div>
 
@@ -233,12 +299,69 @@ export default function CommitmentPage() {
             </CardContent>
           </Card>
 
+          {/* Will Questions — The Core */}
+          {WILL_QUESTIONS.map((q, i) => {
+            const Icon = q.icon;
+            return (
+              <Card key={q.id} className="animate-fade-up" style={{ animationDelay: `${(i + 1) * 80}ms` }}>
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-3 mb-3">
+                    <Icon className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <label className="font-medium text-sm">
+                        {q.question}
+                        {q.required && <span className="text-destructive ml-1">*</span>}
+                      </label>
+                    </div>
+                  </div>
+                  <Textarea
+                    value={willAnswers[q.id] || ''}
+                    onChange={(e) => handleWillChange(q.id, e.target.value)}
+                    placeholder={q.placeholder}
+                    className="min-h-[80px] resize-none text-sm"
+                    maxLength={500}
+                  />
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          {/* Commitment Level */}
+          <Card className="animate-fade-up" style={{ animationDelay: '500ms' }}>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-serif flex items-center gap-2">
+                <Flame className="w-5 h-5 text-primary" />
+                How committed are you?
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>Exploring</span>
+                <span className="text-2xl font-bold text-foreground">{commitmentLevel[0]}/10</span>
+                <span>All in</span>
+              </div>
+              <Slider
+                value={commitmentLevel}
+                onValueChange={setCommitmentLevel}
+                min={1}
+                max={10}
+                step={1}
+                className="py-2"
+              />
+              {commitmentLevel[0] < 7 && (
+                <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                  💡 What would it take to raise your commitment by 1 or 2 points? Sometimes naming the blocker helps.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Time Budget */}
-          <Card className="animate-fade-up" style={{ animationDelay: '100ms' }}>
+          <Card className="animate-fade-up" style={{ animationDelay: '600ms' }}>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg font-serif flex items-center gap-2">
                 <Clock className="w-5 h-5 text-primary" />
-                Weekly Time Budget
+                Weekly Time Budget <span className="text-destructive text-sm">*</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -264,34 +387,8 @@ export default function CommitmentPage() {
             </CardContent>
           </Card>
 
-          {/* Intent Statement */}
-          <Card className="animate-fade-up" style={{ animationDelay: '200ms' }}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-serif flex items-center gap-2">
-                <Target className="w-5 h-5 text-primary" />
-                Your Intent
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Label htmlFor="intent" className="text-sm text-muted-foreground mb-3 block">
-                In 1–2 sentences, what do you want to achieve and why does it matter to you?
-              </Label>
-              <Textarea
-                id="intent"
-                value={intent}
-                onChange={(e) => setIntent(e.target.value)}
-                placeholder="e.g. I want to transition from nursing into healthcare management because I believe I can create better systems for patient care..."
-                className="min-h-[100px] resize-none"
-                maxLength={500}
-              />
-              <p className="text-xs text-muted-foreground mt-2 text-right">
-                {intent.length}/500
-              </p>
-            </CardContent>
-          </Card>
-
           {/* Constraints */}
-          <Card className="animate-fade-up" style={{ animationDelay: '300ms' }}>
+          <Card className="animate-fade-up" style={{ animationDelay: '700ms' }}>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg font-serif flex items-center gap-2">
                 <Shield className="w-5 h-5 text-muted-foreground" />
@@ -313,21 +410,21 @@ export default function CommitmentPage() {
             </CardContent>
           </Card>
 
-          {/* Info note */}
-          <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 animate-fade-up" style={{ animationDelay: '400ms' }}>
+          {/* Wisdom note */}
+          <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 animate-fade-up" style={{ animationDelay: '800ms' }}>
             <AlertTriangle className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground">
-              Your commitment shapes how we build your personal execution path. Be honest about
-              your time and constraints — a realistic plan beats an ambitious one you can't follow.
+              A realistic commitment beats an ambitious one you can't follow. Be honest about
+              your time and energy — your execution plan will be built around what you commit to here.
             </p>
           </div>
 
           {/* Submit */}
-          <div className="flex justify-center pt-2 pb-8 animate-fade-up" style={{ animationDelay: '500ms' }}>
+          <div className="flex justify-center pt-2 pb-8 animate-fade-up" style={{ animationDelay: '900ms' }}>
             <Button
               size="lg"
               onClick={handleSubmit}
-              disabled={isSubmitting || !timeBudget || !intent.trim()}
+              disabled={isSubmitting || !canSubmit}
               className="rounded-full px-10"
             >
               {isSubmitting ? (
