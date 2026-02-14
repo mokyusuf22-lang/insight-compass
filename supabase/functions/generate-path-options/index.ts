@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { reality_report, onboarding } = await req.json();
+    const { reality_report, onboarding, user_reflections } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -41,6 +41,10 @@ Rules:
 - Key actions must be specific and executable, not vague
 - Time horizons should be realistic given constraints`;
 
+    const reflectionsBlock = user_reflections?.length
+      ? `\nUSER'S OWN REFLECTIONS (incorporate these — they reveal what the user is already thinking):\n${user_reflections.map((r: any) => `- Q: ${r.question}\n  A: ${r.answer}`).join("\n")}`
+      : "";
+
     const userPrompt = `REALITY REPORT:
 - Headline: ${reality_report.headline}
 - Strengths: ${reality_report.strengths?.join("; ")}
@@ -56,7 +60,7 @@ USER CONTEXT:
 - Education: ${onboarding.education}
 - Location: ${onboarding.location}
 - Personal Goal: ${onboarding.personalGoal}
-- Career Goal: ${onboarding.careerGoal}`;
+- Career Goal: ${onboarding.careerGoal}${reflectionsBlock}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
