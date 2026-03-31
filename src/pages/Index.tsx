@@ -16,7 +16,7 @@ export default function Index() {
 
   const handleGetStarted = () => {
     // Start with onboarding flow (Tell me about yourself)
-    navigate('/onboarding');
+    navigate('/aura/welcome');
   };
 
   return (
