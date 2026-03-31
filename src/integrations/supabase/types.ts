@@ -74,6 +74,51 @@ export type Database = {
         }
         Relationships: []
       }
+      aura_sessions: {
+        Row: {
+          aura_summary: string | null
+          challenge_text: string | null
+          created_at: string
+          current_step: number | null
+          email: string | null
+          id: string
+          identified_themes: Json | null
+          name: string | null
+          preferred_contact: string | null
+          updated_at: string
+          user_confirmed: boolean | null
+          user_id: string
+        }
+        Insert: {
+          aura_summary?: string | null
+          challenge_text?: string | null
+          created_at?: string
+          current_step?: number | null
+          email?: string | null
+          id?: string
+          identified_themes?: Json | null
+          name?: string | null
+          preferred_contact?: string | null
+          updated_at?: string
+          user_confirmed?: boolean | null
+          user_id: string
+        }
+        Update: {
+          aura_summary?: string | null
+          challenge_text?: string | null
+          created_at?: string
+          current_step?: number | null
+          email?: string | null
+          id?: string
+          identified_themes?: Json | null
+          name?: string | null
+          preferred_contact?: string | null
+          updated_at?: string
+          user_confirmed?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       blob_tree_assessments: {
         Row: {
           created_at: string
