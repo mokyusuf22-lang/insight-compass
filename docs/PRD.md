@@ -1,8 +1,8 @@
 # CLARITY — Product Requirements Document
 
-**Version:** 1.0  
-**Last Updated:** 2026-02-12  
-**Status:** Living Document
+**Version:** 2.0  
+**Last Updated:** 2026-03-31  
+**Status:** Living Document — Major Revision (Aura Workflow)
 
 ---
 
