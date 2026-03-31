@@ -154,9 +154,7 @@ export default function AuraChallenge() {
       .update({ user_confirmed: true, current_step: 3 } as any)
       .eq('id', sessionId);
 
-    // Navigate to Step 3 (clarification/confirmation) — to be built
-    toast.success('Understanding confirmed! Next step coming soon.');
-    navigate('/welcome');
+    navigate('/aura/assessment-intro');
   };
 
   const handleExpand = () => {
