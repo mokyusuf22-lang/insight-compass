@@ -1,8 +1,8 @@
 # CLARITY — Product Requirements Document
 
-**Version:** 1.0  
-**Last Updated:** 2026-02-12  
-**Status:** Living Document
+**Version:** 2.0  
+**Last Updated:** 2026-03-31  
+**Status:** Living Document — Major Revision (Aura Workflow)
 
 ---
 
@@ -30,41 +30,136 @@ CLARITY provides:
 
 ---
 
-## 2. User Acquisition Funnel
+## 2. Refined Virtual Coaching Workflow — "Your Journey with Aura"
 
-### 2.1 Flow Sequence (Login-Free)
+### 2.0 Design Philosophy
+> **Goal:** Create a seamless, interactive, and deeply personalised virtual coaching experience, guided by our AI agent **"Aura,"** that feels supportive and human-centric.
+
+**Key Principles:**
+- Highly personalised and effective coaching journey with an interactive, "human" feel
+- Strictly sequential flow — users cannot dance around the platform; they proceed step-by-step
+- Users may only: save results, review progress, continue from where they left off, or browse coach/mentor listings
+- Aura speaks in a warm, conversational tone throughout — not robotic or corporate
+
+### 2.1 Flow Sequence
 
 ```
-Landing Page (/) → Start Free
+Step 1: Welcome & Initial Details
     ↓
-Onboarding (/onboarding) — "Tell me about yourself"
+Step 2: Understanding Your Needs — The Core Challenge (free-text ~100-200 words)
     ↓
-Initial Personality Hypothesis (/initial-assessment) — 20 questions
+Step 3: Clarification & Confirmation Loop (Aura summarises → user confirms/expands)
     ↓
-Initial Results (/initial-results) — Tendency Profile
+Step 4: Introducing Your Personalised Assessment Path
     ↓
-Goals & Reality (/goals-reality) — Life/Career Goals & Challenges
+Step 5: Tailored Deep-Dive Assessments (dynamically selected by Aura)
     ↓
-AI Assessment Recommendations (/assessment-recommendations)
+Step 6: Personalised Insights & Next Steps (summary + coach/mentor match)
     ↓
-[Registration Gate] — Required to save results / access Skill Path
+Step 6.5: Feedback (quick survey + free-text)
+    ↓
+Step 7: (Future) Gen AI Complete Coaching Service (fee-based)
 ```
 
-### 2.2 Onboarding Data Collected
-| Field | Type | Purpose |
-|-------|------|---------|
-| Name | Text | Personalisation |
-| Age | Number | Life-stage context |
-| Profession | Text | Career context |
-| Marital Status | Select | Life context |
-| Children | Boolean | Responsibility context |
-| Location | Text | Market context |
-| Education | Text | Background context |
-| Hobbies | Text | Personality signals |
-| Personal Goal | Text | Coaching direction |
-| Career Goal | Text | Strategy formation |
+### 2.2 Step 1 — Welcome & Initial Details
 
-### 2.3 Data Persistence
+**Aura's Prompt:** *"Welcome to your journey of growth! To get started, please share a few high-level details about yourself."*
+
+**User Input:** Name, Email, preferred contact method.
+
+**Purpose:** Warm, efficient onboarding to establish a basic profile.
+
+### 2.3 Step 2 — Understanding Your Needs: The Core Challenge
+
+**Aura's Prompt:** *"Now, let's dive into what's on your mind. In your own words, please describe what you're seeking help with today. Are you looking for support with your career, life balance, relationships, finances, personal growth, or something else? Tell me a bit about your current situation and what you hope to achieve."*
+
+**User Input:** Free-text summary (~100–200 words) describing their needs.
+
+**AI Function:** Aura analyses keywords and themes to identify primary focus areas (e.g., Career, Life Balance, Family, Finance, Personal Development). This acts as the core filter for all subsequent steps.
+
+**Purpose:** Allow the user to express needs naturally, giving Aura foundational understanding for tailored guidance.
+
+### 2.4 Step 3 — Clarification & Confirmation Loop
+
+**Aura's Prompt:** *"Thank you for sharing that. Just to ensure I've understood correctly, it sounds like your primary focus is [Aura's summarised understanding]. Is this an accurate summary, or would you like to expand on anything?"*
+
+**User Interaction:**
+- **"Yes"** → proceed to Step 4
+- **"No" / "Expand"** → Aura asks clarifying questions based on the initial input until a confirmed understanding is reached
+
+**Purpose:** Build trust and ensure Aura has a precise grasp of the client's needs. Makes the process feel genuinely interactive and attentive.
+
+### 2.5 Step 4 — Introducing Your Personalised Assessment Path
+
+**Aura's Prompt:** *"Excellent! To provide you with the most effective support, we'll now embark on a quick profiling exercise. This will help us understand your unique personality traits and behavioural preferences, which are key to tailoring your coaching journey. Shall we begin?"*
+
+**User Action:** "Continue" button.
+
+**Purpose:** Set expectations and frame assessments as beneficial and necessary.
+
+### 2.6 Step 5 — Tailored Deep-Dive Assessments
+
+**Aura's Prompt:** *"Fantastic! Based on our earlier conversation, we've identified some key areas to explore further. To truly understand your motivations, values, and goals, we'll now guide you through a selection of assessments designed specifically for your needs."*
+
+**Dynamic Assessment Selection:** Aura selects relevant assessments based on Step 2 output:
+- If primary need is **Career** → career motivation, skills, professional values assessments
+- If primary need is **Life Balance** → personal values, well-being, life satisfaction assessments
+
+**Available Assessments:**
+
+| Assessment | Purpose | Notes |
+|-----------|---------|-------|
+| Quick Profile Test (DISC) | Behavioural types & communication styles | Always included |
+| Values Clarification | Core personal & professional values | Always included |
+| Wheel of Life / Wheel of Work | Visualise satisfaction levels across life areas | Aura explains: *"This will help us visualise your current satisfaction and identify where to focus energy."* |
+| Barriers Identification | Pinpoint obstacles hindering progress | Selected when challenges are prominent |
+| Strengths & Weaknesses Analysis | Recognise personal assets & growth areas | Always included |
+| Jelly Bean Tree (JBT) | Emotional state & underlying feelings | Selected for emotional/wellbeing focus |
+| Career Goals / Life Goals (SMART) | Define aspirations with SMART breakdown | Always included; dedicated input for each SMART component (Specific, Measurable, Achievable, Relevant, Time-bound) |
+
+**Purpose:** Gather comprehensive data through targeted assessments, making the process efficient and highly relevant to stated needs.
+
+### 2.7 Step 6 — Personalised Insights & Next Steps
+
+**Aura's Summary:** *"Thank you for completing your assessments! I've compiled your unique insights into a comprehensive summary."*
+
+**Summary Includes:**
+- **Behavioural Profile:** DISC profile with interpretation
+- **Identified Barriers:** Key obstacles holding the user back
+- **Life/Work Balance Snapshot:** Wheel of Life/Work results with focus areas
+- **Strengths & Growth Areas:** Personal assets and development priorities
+- **Emotional Landscape:** JBT insights on current emotional state
+- **Core Values:** Identified personal and professional values
+- **Defined Goals:** SMART goals providing a clear path forward
+
+**Aura's Recommendation:** *"Based on these findings, I can see a clear path forward for you. Your summary suggests [e.g., 'a need to develop strategies for time management and explore leadership skills']. My strongest recommendation is to connect you with a coach or mentor whose expertise aligns perfectly with your unique needs."*
+
+**Coach/Mentor Match:** Aura presents a curated selection of coaches/mentors whose specialisations directly match the client's identified needs and assessment outputs.
+
+### 2.8 Step 6.5 — Feedback
+
+**Aura gathers feedback** on the experience:
+- Quick survey (satisfaction rating, ease of use, relevance)
+- Free-form text for additional comments
+
+**Purpose:** Platform development and continuous improvement.
+
+### 2.9 Step 7 — Future: Gen AI Complete Coaching Service (Fee-Based)
+
+**Aura's Prompt:** *"Looking ahead, we are also developing an advanced Gen AI complete coaching service for those who prefer an AI-driven, continuous coaching experience. This will be available as a premium, fee-based service in the future."*
+
+**Purpose:** Inform users about future offerings and advanced AI-driven support.
+
+### 2.10 Navigation Restrictions
+
+Users are **strictly locked** to the sequential flow. The only permitted deviations are:
+1. **Save & resume** — return to where they left off
+2. **Review results** — view previously completed assessment results
+3. **Coach/Mentor listings** — browse available coaches and mentors
+
+All other routes are gated by prerequisite completion flags.
+
+### 2.11 Data Persistence
 - **Guest users:** localStorage for all pre-registration data
 - **Registered users:** Supabase database with RLS per user
 
