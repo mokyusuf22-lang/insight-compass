@@ -47,6 +47,11 @@ import PathOptions from "./pages/PathOptions";
 import CommitmentPage from "./pages/CommitmentPage";
 import AuraWelcome from "./pages/AuraWelcome";
 import AuraChallenge from "./pages/AuraChallenge";
+import AuraAssessmentIntro from "./pages/AuraAssessmentIntro";
+import AuraAssessments from "./pages/AuraAssessments";
+import AuraInsights from "./pages/AuraInsights";
+import AuraFeedback from "./pages/AuraFeedback";
+import AuraFuture from "./pages/AuraFuture";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +69,11 @@ const App = () => (
             {/* Aura Workflow */}
             <Route path="/aura/welcome" element={<AuraWelcome />} />
             <Route path="/aura/challenge" element={<AuraChallenge />} />
+            <Route path="/aura/assessment-intro" element={<AuraAssessmentIntro />} />
+            <Route path="/aura/assessments" element={<AuraAssessments />} />
+            <Route path="/aura/insights" element={<AuraInsights />} />
+            <Route path="/aura/feedback" element={<AuraFeedback />} />
+            <Route path="/aura/future" element={<AuraFuture />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/onboarding" element={<Onboarding />} />
             {/* CLARITY Flow — gated routes in sequence */}
