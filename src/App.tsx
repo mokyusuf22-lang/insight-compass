@@ -61,6 +61,10 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            {/* Aura Workflow */}
+            <Route path="/aura/welcome" element={<AuraWelcome />} />
+            <Route path="/aura/challenge" element={<AuraChallenge />} />
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/onboarding" element={<Onboarding />} />
             {/* CLARITY Flow — gated routes in sequence */}
             <Route path="/initial-assessment" element={<RequireStep requireAuth={false}><InitialAssessment /></RequireStep>} />
