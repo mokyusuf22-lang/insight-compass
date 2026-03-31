@@ -45,6 +45,8 @@ import ValueMapResults from "./pages/ValueMapResults";
 import RealityReport from "./pages/RealityReport";
 import PathOptions from "./pages/PathOptions";
 import CommitmentPage from "./pages/CommitmentPage";
+import AuraWelcome from "./pages/AuraWelcome";
+import AuraChallenge from "./pages/AuraChallenge";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
