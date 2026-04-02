@@ -24,7 +24,7 @@ export default function Index() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border">
         <div className="container max-w-6xl py-4 flex justify-between items-center">
-          <span className="font-sans font-semibold tracking-wide text-lg">CLARITY</span>
+          <span className="font-sans font-semibold tracking-wide text-lg">be:more</span>
           <div className="flex items-center gap-4">
             {user ? (
               <Link to="/welcome">
