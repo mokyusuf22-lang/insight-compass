@@ -491,7 +491,7 @@ export default function Auth() {
       {/* Footer */}
       <footer className="py-6 text-center">
         <p className="text-xs text-muted-foreground">
-          ©2025 Clarity
+          ©2025 be:more
         </p>
       </footer>
     </div>

@@ -414,7 +414,7 @@ export default function Index() {
           {/* Large Brand Name */}
           <div className="mt-12 pt-8">
             <span className="text-6xl md:text-8xl lg:text-9xl font-sans font-bold tracking-tight text-background/10">
-              CLARITY
+              be:more
             </span>
           </div>
         </div>
