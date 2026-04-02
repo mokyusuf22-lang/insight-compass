@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Sparkles, ArrowRight, Rocket, MessageSquare, Calendar, Brain } from 'lucide-react';
+import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 
 const TYPING_SPEED = 25;
 
