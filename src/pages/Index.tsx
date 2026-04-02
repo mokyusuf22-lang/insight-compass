@@ -179,7 +179,7 @@ export default function Index() {
         <div className="container max-w-5xl">
           <ScrollReveal animation="fade-up" className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-4">
-              Start with clarity. Build momentum.
+              Start with clarity. Build momentum
             </h2>
             <p className="text-muted-foreground text-lg max-w-lg mx-auto">
               Understand how you operate, then execute with intention.
