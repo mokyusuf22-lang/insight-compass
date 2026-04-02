@@ -195,8 +195,9 @@ export default function AuraAssessments() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-background flex items-start justify-center px-4 py-12">
+    <div className="min-h-screen bg-background flex items-start justify-center px-4 pt-16 pb-12">
       <div className="w-full max-w-2xl">
+        <AuraProgressBar currentStep={5} className="mb-8" />
         {/* Aura Avatar */}
         <div className="flex items-center gap-3 mb-6">
           <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
