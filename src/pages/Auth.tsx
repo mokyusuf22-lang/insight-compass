@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { SignInConfirmation } from '@/components/SignInConfirmation';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { z } from 'zod';
 import { lovable } from '@/integrations/lovable/index';
 
@@ -195,7 +195,7 @@ export default function Auth() {
       <div className="min-h-screen bg-background flex flex-col">
         <header className="py-6 px-6 text-center border-b border-border">
           <Link to="/" className="font-sans font-semibold tracking-wide text-lg">
-            CLARITY
+            be:more
           </Link>
         </header>
 
@@ -223,7 +223,7 @@ export default function Auth() {
         </main>
 
         <footer className="py-6 text-center">
-          <p className="text-xs text-muted-foreground">©2025 Clarity</p>
+          <p className="text-xs text-muted-foreground">©2025 be:more</p>
         </footer>
       </div>
     );
@@ -235,47 +235,37 @@ export default function Auth() {
       <div className="min-h-screen bg-background flex flex-col">
         <header className="py-6 px-6 text-center border-b border-border">
           <Link to="/" className="font-sans font-semibold tracking-wide text-lg">
-            CLARITY
+            be:more
           </Link>
         </header>
 
-        <main className="flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-md">
-            <div className="chamfer-lg bg-card p-8 md:p-12 text-center">
-              <div className="w-16 h-16 mx-auto mb-6 chamfer bg-primary/10 flex items-center justify-center">
-                <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h1 className="text-2xl md:text-3xl font-serif mb-4">Verify your email</h1>
-              <p className="text-muted-foreground mb-2">
-                We've sent a verification link to
+        <main className="flex-1 flex items-center justify-center px-6 py-12">
+          <div className="w-full max-w-sm space-y-6 text-center">
+            <div className="space-y-2">
+              <CheckCircle className="w-16 h-16 text-primary mx-auto" />
+              <h1 className="text-2xl font-serif font-semibold">Check Your Email</h1>
+              <p className="text-muted-foreground">
+                We've sent a verification link to <strong>{email}</strong>. Please check your inbox and click the link to verify your account.
               </p>
-              <p className="text-foreground font-medium mb-4">{confirmedEmail}</p>
-              <p className="text-muted-foreground text-sm mb-6">
-                Please check your inbox and click the link to activate your account. You won't be able to sign in until your email is verified.
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Didn't receive the email? Check your spam folder or try again.
               </p>
-              <div className="space-y-3">
-                <Button
-                  variant="outline"
-                  className="rounded-full w-full"
-                  onClick={() => {
-                    setMode('login');
-                    setConfirmedEmail('');
-                  }}
-                >
-                  Back to sign in
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Didn't receive the email? Check your spam folder or try signing up again.
-                </p>
-              </div>
+              <Button
+                variant="outline"
+                onClick={() => setMode('login')}
+                className="w-full"
+              >
+                Back to Sign In
+              </Button>
             </div>
           </div>
         </main>
 
         <footer className="py-6 text-center">
-          <p className="text-xs text-muted-foreground">©2025 Clarity</p>
+          <p className="text-xs text-muted-foreground">©2025 be:more</p>
         </footer>
       </div>
     );
@@ -286,9 +276,9 @@ export default function Auth() {
       {/* Header */}
       <header className="py-6 px-6 text-center border-b border-border">
         <Link to="/" className="font-sans font-semibold tracking-wide text-lg">
-          CLARITY
-        </Link>
-      </header>
+            be:more
+          </Link>
+        </header>
 
       {/* Main content */}
       <main className="flex-1 flex items-center justify-center p-6">
@@ -501,7 +491,7 @@ export default function Auth() {
       {/* Footer */}
       <footer className="py-6 text-center">
         <p className="text-xs text-muted-foreground">
-          ©2025 Clarity
+          ©2025 be:more
         </p>
       </footer>
     </div>

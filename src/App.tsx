@@ -76,7 +76,7 @@ const App = () => (
             <Route path="/aura/future" element={<AuraFuture />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/onboarding" element={<Onboarding />} />
-            {/* CLARITY Flow — gated routes in sequence */}
+            {/* be:more Flow — gated routes in sequence */}
             <Route path="/initial-assessment" element={<RequireStep requireAuth={false}><InitialAssessment /></RequireStep>} />
             <Route path="/initial-results" element={<RequireStep requireAuth={false}><InitialResults /></RequireStep>} />
             <Route path="/goals-reality" element={<RequireStep requireAuth={false}><GoalsReality /></RequireStep>} />

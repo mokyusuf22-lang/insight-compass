@@ -222,7 +222,7 @@ export default function Welcome() {
           <p className="text-muted-foreground text-lg">
             {hasPersonalPath
               ? 'Your personal path is ready. Let\'s make progress.'
-              : 'Complete the CLARITY flow to unlock your personal path.'
+              : 'Complete the be:more flow to unlock your personal path.'
             }
           </p>
         </div>
@@ -273,7 +273,7 @@ export default function Welcome() {
               </div>
               <div>
                 <h2 className="text-xl font-serif font-semibold text-foreground mb-2">
-                  Complete Your CLARITY Journey
+                  Complete Your be:more Journey
                 </h2>
                 <p className="text-muted-foreground mb-4">
                   Finish the assessment flow and commit to a path to unlock your personalized execution plan.

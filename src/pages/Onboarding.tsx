@@ -138,7 +138,7 @@ export default function Onboarding() {
       // Always mark onboarding complete locally for non-auth flow
       setLocalProgress('onboarding_complete', true);
 
-      // Navigate to Initial Personality Hypothesis (next step in CLARITY flow)
+      // Navigate to Initial Personality Hypothesis (next step in be:more flow)
       navigate('/initial-assessment');
     } catch (error) {
       console.error('Error saving onboarding data:', error);

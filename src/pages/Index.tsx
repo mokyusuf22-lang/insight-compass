@@ -24,7 +24,7 @@ export default function Index() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border">
         <div className="container max-w-6xl py-4 flex justify-between items-center">
-          <span className="font-sans font-semibold tracking-wide text-lg">CLARITY</span>
+          <span className="font-sans font-semibold tracking-wide text-lg">be:more</span>
           <div className="flex items-center gap-4">
             {user ? (
               <Link to="/welcome">
@@ -179,7 +179,7 @@ export default function Index() {
         <div className="container max-w-5xl">
           <ScrollReveal animation="fade-up" className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-4">
-              Start with clarity. Build momentum.
+              Start with clarity. Build momentum
             </h2>
             <p className="text-muted-foreground text-lg max-w-lg mx-auto">
               Understand how you operate, then execute with intention.
@@ -366,7 +366,7 @@ export default function Index() {
           <div className="grid md:grid-cols-3 gap-12 mb-12">
             {/* Brand */}
             <div className="md:col-span-1">
-              <span className="font-sans font-semibold tracking-wide text-lg block mb-4">CLARITY</span>
+              <span className="font-sans font-semibold tracking-wide text-lg block mb-4">be:more</span>
               <p className="text-background/70 text-sm leading-relaxed">
                 A structured career coaching platform for professionals who want direction, not noise.
               </p>
@@ -402,7 +402,7 @@ export default function Index() {
           <div className="pt-8 border-t border-background/20">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-xs text-background/50">
-                © 2026 Clarity. All rights reserved.
+                © 2026 be:more. All rights reserved.
               </p>
               <div className="text-xs text-background/50 flex gap-4">
                 <a href="#" className="hover:text-background/70">Terms of Service</a>
@@ -414,7 +414,7 @@ export default function Index() {
           {/* Large Brand Name */}
           <div className="mt-12 pt-8">
             <span className="text-6xl md:text-8xl lg:text-9xl font-sans font-bold tracking-tight text-background/10">
-              CLARITY
+              be:more
             </span>
           </div>
         </div>

@@ -1,6 +1,6 @@
 // Flow prerequisite system — single source of truth for route access gating
 // Each route defines what progress flags must be true before access is allowed.
-// CLARITY Flow: Onboarding → Initial Personality → Challenges → Wheel of Life → Blob Tree → Value Map → Reality → Options → Will
+// be:more Flow: Onboarding → Initial Personality → Challenges → Wheel of Life → Blob Tree → Value Map → Reality → Options → Will
 
 export interface FlowProgress {
   onboarding_complete: boolean;
