@@ -6,7 +6,7 @@ import { ArrowRight, MessageSquare, Brain, Target, BarChart3, Check } from 'luci
 import { ScrollReveal } from '@/components/ScrollReveal';
 import heroImage from '@/assets/hero-gen-z.jpg';
 import quoteImage from '@/assets/professional-nurse.jpg';
-import collaborationImage from '@/assets/collaboration-diverse.jpg';
+
 import builderImage from '@/assets/professional-builder.jpg';
 import teacherImage from '@/assets/professional-teacher.jpg';
 
