@@ -402,7 +402,7 @@ export default function Index() {
           <div className="pt-8 border-t border-background/20">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-xs text-background/50">
-                © 2026 Clarity. All rights reserved.
+                © 2026 be:more. All rights reserved.
               </p>
               <div className="text-xs text-background/50 flex gap-4">
                 <a href="#" className="hover:text-background/70">Terms of Service</a>
