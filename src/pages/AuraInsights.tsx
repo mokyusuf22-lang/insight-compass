@@ -17,6 +17,7 @@ import {
   Loader2,
   User,
 } from 'lucide-react';
+import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 
 const TYPING_SPEED = 20;
 
