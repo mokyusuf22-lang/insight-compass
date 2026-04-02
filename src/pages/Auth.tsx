@@ -195,7 +195,7 @@ export default function Auth() {
       <div className="min-h-screen bg-background flex flex-col">
         <header className="py-6 px-6 text-center border-b border-border">
           <Link to="/" className="font-sans font-semibold tracking-wide text-lg">
-            CLARITY
+            be:more
           </Link>
         </header>
 
