@@ -222,7 +222,7 @@ export default function Welcome() {
           <p className="text-muted-foreground text-lg">
             {hasPersonalPath
               ? 'Your personal path is ready. Let\'s make progress.'
-              : 'Complete the CLARITY flow to unlock your personal path.'
+              : 'Complete the be:more flow to unlock your personal path.'
             }
           </p>
         </div>
