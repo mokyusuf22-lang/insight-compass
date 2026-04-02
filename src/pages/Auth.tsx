@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { SignInConfirmation } from '@/components/SignInConfirmation';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { z } from 'zod';
 import { lovable } from '@/integrations/lovable/index';
 
