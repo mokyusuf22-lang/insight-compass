@@ -185,15 +185,33 @@ export default function Index() {
               Understand how you operate, then execute with intention.
             </p>
           </ScrollReveal>
-          <ScrollReveal animation="scale" delay={150}>
-            <div className="max-w-2xl mx-auto">
-              <img
-                src={collaborationImage}
-                alt="Professionals collaborating"
-                className="w-full chamfer"
-              />
-            </div>
-          </ScrollReveal>
+          <div className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+            {[
+              {
+                step: '01',
+                title: 'Discover',
+                description: 'Meet Aura, your AI coach. Share your challenge and uncover your unique profile through guided assessments.',
+              },
+              {
+                step: '02',
+                title: 'Plan',
+                description: 'Receive a personalised strategy and structured roadmap built around your strengths, values, and goals.',
+              },
+              {
+                step: '03',
+                title: 'Execute',
+                description: 'Follow weekly action plans, track milestones, and get adaptive coaching as you make real progress.',
+              },
+            ].map((item, index) => (
+              <ScrollReveal key={item.step} animation="fade-up" delay={100 + index * 150}>
+                <div className="chamfer bg-card border border-border p-6 space-y-3 h-full">
+                  <span className="text-3xl font-serif text-primary/40">{item.step}</span>
+                  <h3 className="font-sans font-semibold text-lg">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
         </div>
       </section>
 
