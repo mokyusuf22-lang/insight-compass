@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Sparkles, ArrowRight, User, Mail, Phone } from 'lucide-react';
+import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 
 const TYPING_SPEED = 30;
 
