@@ -366,7 +366,7 @@ export default function Index() {
           <div className="grid md:grid-cols-3 gap-12 mb-12">
             {/* Brand */}
             <div className="md:col-span-1">
-              <span className="font-sans font-semibold tracking-wide text-lg block mb-4">CLARITY</span>
+              <span className="font-sans font-semibold tracking-wide text-lg block mb-4">be:more</span>
               <p className="text-background/70 text-sm leading-relaxed">
                 A structured career coaching platform for professionals who want direction, not noise.
               </p>
