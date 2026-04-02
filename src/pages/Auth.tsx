@@ -276,9 +276,9 @@ export default function Auth() {
       {/* Header */}
       <header className="py-6 px-6 text-center border-b border-border">
         <Link to="/" className="font-sans font-semibold tracking-wide text-lg">
-          CLARITY
-        </Link>
-      </header>
+            be:more
+          </Link>
+        </header>
 
       {/* Main content */}
       <main className="flex-1 flex items-center justify-center p-6">
