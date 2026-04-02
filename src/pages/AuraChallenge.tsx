@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Sparkles, ArrowRight, Send, Loader2 } from 'lucide-react';
+import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 
 const TYPING_SPEED = 25;
 
