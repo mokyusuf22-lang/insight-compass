@@ -223,7 +223,7 @@ export default function Auth() {
         </main>
 
         <footer className="py-6 text-center">
-          <p className="text-xs text-muted-foreground">©2025 Clarity</p>
+          <p className="text-xs text-muted-foreground">©2025 be:more</p>
         </footer>
       </div>
     );
