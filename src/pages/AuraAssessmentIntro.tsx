@@ -82,8 +82,9 @@ export default function AuraAssessmentIntro() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 pt-16 pb-8">
       <div className="w-full max-w-xl">
+        <AuraProgressBar currentStep={4} className="mb-8" />
         {/* Aura Avatar */}
         <div className="flex items-center gap-3 mb-6">
           <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
