@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Sparkles, ArrowRight, Send, Loader2 } from 'lucide-react';
+import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 
 const TYPING_SPEED = 25;
 
@@ -167,8 +168,9 @@ export default function AuraChallenge() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-background flex items-start justify-center px-4 py-12">
+    <div className="min-h-screen bg-background flex items-start justify-center px-4 pt-16 pb-12">
       <div className="w-full max-w-2xl">
+        <AuraProgressBar currentStep={2} className="mb-8" />
         {/* Aura Avatar */}
         <div className="flex items-center gap-3 mb-6">
           <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">

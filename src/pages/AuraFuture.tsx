@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Sparkles, ArrowRight, Rocket, MessageSquare, Calendar, Brain } from 'lucide-react';
+import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 
 const TYPING_SPEED = 25;
 
@@ -69,8 +70,9 @@ export default function AuraFuture() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 pt-16 pb-8">
       <div className="w-full max-w-xl">
+        <AuraProgressBar currentStep={7} className="mb-8" />
         {/* Aura Avatar */}
         <div className="flex items-center gap-3 mb-6">
           <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">

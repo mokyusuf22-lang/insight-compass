@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Sparkles, ArrowRight, User, Mail, Phone } from 'lucide-react';
+import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 
 const TYPING_SPEED = 30;
 
@@ -116,8 +117,9 @@ export default function AuraWelcome() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 pt-16 pb-8">
       <div className="w-full max-w-xl">
+        <AuraProgressBar currentStep={1} className="mb-8" />
         {/* Aura Avatar */}
         <div className="flex items-center gap-3 mb-6">
           <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
