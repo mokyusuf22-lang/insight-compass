@@ -30,8 +30,8 @@ import {
   RefreshCw,
   LogOut,
   Settings,
-  Crown,
   Menu,
+  X,
   X,
 } from 'lucide-react';
 
