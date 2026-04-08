@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Sparkles, ArrowRight, Rocket, MessageSquare, Calendar, Brain } from 'lucide-react';
+import { ArrowRight, Rocket, MessageSquare, Calendar, Brain } from 'lucide-react';
 import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
+import { AuraOrb } from '@/components/aura/AuraOrb';
 
 const TYPING_SPEED = 25;
 
@@ -76,9 +77,7 @@ export default function AuraFuture() {
 
         {/* Aura Avatar */}
         <div className="flex items-center gap-4 mb-7">
-          <div className="w-12 h-12 chamfer-sm gradient-coral flex items-center justify-center shadow-accent flex-shrink-0">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
+          <AuraOrb size="sm" interactive />
           <div>
             <p className="text-sm font-semibold text-foreground leading-none mb-1">Aura</p>
             <p className="text-xs text-muted-foreground">Step 7 of 7 — What's Next</p>
