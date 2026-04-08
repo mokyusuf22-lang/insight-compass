@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, ClipboardCheck } from 'lucide-react';
 import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 import { AuraOrb } from '@/components/aura/AuraOrb';
+import { AuraOrb } from '@/components/aura/AuraOrb';
 
 const TYPING_SPEED = 25;
 
@@ -89,9 +90,7 @@ export default function AuraAssessmentIntro() {
 
         {/* Aura Avatar */}
         <div className="flex items-center gap-4 mb-7">
-          <div className="w-12 h-12 chamfer-sm gradient-coral flex items-center justify-center shadow-accent flex-shrink-0">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
+          <AuraOrb size="sm" interactive />
           <div>
             <p className="text-sm font-semibold text-foreground leading-none mb-1">Aura</p>
             <p className="text-xs text-muted-foreground">Step 4 of 7</p>
