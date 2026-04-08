@@ -32,7 +32,6 @@ import {
   Settings,
   Menu,
   X,
-  X,
 } from 'lucide-react';
 
 interface UserHeaderProps {
