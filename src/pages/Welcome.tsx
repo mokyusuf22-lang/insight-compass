@@ -9,14 +9,15 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { Json } from '@/integrations/supabase/types';
-import { 
-  ArrowRight, 
+import {
+  ArrowRight,
   Sparkles,
   RefreshCw,
   CheckCircle2,
-  Target,
+  Waypoints,
   Compass,
-  Brain,
+  Activity,
+  TrendingUp,
 } from 'lucide-react';
 
 export default function Welcome() {
@@ -184,7 +185,7 @@ export default function Welcome() {
     );
   }
 
-  const userName = user?.email?.split('@')[0] || 'there';
+  const userName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'there';
 
   // Generating state
   if (isGenerating) {
@@ -222,7 +223,7 @@ export default function Welcome() {
           <p className="text-muted-foreground text-lg">
             {hasPersonalPath
               ? 'Your personal path is ready. Let\'s make progress.'
-              : 'Complete the be:more flow to unlock your personal path.'
+              : 'Complete the Be:More flow to unlock your personal path.'
             }
           </p>
         </div>
@@ -238,12 +239,6 @@ export default function Welcome() {
             <h2 className="text-xl md:text-2xl font-serif font-semibold text-secondary-foreground mb-2">
               {pathTitle}
             </h2>
-
-            <div className="flex items-center gap-2 mb-6">
-              <Badge variant="secondary" className="bg-secondary-foreground/10 text-secondary-foreground">
-                {pathProgress}% Complete
-              </Badge>
-            </div>
 
             <div className="mb-6">
               <div className="flex items-center justify-between text-sm mb-2">
@@ -273,7 +268,7 @@ export default function Welcome() {
               </div>
               <div>
                 <h2 className="text-xl font-serif font-semibold text-foreground mb-2">
-                  Complete Your be:more Journey
+                  Complete Your Be:More Journey
                 </h2>
                 <p className="text-muted-foreground mb-4">
                   Finish the assessment flow and commit to a path to unlock your personalized execution plan.
@@ -314,25 +309,25 @@ export default function Welcome() {
         {hasPersonalPath && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="chamfer bg-card border border-border p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <Brain className="w-4 h-4 text-primary" />
-                <span className="text-xs text-muted-foreground uppercase tracking-wide">Status</span>
+              <div className="flex items-center gap-2 mb-3">
+                <Activity className="w-4 h-4 text-accent" />
+                <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Status</span>
               </div>
               <p className="text-lg font-semibold">
                 {pathProgress === 100 ? 'Complete!' : pathProgress > 0 ? 'In Progress' : 'Ready to Start'}
               </p>
             </div>
             <div className="chamfer bg-card border border-border p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <Target className="w-4 h-4 text-primary" />
-                <span className="text-xs text-muted-foreground uppercase tracking-wide">Progress</span>
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="w-4 h-4 text-pop" />
+                <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Progress</span>
               </div>
               <p className="text-lg font-semibold">{pathProgress}%</p>
             </div>
             <div className="chamfer bg-card border border-border p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span className="text-xs text-muted-foreground uppercase tracking-wide">Path</span>
+              <div className="flex items-center gap-2 mb-3">
+                <Waypoints className="w-4 h-4 text-accent" />
+                <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Path</span>
               </div>
               <p className="text-lg font-semibold truncate">{pathTitle}</p>
             </div>

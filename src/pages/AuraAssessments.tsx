@@ -8,12 +8,9 @@ import {
   Sparkles,
   ArrowRight,
   CheckCircle2,
-  Circle,
   Lock,
   Target,
-  Heart,
   BarChart3,
-  Shield,
   Zap,
   TreePine,
   Compass,
@@ -65,7 +62,6 @@ export default function AuraAssessments() {
   const [completionStatus, setCompletionStatus] = useState<Record<string, boolean>>({});
   const [showAssessments, setShowAssessments] = useState(false);
 
-  // Build dynamic intro based on themes
   const themeAreas = themes.map(t => t.area.toLowerCase()).join(', ');
   const introText = userName
     ? `Fantastic, ${userName}! Based on our earlier conversation, we've identified some key areas to explore further${themeAreas ? ` — particularly around ${themeAreas}` : ''}. To truly understand your motivations, values, and goals, we'll guide you through a selection of assessments designed specifically for your needs.`
@@ -84,7 +80,6 @@ export default function AuraAssessments() {
     }
   }, [done]);
 
-  // Load session & profile completion flags
   useEffect(() => {
     const load = async () => {
       if (!user) return;
@@ -126,7 +121,6 @@ export default function AuraAssessments() {
     if (!loading && user) load();
   }, [user, loading, navigate]);
 
-  // Determine relevance based on themes
   const themeKeywords = themes.map(t => t.area.toLowerCase());
   const isRelevant = (keywords: string[]) =>
     themes.length === 0 || keywords.some(k => themeKeywords.some(tk => tk.includes(k) || k.includes(tk)));
@@ -139,7 +133,7 @@ export default function AuraAssessments() {
       icon: <BarChart3 className="w-5 h-5" />,
       route: '/assessment/disc',
       completionFlag: 'disc',
-      relevant: true, // Always relevant
+      relevant: true,
     },
     {
       id: 'values',
@@ -181,6 +175,7 @@ export default function AuraAssessments() {
 
   const relevantAssessments = assessments.filter(a => a.relevant);
   const allRelevantComplete = relevantAssessments.every(a => completionStatus[a.completionFlag]);
+  const completedCount = relevantAssessments.filter(a => completionStatus[a.completionFlag]).length;
 
   const handleContinueToInsights = async () => {
     if (sessionId) {
@@ -195,22 +190,23 @@ export default function AuraAssessments() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-background flex items-start justify-center px-4 pt-16 pb-12">
+    <div className="min-h-screen flex items-start justify-center px-4 pt-16 pb-12 bg-gradient-to-b from-secondary/50 via-background to-background">
       <div className="w-full max-w-2xl">
-        <AuraProgressBar currentStep={5} className="mb-8" />
+        <AuraProgressBar currentStep={5} className="mb-10" />
+
         {/* Aura Avatar */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-accent" />
+        <div className="flex items-center gap-4 mb-7">
+          <div className="w-12 h-12 chamfer-sm gradient-coral flex items-center justify-center shadow-accent flex-shrink-0">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Aura</p>
-            <p className="text-xs text-muted-foreground/60">Step 5 of 7 — Deep-Dive Assessments</p>
+            <p className="text-sm font-semibold text-foreground leading-none mb-1">Aura</p>
+            <p className="text-xs text-muted-foreground">Step 5 of 7 — Deep-Dive Assessments</p>
           </div>
         </div>
 
         {/* Intro */}
-        <div className="bg-card border border-border rounded-2xl rounded-tl-sm p-6 mb-6 shadow-[var(--shadow-soft)]">
+        <div className="bg-secondary/25 border border-border/60 rounded-2xl rounded-tl-sm p-6 mb-6 shadow-card">
           <p className="text-foreground text-lg leading-relaxed font-serif">
             {displayed}
             {!done && <span className="inline-block w-0.5 h-5 bg-accent animate-pulse ml-0.5 align-text-bottom" />}
@@ -221,42 +217,61 @@ export default function AuraAssessments() {
         <div
           className={`space-y-3 transition-all duration-500 ${showAssessments ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
         >
+          {/* Progress summary */}
+          {showAssessments && relevantAssessments.length > 0 && (
+            <div className="flex items-center justify-between px-1 mb-1">
+              <span className="text-xs text-muted-foreground">
+                {completedCount} of {relevantAssessments.length} complete
+              </span>
+              {completedCount > 0 && !allRelevantComplete && (
+                <span className="text-xs text-accent font-medium">Keep going!</span>
+              )}
+            </div>
+          )}
+
           {relevantAssessments.map((assessment, i) => {
             const isComplete = completionStatus[assessment.completionFlag];
-            // Unlock sequentially: first is always unlocked, rest require previous complete
             const previousComplete = i === 0 || completionStatus[relevantAssessments[i - 1].completionFlag];
             const isLocked = !isComplete && !previousComplete;
 
             return (
               <div
                 key={assessment.id}
-                className={`bg-card border rounded-2xl p-5 shadow-[var(--shadow-card)] transition-all ${
-                  isComplete ? 'border-accent/40 bg-accent/5' : isLocked ? 'border-border opacity-60' : 'border-border'
+                className={`bg-card border rounded-2xl p-5 shadow-card transition-all duration-200 ${
+                  isComplete
+                    ? 'border-accent/30 bg-accent/5'
+                    : isLocked
+                    ? 'border-border/50 opacity-55'
+                    : 'border-border/70 hover:border-accent/30 hover:shadow-elevated'
                 }`}
               >
                 <div className="flex items-start gap-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    isComplete ? 'bg-accent/20 text-accent' : isLocked ? 'bg-muted text-muted-foreground' : 'bg-accent/10 text-accent'
+                  <div className={`w-10 h-10 chamfer-sm flex items-center justify-center flex-shrink-0 ${
+                    isComplete
+                      ? 'bg-accent text-white'
+                      : isLocked
+                      ? 'bg-muted text-muted-foreground'
+                      : 'gradient-coral text-white shadow-accent'
                   }`}>
                     {assessment.icon}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium text-foreground">{assessment.name}</h3>
+                      <h3 className="font-medium text-foreground text-sm">{assessment.name}</h3>
                       {isComplete && <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />}
-                      {isLocked && <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+                      {isLocked && <Lock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />}
                     </div>
-                    <p className="text-sm text-muted-foreground">{assessment.description}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{assessment.description}</p>
                   </div>
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 pt-0.5">
                     {isComplete ? (
-                      <span className="text-xs font-medium text-accent bg-accent/10 px-3 py-1 rounded-full">Complete</span>
+                      <span className="text-xs font-medium text-accent bg-accent/10 px-2.5 py-1 rounded-full">Done</span>
                     ) : isLocked ? (
-                      <span className="text-xs font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">Locked</span>
+                      <span className="text-xs font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-full">Locked</span>
                     ) : (
                       <Button
                         size="sm"
-                        className="rounded-full"
+                        className="rounded-full btn-lift text-xs h-8"
                         onClick={() => navigate(assessment.route)}
                       >
                         Start
@@ -269,20 +284,22 @@ export default function AuraAssessments() {
             );
           })}
 
-          {/* Continue button */}
+          {/* All complete — continue card */}
           {allRelevantComplete && (
-            <div className="pt-4 animate-fade-up">
-              <div className="bg-card border border-accent/30 rounded-2xl p-6 shadow-[var(--shadow-soft)]">
+            <div className="pt-3 animate-fade-up">
+              <div className="bg-card border border-accent/30 rounded-2xl p-6 shadow-elevated">
                 <div className="flex items-center gap-3 mb-3">
-                  <Sparkles className="w-5 h-5 text-accent" />
-                  <p className="font-medium text-foreground">All assessments complete!</p>
+                  <div className="w-9 h-9 chamfer-sm gradient-coral flex items-center justify-center shadow-accent">
+                    <Sparkles className="w-4 h-4 text-white" />
+                  </div>
+                  <p className="font-semibold text-foreground">All assessments complete!</p>
                 </div>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
                   Wonderful work! I now have everything I need to create your personalised insights summary.
                 </p>
                 <Button
                   onClick={handleContinueToInsights}
-                  className="w-full h-12 text-base rounded-full"
+                  className="w-full h-12 text-base rounded-full btn-lift"
                   size="lg"
                 >
                   View My Insights
@@ -292,10 +309,10 @@ export default function AuraAssessments() {
             </div>
           )}
 
-          {/* Partial progress encouragement */}
+          {/* Progress encouragement */}
           {!allRelevantComplete && showAssessments && (
             <div className="pt-2">
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-xs text-muted-foreground">
                 Complete all assessments above to unlock your personalised insights
               </p>
             </div>

@@ -104,7 +104,7 @@ export default function AuraChallenge() {
   }, [user, loading, navigate]);
 
   const wordCount = countWords(challengeText);
-  const isValid = wordCount >= 30; // Minimum 30 words for meaningful input
+  const isValid = wordCount >= 30;
 
   const handleAnalyse = async () => {
     if (!user || !sessionId || !isValid) return;
@@ -168,22 +168,23 @@ export default function AuraChallenge() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-background flex items-start justify-center px-4 pt-16 pb-12">
+    <div className="min-h-screen flex items-start justify-center px-4 pt-16 pb-12 bg-gradient-to-b from-secondary/50 via-background to-background">
       <div className="w-full max-w-2xl">
-        <AuraProgressBar currentStep={2} className="mb-8" />
+        <AuraProgressBar currentStep={2} className="mb-10" />
+
         {/* Aura Avatar */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-accent" />
+        <div className="flex items-center gap-4 mb-7">
+          <div className="w-12 h-12 chamfer-sm gradient-coral flex items-center justify-center shadow-accent flex-shrink-0">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Aura</p>
-            <p className="text-xs text-muted-foreground/60">Understanding your needs</p>
+            <p className="text-sm font-semibold text-foreground leading-none mb-1">Aura</p>
+            <p className="text-xs text-muted-foreground">Understanding your needs</p>
           </div>
         </div>
 
         {/* Aura's prompt */}
-        <div className="bg-card border border-border rounded-2xl rounded-tl-sm p-6 mb-6 shadow-[var(--shadow-soft)]">
+        <div className="bg-secondary/25 border border-border/60 rounded-2xl rounded-tl-sm p-6 mb-6 shadow-card">
           <p className="text-foreground text-lg leading-relaxed font-serif">
             {typedPrompt}
             {!promptDone && <span className="inline-block w-0.5 h-5 bg-accent animate-pulse ml-0.5 align-text-bottom" />}
@@ -197,7 +198,7 @@ export default function AuraChallenge() {
               showInput ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
             }`}
           >
-            <div className="bg-card border border-border rounded-2xl p-6 shadow-[var(--shadow-card)]">
+            <div className="bg-card border border-border/70 rounded-2xl p-6 shadow-elevated">
               <Textarea
                 placeholder="Tell Aura what's on your mind..."
                 value={challengeText}
@@ -208,31 +209,25 @@ export default function AuraChallenge() {
 
               <div className="flex items-center justify-between">
                 <div className="text-sm text-muted-foreground">
-                  <span className={wordCount < 30 ? 'text-destructive' : 'text-success'}>
+                  <span className={wordCount < 30 ? 'text-destructive' : 'text-[hsl(var(--success))]'}>
                     {wordCount}
                   </span>
                   {' '}words
                   {wordCount < 30 && (
-                    <span className="text-muted-foreground/60 ml-1">
-                      (minimum 30)
-                    </span>
+                    <span className="text-muted-foreground/60 ml-1">(minimum 30)</span>
                   )}
                   {wordCount >= 30 && wordCount < 100 && (
-                    <span className="text-muted-foreground/60 ml-1">
-                      — good start, feel free to share more
-                    </span>
+                    <span className="text-muted-foreground/60 ml-1">— good start, feel free to share more</span>
                   )}
                   {wordCount >= 100 && (
-                    <span className="text-muted-foreground/60 ml-1">
-                      — great detail!
-                    </span>
+                    <span className="text-muted-foreground/60 ml-1">— great detail!</span>
                   )}
                 </div>
 
                 <Button
                   onClick={handleAnalyse}
                   disabled={!isValid || isAnalysing}
-                  className="rounded-full"
+                  className="rounded-full btn-lift"
                   size="lg"
                 >
                   {isAnalysing ? (
@@ -254,11 +249,11 @@ export default function AuraChallenge() {
 
         {/* Analysis Results */}
         {showResults && auraSummary && (
-          <div className="space-y-6 animate-fade-up">
+          <div className="space-y-5 animate-fade-up">
             {/* Aura's understanding */}
-            <div className="bg-card border border-border rounded-2xl rounded-tl-sm p-6 shadow-[var(--shadow-soft)]">
-              <p className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-accent" />
+            <div className="bg-secondary/25 border border-border/60 rounded-2xl rounded-tl-sm p-6 shadow-card">
+              <p className="text-xs font-medium text-accent mb-3 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
                 Aura's understanding
               </p>
               <p className="text-foreground text-lg leading-relaxed font-serif">
@@ -269,20 +264,20 @@ export default function AuraChallenge() {
 
             {/* Identified themes */}
             {themes.length > 0 && summaryDone && (
-              <div className="bg-card border border-border rounded-2xl p-6 shadow-[var(--shadow-card)] animate-fade-up">
-                <p className="text-sm font-medium text-muted-foreground mb-4">Focus areas I've identified:</p>
+              <div className="bg-card border border-border/70 rounded-2xl p-6 shadow-elevated animate-fade-up">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Focus areas identified</p>
                 <div className="space-y-3">
                   {themes.map((theme, i) => (
                     <div
                       key={i}
-                      className="flex items-start gap-3 p-3 rounded-xl bg-secondary/50"
+                      className="flex items-start gap-3 p-3.5 rounded-xl bg-secondary/40 border border-border/40"
                     >
-                      <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-sm font-semibold text-accent">{i + 1}</span>
+                      <div className="w-7 h-7 chamfer-sm bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-xs font-bold text-accent">{i + 1}</span>
                       </div>
                       <div>
-                        <p className="font-medium text-foreground">{theme.area}</p>
-                        <p className="text-sm text-muted-foreground mt-0.5">{theme.explanation}</p>
+                        <p className="font-medium text-foreground text-sm">{theme.area}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{theme.explanation}</p>
                       </div>
                     </div>
                   ))}
@@ -292,14 +287,14 @@ export default function AuraChallenge() {
 
             {/* Confirmation buttons */}
             {summaryDone && (
-              <div className="bg-card border border-border rounded-2xl p-6 shadow-[var(--shadow-card)] animate-fade-up">
-                <p className="text-foreground mb-4 font-serif">
+              <div className="bg-card border border-border/70 rounded-2xl p-6 shadow-elevated animate-fade-up">
+                <p className="text-foreground mb-5 font-serif text-base leading-relaxed">
                   Is this an accurate summary of what you're looking for, or would you like to expand on anything?
                 </p>
                 <div className="flex gap-3">
                   <Button
                     onClick={handleConfirmAndContinue}
-                    className="rounded-full flex-1"
+                    className="rounded-full flex-1 btn-lift"
                     size="lg"
                   >
                     Yes, that's right

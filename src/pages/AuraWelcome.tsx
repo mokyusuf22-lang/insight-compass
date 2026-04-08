@@ -117,22 +117,23 @@ export default function AuraWelcome() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 pt-16 pb-8">
+    <div className="min-h-screen flex items-center justify-center px-4 pt-16 pb-8 bg-gradient-to-b from-secondary/50 via-background to-background">
       <div className="w-full max-w-xl">
-        <AuraProgressBar currentStep={1} className="mb-8" />
+        <AuraProgressBar currentStep={1} className="mb-10" />
+
         {/* Aura Avatar */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-accent" />
+        <div className="flex items-center gap-4 mb-7">
+          <div className="w-12 h-12 chamfer-sm gradient-coral flex items-center justify-center shadow-accent flex-shrink-0">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Aura</p>
-            <p className="text-xs text-muted-foreground/60">Your coaching guide</p>
+            <p className="text-sm font-semibold text-foreground leading-none mb-1">Aura</p>
+            <p className="text-xs text-muted-foreground">Your coaching guide</p>
           </div>
         </div>
 
         {/* Chat bubble */}
-        <div className="bg-card border border-border rounded-2xl rounded-tl-sm p-6 mb-8 shadow-[var(--shadow-soft)]">
+        <div className="bg-secondary/25 border border-border/60 rounded-2xl rounded-tl-sm p-6 mb-8 shadow-card">
           <p className="text-foreground text-lg leading-relaxed font-serif">
             {typedGreeting}
             {!greetingDone && <span className="inline-block w-0.5 h-5 bg-accent animate-pulse ml-0.5 align-text-bottom" />}
@@ -145,7 +146,7 @@ export default function AuraWelcome() {
             showForm ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
           }`}
         >
-          <div className="bg-card border border-border rounded-2xl p-6 space-y-5 shadow-[var(--shadow-card)]">
+          <div className="bg-card border border-border/70 rounded-2xl p-6 space-y-5 shadow-elevated">
             <div className="space-y-2">
               <Label htmlFor="name" className="flex items-center gap-2 text-sm font-medium">
                 <User className="w-4 h-4 text-muted-foreground" />
@@ -180,7 +181,7 @@ export default function AuraWelcome() {
               <Label htmlFor="contact" className="flex items-center gap-2 text-sm font-medium">
                 <Phone className="w-4 h-4 text-muted-foreground" />
                 Preferred contact method
-                <span className="text-muted-foreground/50 text-xs">(optional)</span>
+                <span className="text-muted-foreground/50 text-xs font-normal">(optional)</span>
               </Label>
               <Select value={preferredContact} onValueChange={setPreferredContact}>
                 <SelectTrigger className="h-12 text-base">
@@ -198,7 +199,7 @@ export default function AuraWelcome() {
             <Button
               onClick={handleSubmit}
               disabled={!isValid || isSubmitting}
-              className="w-full h-12 text-base rounded-full"
+              className="w-full h-12 text-base rounded-full btn-lift"
               size="lg"
             >
               {isSubmitting ? 'Saving...' : 'Continue'}

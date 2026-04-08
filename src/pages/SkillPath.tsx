@@ -157,7 +157,7 @@ export default function SkillPath() {
               No Path Generated Yet
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-              Complete the be:more flow and commit to a path to generate your personalized execution plan.
+              Complete the Be:More flow and commit to a path to generate your personalized execution plan.
             </p>
             <Button 
               size="lg" 

@@ -36,12 +36,14 @@ export default function Auth() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedEmail, setConfirmedEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
-  const { signIn, signUp, resetPassword, user, loading } = useAuth();
+  const { signIn, signUp, resetPassword, resendVerificationEmail, user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const returnTo = (location.state as any)?.from || '/assessment/blob-tree';
+  const isUnverified = (location.state as any)?.unverified === true;
 
   const handleConfirmationComplete = useCallback(() => {
     navigate(returnTo);
@@ -52,6 +54,13 @@ export default function Auth() {
       navigate(returnTo);
     }
   }, [user, loading, navigate, showConfirmation, returnTo]);
+
+  // If redirected here because email isn't verified, show the verify-email screen
+  useEffect(() => {
+    if (isUnverified && mode === 'login') {
+      setMode('verify-email');
+    }
+  }, [isUnverified]);
 
   const validateForm = () => {
     try {
@@ -72,6 +81,36 @@ export default function Auth() {
         setErrors(fieldErrors);
       }
       return false;
+    }
+  };
+
+  const handleResendVerification = async () => {
+    const emailToResend = confirmedEmail || email;
+    if (!emailToResend) {
+      toast({
+        title: 'Email required',
+        description: 'Please go back to sign in and enter your email.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setResendLoading(true);
+    try {
+      const { error } = await resendVerificationEmail(emailToResend);
+      if (error) {
+        toast({
+          title: 'Failed to resend',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Verification email sent',
+          description: `Check your inbox at ${emailToResend}.`,
+        });
+      }
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -133,7 +172,10 @@ export default function Auth() {
       if (mode === 'login') {
         const { error } = await signIn(email, password);
         if (error) {
-          if (error.message.includes('Invalid login credentials')) {
+          if (error.message.toLowerCase().includes('email not confirmed')) {
+            setConfirmedEmail(email);
+            setMode('verify-email');
+          } else if (error.message.includes('Invalid login credentials')) {
             toast({
               title: 'Login failed',
               description: 'Invalid email or password. Please try again.',
@@ -200,7 +242,7 @@ export default function Auth() {
       <div className="min-h-screen bg-background flex flex-col">
         <header className="py-6 px-6 text-center border-b border-border">
           <Link to="/" className="font-sans font-semibold tracking-wide text-lg">
-            be:more
+            Be:More
           </Link>
         </header>
 
@@ -228,7 +270,7 @@ export default function Auth() {
         </main>
 
         <footer className="py-6 text-center">
-          <p className="text-xs text-muted-foreground">©2025 be:more</p>
+          <p className="text-xs text-muted-foreground">©2025 Be:More</p>
         </footer>
       </div>
     );
@@ -240,7 +282,7 @@ export default function Auth() {
       <div className="min-h-screen bg-background flex flex-col">
         <header className="py-6 px-6 text-center border-b border-border">
           <Link to="/" className="font-sans font-semibold tracking-wide text-lg">
-            be:more
+            Be:More
           </Link>
         </header>
 
@@ -250,14 +292,22 @@ export default function Auth() {
               <CheckCircle className="w-16 h-16 text-primary mx-auto" />
               <h1 className="text-2xl font-serif font-semibold">Check Your Email</h1>
               <p className="text-muted-foreground">
-                We've sent a verification link to <strong>{email}</strong>. Please check your inbox and click the link to verify your account.
+                We've sent a verification link to{' '}
+                <strong>{confirmedEmail || email}</strong>. Click the link to verify your account before signing in.
               </p>
             </div>
 
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Didn't receive the email? Check your spam folder or try again.
+                Didn't receive the email? Check your spam folder or resend it.
               </p>
+              <Button
+                onClick={handleResendVerification}
+                disabled={resendLoading}
+                className="w-full"
+              >
+                {resendLoading ? <LoadingSpinner size="sm" /> : 'Resend verification email'}
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => setMode('login')}
@@ -270,7 +320,7 @@ export default function Auth() {
         </main>
 
         <footer className="py-6 text-center">
-          <p className="text-xs text-muted-foreground">©2025 be:more</p>
+          <p className="text-xs text-muted-foreground">©2025 Be:More</p>
         </footer>
       </div>
     );
@@ -281,7 +331,7 @@ export default function Auth() {
       {/* Header */}
       <header className="py-6 px-6 text-center border-b border-border">
         <Link to="/" className="font-sans font-semibold tracking-wide text-lg">
-            be:more
+            Be:More
           </Link>
         </header>
 
@@ -416,6 +466,8 @@ export default function Auth() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-pressed={showPassword}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                       tabIndex={-1}
                     >
@@ -496,7 +548,7 @@ export default function Auth() {
       {/* Footer */}
       <footer className="py-6 text-center">
         <p className="text-xs text-muted-foreground">
-          ©2025 be:more
+          ©2025 Be:More
         </p>
       </footer>
     </div>

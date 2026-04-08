@@ -10,18 +10,18 @@ import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicato
 import { useToast } from '@/hooks/use-toast';
 import { SUBSCRIPTION_TIERS } from '@/lib/subscriptionTiers';
 import {
-  User,
-  Shield,
-  CreditCard,
-  AlertTriangle,
+  CircleUser,
+  ShieldCheck,
+  Wallet,
+  UserMinus,
   ArrowLeft,
-  Check,
+  CheckCircle2,
   Crown,
   Calendar,
   RefreshCw,
   Eye,
   EyeOff,
-  ExternalLink
+  ExternalLink,
 } from 'lucide-react';
 import {
   Dialog,
@@ -47,11 +47,9 @@ export default function Account() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Profile state
   const [displayName, setDisplayName] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
-  // Password state
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -59,54 +57,31 @@ export default function Account() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-  // Billing state
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
-
-  // Deactivation state
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
   const [isDeactivating, setIsDeactivating] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
+    if (!loading && !user) navigate('/auth');
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    if (user?.user_metadata?.display_name) {
-      setDisplayName(user.user_metadata.display_name);
-    }
+    if (user?.user_metadata?.display_name) setDisplayName(user.user_metadata.display_name);
   }, [user]);
 
-  // Refresh subscription on mount
   useEffect(() => {
-    if (user) {
-      refreshSubscription();
-    }
+    if (user) refreshSubscription();
   }, [user]);
 
   const handleSaveProfile = async () => {
     if (!user) return;
-
     setIsSavingProfile(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: { display_name: displayName }
-      });
-
+      const { error } = await supabase.auth.updateUser({ data: { display_name: displayName } });
       if (error) throw error;
-
-      toast({
-        title: 'Profile Updated',
-        description: 'Your profile has been saved successfully.',
-      });
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update profile. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Profile Updated', description: 'Your profile has been saved.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to update profile.', variant: 'destructive' });
     } finally {
       setIsSavingProfile(false);
     }
@@ -114,43 +89,23 @@ export default function Account() {
 
   const handleUpdatePassword = async () => {
     if (newPassword !== confirmPassword) {
-      toast({
-        title: 'Passwords do not match',
-        description: 'Please make sure both passwords are the same.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Passwords do not match', description: 'Make sure both passwords are the same.', variant: 'destructive' });
       return;
     }
-
     if (newPassword.length < 8) {
-      toast({
-        title: 'Password too short',
-        description: 'Password must be at least 8 characters long.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Password too short', description: 'Must be at least 8 characters.', variant: 'destructive' });
       return;
     }
-
     setIsUpdatingPassword(true);
     try {
       const { error } = await updatePassword(newPassword);
-
       if (error) throw error;
-
-      toast({
-        title: 'Password Updated',
-        description: 'Your password has been changed successfully.',
-      });
+      toast({ title: 'Password Updated', description: 'Your password has been changed.' });
       setShowPasswordDialog(false);
       setNewPassword('');
       setConfirmPassword('');
-    } catch (error) {
-      console.error('Error updating password:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update password. Please try again.',
-        variant: 'destructive',
-      });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to update password.', variant: 'destructive' });
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -160,19 +115,13 @@ export default function Account() {
     setIsLoadingPortal(true);
     try {
       const { data, error } = await supabase.functions.invoke('customer-portal');
-
       if (error) throw error;
-
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      } else {
-        throw new Error('No portal URL received');
-      }
-    } catch (error) {
-      console.error('Error opening customer portal:', error);
+      if (data?.url) window.open(data.url, '_blank');
+      else throw new Error('No portal URL received');
+    } catch {
       toast({
         title: 'Error',
-        description: subscription.subscribed 
+        description: subscription.subscribed
           ? 'Unable to open billing portal. Please try again.'
           : 'You need an active subscription to manage billing.',
         variant: 'destructive',
@@ -185,21 +134,11 @@ export default function Account() {
   const handleDeactivateAccount = async () => {
     setIsDeactivating(true);
     try {
-      // For now, just sign out the user
-      // In a real implementation, you'd also set a flag in the database
       await signOut();
       navigate('/');
-      toast({
-        title: 'Account Deactivated',
-        description: 'Your account has been deactivated. Sign in anytime to reactivate.',
-      });
-    } catch (error) {
-      console.error('Error deactivating account:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to deactivate account. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Account Deactivated', description: 'Sign in anytime to reactivate.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to deactivate account.', variant: 'destructive' });
     } finally {
       setIsDeactivating(false);
       setShowDeactivateDialog(false);
@@ -208,11 +147,7 @@ export default function Account() {
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
+    return new Date(dateString).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
   if (loading || subscription.loading) {
@@ -230,29 +165,27 @@ export default function Account() {
       {/* Header */}
       <header className="p-4 md:p-6 border-b border-border">
         <div className="container max-w-4xl flex items-center gap-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            className="text-muted-foreground hover:text-foreground rounded-full"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+          <Button variant="ghost" onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground rounded-full gap-2">
+            <ArrowLeft className="w-4 h-4" />
             Back
           </Button>
-          <h1 className="text-xl font-serif font-semibold">Account Settings</h1>
+          <h1 className="text-xl font-serif">Account Settings</h1>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="container max-w-4xl py-8 px-4 md:px-8 space-y-8">
-        {/* Profile Settings */}
-        <section className="chamfer bg-card p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 chamfer-sm bg-primary/10 flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
-            </div>
-            <h2 className="text-lg font-semibold">Profile Settings</h2>
-          </div>
+      <main className="container max-w-4xl py-8 px-4 md:px-8 space-y-6">
 
+        {/* ── Profile ─────────────────────────────────────── */}
+        <section className="chamfer bg-card border border-border p-6">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="w-12 h-12 chamfer-sm gradient-coral flex items-center justify-center flex-shrink-0">
+              <CircleUser className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-serif font-semibold">Profile</h2>
+              <p className="text-sm text-muted-foreground">Your name and contact details</p>
+            </div>
+          </div>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="displayName">Display Name</Label>
@@ -264,149 +197,120 @@ export default function Account() {
                 className="max-w-md"
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                value={user?.email || ''}
-                disabled
-                className="max-w-md bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+              <Input id="email" value={user?.email || ''} disabled className="max-w-md bg-muted" />
+              <p className="text-xs text-muted-foreground">Email cannot be changed. Contact support if needed.</p>
             </div>
-
-            <Button
-              onClick={handleSaveProfile}
-              disabled={isSavingProfile}
-              className="mt-4"
-            >
+            <Button onClick={handleSaveProfile} disabled={isSavingProfile} className="mt-2">
               {isSavingProfile ? <LoadingSpinner size="sm" /> : 'Save Changes'}
             </Button>
           </div>
         </section>
 
-        {/* Security Settings */}
-        <section className="chamfer bg-card p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 chamfer-sm bg-primary/10 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-primary" />
+        {/* ── Security ────────────────────────────────────── */}
+        <section className="chamfer bg-card border border-border p-6">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="w-12 h-12 chamfer-sm bg-pop/10 flex items-center justify-center flex-shrink-0">
+              <ShieldCheck className="w-6 h-6 text-pop" />
             </div>
-            <h2 className="text-lg font-semibold">Security Settings</h2>
+            <div>
+              <h2 className="text-lg font-serif font-semibold">Security</h2>
+              <p className="text-sm text-muted-foreground">Manage your password and account access</p>
+            </div>
           </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 chamfer-sm bg-secondary/50">
-              <div>
-                <p className="font-medium">Password</p>
-                <p className="text-sm text-muted-foreground">Update your password to keep your account secure</p>
-              </div>
-              <Button variant="outline" onClick={() => setShowPasswordDialog(true)}>
-                Update Password
-              </Button>
+          <div className="flex items-center justify-between p-4 chamfer-sm bg-secondary/50">
+            <div>
+              <p className="font-medium text-sm">Password</p>
+              <p className="text-sm text-muted-foreground">Keep your account secure with a strong password</p>
             </div>
+            <Button variant="outline" onClick={() => setShowPasswordDialog(true)}>
+              Update Password
+            </Button>
           </div>
         </section>
 
-        {/* Subscription & Billing */}
-        <section className="chamfer bg-card p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 chamfer-sm bg-primary/10 flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-primary" />
+        {/* ── Subscription ────────────────────────────────── */}
+        <section className="chamfer bg-card border border-border p-6">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="w-12 h-12 chamfer-sm bg-accent/10 flex items-center justify-center flex-shrink-0">
+              <Wallet className="w-6 h-6 text-accent" />
             </div>
-            <h2 className="text-lg font-semibold">Subscription & Billing</h2>
+            <div>
+              <h2 className="text-lg font-serif font-semibold">Subscription & Billing</h2>
+              <p className="text-sm text-muted-foreground">Your current plan and payment details</p>
+            </div>
           </div>
-
           <div className="space-y-4">
-            {/* Current Plan */}
-            <div className={`p-4 chamfer-sm ${subscription.tier !== 'free' ? 'bg-primary/5 border border-primary/20' : 'bg-secondary/50'}`}>
+            <div className={`p-4 chamfer-sm ${subscription.tier !== 'free' ? 'bg-accent/5 border border-accent/20' : 'bg-secondary/50'}`}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  {subscription.tier !== 'free' && <Crown className="w-5 h-5 text-primary" />}
+                  {subscription.tier !== 'free' && <Crown className="w-5 h-5 text-accent" />}
                   <span className="font-semibold text-lg">{tierConfig.name} Plan</span>
                 </div>
-                <span className="text-2xl font-bold">{tierConfig.priceDisplay}<span className="text-sm font-normal text-muted-foreground">/ month</span></span>
+                <span className="text-2xl font-bold">
+                  {tierConfig.priceDisplay}
+                  <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                </span>
               </div>
-
               {subscription.subscribed && (
                 <div className="flex items-center gap-4 text-sm text-muted-foreground mt-3">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
-                    <span>
-                      {subscription.cancelAtPeriodEnd ? 'Ends' : 'Renews'}: {formatDate(subscription.subscriptionEnd)}
-                    </span>
+                    <span>{subscription.cancelAtPeriodEnd ? 'Ends' : 'Renews'}: {formatDate(subscription.subscriptionEnd)}</span>
                   </div>
                   {subscription.cancelAtPeriodEnd && (
-                    <span className="text-amber-600 font-medium">Cancellation pending</span>
+                    <span className="text-warning font-medium">Cancellation pending</span>
                   )}
                 </div>
               )}
-
               <ul className="mt-4 space-y-2">
                 {tierConfig.features.map((feature, index) => (
                   <li key={index} className="flex items-center gap-2 text-sm">
-                    <Check className="w-4 h-4 text-green-500" />
+                    <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                     <span>{feature}</span>
                   </li>
                 ))}
               </ul>
             </div>
-
-            {/* Actions */}
             <div className="flex flex-wrap gap-3">
               {subscription.tier === 'free' ? (
-                <Button onClick={() => navigate('/paywall')} className="gradient-primary text-primary-foreground">
+                <Button onClick={() => navigate('/paywall')} className="bg-accent hover:bg-accent/90 text-white shadow-accent">
                   <Crown className="w-4 h-4 mr-2" />
                   Upgrade Plan
                 </Button>
               ) : (
                 <>
-                  <Button variant="outline" onClick={() => navigate('/paywall')}>
-                    Change Plan
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={handleManageSubscription}
-                    disabled={isLoadingPortal}
-                  >
-                    {isLoadingPortal ? (
-                      <LoadingSpinner size="sm" />
-                    ) : (
-                      <>
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Manage Billing
-                      </>
-                    )}
+                  <Button variant="outline" onClick={() => navigate('/paywall')}>Change Plan</Button>
+                  <Button variant="outline" onClick={handleManageSubscription} disabled={isLoadingPortal}>
+                    {isLoadingPortal ? <LoadingSpinner size="sm" /> : <><ExternalLink className="w-4 h-4 mr-2" />Manage Billing</>}
                   </Button>
                 </>
               )}
-              <Button 
-                variant="ghost" 
-                onClick={() => refreshSubscription()}
-                className="text-muted-foreground"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
+              <Button variant="ghost" onClick={() => refreshSubscription()} className="text-muted-foreground gap-2">
+                <RefreshCw className="w-4 h-4" />
                 Refresh Status
               </Button>
             </div>
           </div>
         </section>
 
-        {/* Account Deactivation */}
-        <section className="chamfer bg-card p-6 border border-destructive/20">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 chamfer-sm bg-destructive/10 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-destructive" />
+        {/* ── Danger Zone ─────────────────────────────────── */}
+        <section className="chamfer bg-destructive/3 border-2 border-destructive/25 p-6">
+          <div className="flex items-start gap-4 mb-5">
+            <div className="w-12 h-12 chamfer-sm bg-destructive/10 flex items-center justify-center flex-shrink-0">
+              <UserMinus className="w-6 h-6 text-destructive" />
             </div>
-            <h2 className="text-lg font-semibold">Account Deactivation</h2>
+            <div>
+              <h2 className="text-lg font-serif font-semibold text-destructive">Danger Zone</h2>
+              <p className="text-sm text-muted-foreground">Irreversible account actions</p>
+            </div>
           </div>
-
           <p className="text-sm text-muted-foreground mb-4">
-            Deactivating your account will pause your Skill Path and coaching access. Your data will be retained and you can reactivate anytime by signing in again.
+            Deactivating your account will pause your Skill Path and coaching access. Your data is retained and you can reactivate anytime by signing in again.
           </p>
-
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
             onClick={() => setShowDeactivateDialog(true)}
           >
@@ -415,16 +319,13 @@ export default function Account() {
         </section>
       </main>
 
-      {/* Password Update Dialog */}
+      {/* Password Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Update Password</DialogTitle>
-            <DialogDescription>
-              Enter your new password below. Make sure it's at least 8 characters long.
-            </DialogDescription>
+            <DialogDescription>Enter your new password. Minimum 8 characters.</DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="newPassword">New Password</Label>
@@ -440,6 +341,8 @@ export default function Account() {
                 <button
                   type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
+                  aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showNewPassword}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   tabIndex={-1}
                 >
@@ -448,7 +351,6 @@ export default function Account() {
               </div>
               <PasswordStrengthIndicator password={newPassword} />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
               <div className="relative">
@@ -463,6 +365,8 @@ export default function Account() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showConfirmPassword}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   tabIndex={-1}
                 >
@@ -474,31 +378,25 @@ export default function Account() {
               )}
             </div>
           </div>
-
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleUpdatePassword} 
-              disabled={isUpdatingPassword || !newPassword || newPassword !== confirmPassword}
-            >
+            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>Cancel</Button>
+            <Button onClick={handleUpdatePassword} disabled={isUpdatingPassword || !newPassword || newPassword !== confirmPassword}>
               {isUpdatingPassword ? <LoadingSpinner size="sm" /> : 'Update Password'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Deactivation Confirmation Dialog */}
+      {/* Deactivation Dialog */}
       <AlertDialog open={showDeactivateDialog} onOpenChange={setShowDeactivateDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Deactivate Account?</AlertDialogTitle>
             <AlertDialogDescription>
-              Deactivating your account will pause your Skill Path and coaching access. You can reactivate anytime by signing in again.
+              Deactivating will pause your Skill Path and coaching access. You can reactivate anytime by signing in.
               {subscription.subscribed && (
-                <span className="block mt-2 font-medium text-amber-600">
-                  Note: Your subscription will continue until the end of your current billing period.
+                <span className="block mt-2 font-medium text-warning">
+                  Note: Your subscription continues until the end of your current billing period.
                 </span>
               )}
             </AlertDialogDescription>

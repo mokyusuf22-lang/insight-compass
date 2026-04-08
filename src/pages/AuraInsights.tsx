@@ -8,12 +8,10 @@ import {
   Sparkles,
   ArrowRight,
   BarChart3,
-  Shield,
   Target,
   Zap,
   TreePine,
   Compass,
-  Heart,
   Loader2,
   User,
 } from 'lucide-react';
@@ -70,7 +68,6 @@ export default function AuraInsights() {
     }
   }, [introDone]);
 
-  // Load all assessment data and build insights
   useEffect(() => {
     const load = async () => {
       if (!user) return;
@@ -91,30 +88,27 @@ export default function AuraInsights() {
 
       const sections: InsightSection[] = [];
 
-      // DISC
       if (discRes.data?.result) {
         const r = discRes.data.result as any;
         sections.push({
           title: 'Behavioural Profile (DISC)',
-          icon: <BarChart3 className="w-5 h-5" />,
+          icon: <BarChart3 className="w-4 h-4" />,
           content: r.summary || `Your primary style is ${r.primaryStyle || 'being determined'}. This indicates your natural approach to challenges and communication.`,
           available: true,
         });
       }
 
-      // Values
       if (valuesRes.data?.ranked_values) {
         const vals = valuesRes.data.ranked_values as any[];
         const topVals = Array.isArray(vals) ? vals.slice(0, 3).join(', ') : 'your core values';
         sections.push({
           title: 'Core Values',
-          icon: <Compass className="w-5 h-5" />,
+          icon: <Compass className="w-4 h-4" />,
           content: `Your top values include ${topVals}. These are the principles that drive your decisions and define what matters most to you.`,
           available: true,
         });
       }
 
-      // Wheel of Life
       if (wheelRes.data?.scores) {
         const scores = wheelRes.data.scores as Record<string, number>;
         const entries = Object.entries(scores);
@@ -122,29 +116,27 @@ export default function AuraInsights() {
         const lowest = entries.sort((a, b) => a[1] - b[1])[0];
         sections.push({
           title: 'Life Balance Snapshot',
-          icon: <Target className="w-5 h-5" />,
+          icon: <Target className="w-4 h-4" />,
           content: `Your strongest area is ${highest?.[0] || 'being assessed'} and your primary growth opportunity is in ${lowest?.[0] || 'being assessed'}. This gives us a clear picture of where to focus your energy.`,
           available: true,
         });
       }
 
-      // Blob Tree
       if (blobRes.data) {
         sections.push({
           title: 'Emotional Landscape',
-          icon: <TreePine className="w-5 h-5" />,
+          icon: <TreePine className="w-4 h-4" />,
           content: `Your current emotional position and desired state have been captured. This helps us understand where you are emotionally and where you'd like to be.`,
           available: true,
         });
       }
 
-      // Strengths
       if (strengthsRes.data?.result) {
         const r = strengthsRes.data.result as any;
         const topStrengths = r.ranked_strengths?.slice(0, 3).map((s: any) => s.name).join(', ') || 'your key strengths';
         sections.push({
           title: 'Strengths & Growth Areas',
-          icon: <Zap className="w-5 h-5" />,
+          icon: <Zap className="w-4 h-4" />,
           content: `Your primary strengths are ${topStrengths}. These are the areas where you naturally excel and create value.`,
           available: true,
         });
@@ -152,7 +144,6 @@ export default function AuraInsights() {
 
       setInsights(sections);
 
-      // Generate AI recommendation
       try {
         const { data: recData, error } = await supabase.functions.invoke('generate-coaching-recommendation', {
           body: {
@@ -193,33 +184,36 @@ export default function AuraInsights() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-background flex items-start justify-center px-4 pt-16 pb-12">
+    <div className="min-h-screen flex items-start justify-center px-4 pt-16 pb-12 bg-gradient-to-b from-secondary/50 via-background to-background">
       <div className="w-full max-w-2xl">
-        <AuraProgressBar currentStep={6} className="mb-8" />
+        <AuraProgressBar currentStep={6} className="mb-10" />
+
         {/* Aura Avatar */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-accent" />
+        <div className="flex items-center gap-4 mb-7">
+          <div className="w-12 h-12 chamfer-sm gradient-coral flex items-center justify-center shadow-accent flex-shrink-0">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Aura</p>
-            <p className="text-xs text-muted-foreground/60">Step 6 of 7 — Your Insights</p>
+            <p className="text-sm font-semibold text-foreground leading-none mb-1">Aura</p>
+            <p className="text-xs text-muted-foreground">Step 6 of 7 — Your Insights</p>
           </div>
         </div>
 
         {/* Loading state */}
         {isGenerating && (
-          <div className="bg-card border border-border rounded-2xl p-8 text-center shadow-[var(--shadow-soft)]">
-            <Loader2 className="w-8 h-8 text-accent animate-spin mx-auto mb-4" />
-            <p className="text-foreground font-serif text-lg">Aura is compiling your insights...</p>
-            <p className="text-sm text-muted-foreground mt-2">Analysing your assessment results</p>
+          <div className="bg-card border border-border/70 rounded-2xl p-10 text-center shadow-elevated">
+            <div className="w-14 h-14 chamfer-sm gradient-coral flex items-center justify-center shadow-accent mx-auto mb-5">
+              <Loader2 className="w-6 h-6 text-white animate-spin" />
+            </div>
+            <p className="text-foreground font-serif text-lg mb-2">Aura is compiling your insights...</p>
+            <p className="text-sm text-muted-foreground">Analysing your assessment results</p>
           </div>
         )}
 
-        {/* Intro */}
+        {/* Content */}
         {!isGenerating && (
           <>
-            <div className="bg-card border border-border rounded-2xl rounded-tl-sm p-6 mb-6 shadow-[var(--shadow-soft)]">
+            <div className="bg-secondary/25 border border-border/60 rounded-2xl rounded-tl-sm p-6 mb-6 shadow-card">
               <p className="text-foreground text-lg leading-relaxed font-serif">
                 {displayed}
                 {!introDone && <span className="inline-block w-0.5 h-5 bg-accent animate-pulse ml-0.5 align-text-bottom" />}
@@ -233,30 +227,32 @@ export default function AuraInsights() {
               {insights.map((section, i) => (
                 <div
                   key={i}
-                  className="bg-card border border-border rounded-2xl p-5 shadow-[var(--shadow-card)] animate-fade-up"
-                  style={{ animationDelay: `${i * 100}ms` }}
+                  className="bg-card border border-border/70 rounded-2xl p-5 shadow-card animate-fade-up"
+                  style={{ animationDelay: `${i * 80}ms` }}
                 >
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center text-accent">
+                    <div className="w-8 h-8 chamfer-sm bg-accent/10 flex items-center justify-center text-accent">
                       {section.icon}
                     </div>
-                    <h3 className="font-medium text-foreground">{section.title}</h3>
+                    <h3 className="font-semibold text-foreground text-sm">{section.title}</h3>
                   </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{section.content}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed pl-11">{section.content}</p>
                 </div>
               ))}
 
               {/* Recommendation */}
               {recommendation && insights.length > 0 && (
-                <div className="bg-accent/5 border border-accent/20 rounded-2xl p-6 shadow-[var(--shadow-soft)] animate-fade-up">
-                  <div className="flex items-center gap-3 mb-3">
-                    <User className="w-5 h-5 text-accent" />
-                    <h3 className="font-medium text-foreground">Aura's Recommendation</h3>
+                <div className="border border-accent/25 rounded-2xl p-6 shadow-elevated animate-fade-up" style={{ background: 'linear-gradient(135deg, hsl(22 92% 62% / 0.06) 0%, hsl(22 92% 62% / 0.02) 100%)' }}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-8 h-8 chamfer-sm gradient-coral flex items-center justify-center shadow-accent">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <h3 className="font-semibold text-foreground">Aura's Recommendation</h3>
                   </div>
-                  <p className="text-sm text-foreground leading-relaxed mb-4">{recommendation}</p>
+                  <p className="text-sm text-foreground leading-relaxed mb-5">{recommendation}</p>
                   <Button
                     onClick={handleContinueToFeedback}
-                    className="w-full h-12 text-base rounded-full"
+                    className="w-full h-12 text-base rounded-full btn-lift"
                     size="lg"
                   >
                     Continue
@@ -267,8 +263,8 @@ export default function AuraInsights() {
 
               {/* No insights fallback */}
               {insights.length === 0 && (
-                <div className="bg-card border border-border rounded-2xl p-6 text-center shadow-[var(--shadow-card)]">
-                  <p className="text-muted-foreground mb-4">No completed assessments found. Please complete at least one assessment first.</p>
+                <div className="bg-card border border-border/70 rounded-2xl p-6 text-center shadow-card">
+                  <p className="text-muted-foreground mb-4 text-sm">No completed assessments found. Please complete at least one assessment first.</p>
                   <Button onClick={() => navigate('/aura/assessments')} variant="outline" className="rounded-full">
                     Back to Assessments
                   </Button>

@@ -2,11 +2,18 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowRight, MessageSquare, Brain, Target, BarChart3, Check } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import {
+  ArrowRight,
+  BotMessageSquare,
+  ScanFace,
+  Waypoints,
+  TrendingUp,
+  CheckCircle2,
+} from 'lucide-react';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import heroImage from '@/assets/hero-gen-z.jpg';
 import quoteImage from '@/assets/professional-nurse.jpg';
-
 import builderImage from '@/assets/professional-builder.jpg';
 import teacherImage from '@/assets/professional-teacher.jpg';
 
@@ -15,16 +22,20 @@ export default function Index() {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    // Start with onboarding flow (Tell me about yourself)
     navigate('/aura/welcome');
   };
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="container max-w-6xl py-4 flex justify-between items-center">
-          <span className="font-sans font-semibold tracking-wide text-lg">be:more</span>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 chamfer-sm bg-accent flex items-center justify-center">
+              <span className="text-white font-sans font-bold text-xs">b</span>
+            </div>
+            <span className="font-sans font-semibold tracking-wide text-base">Be:More</span>
+          </div>
           <div className="flex items-center gap-4">
             {user ? (
               <Link to="/welcome">
@@ -39,34 +50,38 @@ export default function Index() {
         </div>
       </header>
 
-      {/* Hero Section - Split Layout */}
+      {/* Hero — split layout */}
       <section className="pt-16">
         <div className="grid lg:grid-cols-2 min-h-[70vh]">
-          {/* Image Side */}
+          {/* Image */}
           <div className="relative order-1 lg:order-2 overflow-hidden">
             <img
               src={heroImage}
               alt="Professional at work"
               className="w-full h-full object-cover"
+              fetchpriority="high"
             />
           </div>
-          
-          {/* Content Side */}
-          <div className="flex items-center px-6 md:px-12 lg:px-16 py-16 lg:py-24 order-2 lg:order-1 bg-amber-100">
+          {/* Content */}
+          <div className="flex items-center px-6 md:px-12 lg:px-16 py-16 lg:py-24 order-2 lg:order-1 bg-secondary section-dots">
             <ScrollReveal animation="fade-up" className="max-w-md space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20">
+                <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                <span className="text-xs font-medium text-accent tracking-wide uppercase">AI Career Coaching</span>
+              </div>
               <h1 className="text-3xl md:text-4xl lg:text-5xl leading-tight font-serif">
                 Intelligent, personalised coaching for real execution.
               </h1>
               <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
                 AI-powered coaching combined with personality insight to craft your personalised path to success.
               </p>
-              <div className="space-y-3 pt-4">
-                <Button 
-                  className="w-full sm:w-auto bg-foreground text-background hover:bg-foreground/90 rounded-full"
+              <div className="space-y-3 pt-2">
+                <Button
+                  className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-white rounded-full shadow-accent btn-lift gap-2"
                   onClick={handleGetStarted}
                 >
                   Start free
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <ArrowRight className="w-4 h-4" />
                 </Button>
                 <p className="text-xs text-muted-foreground">
                   Free to start. No credit card required.
@@ -77,17 +92,17 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Statement Section - Large Typography */}
+      {/* Statement */}
       <section className="py-20 md:py-28 px-6 bg-background">
         <div className="container max-w-5xl">
           <ScrollReveal animation="fade" className="text-center mb-8">
             <div className="flex flex-wrap justify-center items-baseline gap-x-2 gap-y-1 text-xs uppercase tracking-widest text-muted-foreground mb-6">
               <span>PLANNING</span>
-              <span className="text-muted-foreground/30">·</span>
+              <span className="text-accent">·</span>
               <span>EXECUTION</span>
-              <span className="text-muted-foreground/30">·</span>
+              <span className="text-accent">·</span>
               <span>DIRECTION</span>
-              <span className="text-muted-foreground/30">·</span>
+              <span className="text-accent">·</span>
               <span>STRUCTURE</span>
             </div>
           </ScrollReveal>
@@ -108,36 +123,40 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="py-16 md:py-24 px-6 border-t border-border">
+      {/* Features */}
+      <section className="py-16 md:py-24 px-6 border-t border-border section-dots">
         <div className="container max-w-5xl">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-6">
             {[
               {
-                icon: MessageSquare,
+                icon: BotMessageSquare,
                 title: 'AI Coaching',
                 description: 'Continuous, adaptive coaching that responds to your goals, decisions, and progress.',
+                color: 'bg-accent/10 text-accent',
               },
               {
-                icon: Brain,
+                icon: ScanFace,
                 title: 'Core Assessments',
                 description: 'Personality and behavioral assessments that explain how you think, work, and execute.',
+                color: 'bg-pop/10 text-pop',
               },
               {
-                icon: Target,
+                icon: Waypoints,
                 title: 'Personalised Strategy',
                 description: 'A structured roadmap that shows what to focus on now — and what to ignore.',
+                color: 'bg-accent/10 text-accent',
               },
               {
-                icon: BarChart3,
+                icon: TrendingUp,
                 title: 'Execution Tracking',
                 description: 'Clear milestones, accountability, and evidence of progress.',
+                color: 'bg-pop/10 text-pop',
               },
             ].map((feature, index) => (
               <ScrollReveal key={feature.title} animation="fade-up" delay={index * 100}>
-                <div className="space-y-3">
-                  <div className="w-10 h-10 chamfer-sm bg-secondary flex items-center justify-center">
-                    <feature.icon className="w-5 h-5 text-foreground" />
+                <div className="space-y-4">
+                  <div className={`w-11 h-11 chamfer-sm flex items-center justify-center ${feature.color}`}>
+                    <feature.icon className="w-5 h-5" />
                   </div>
                   <h3 className="font-sans font-semibold text-base">{feature.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
@@ -148,38 +167,37 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Quote Section with Image */}
-      <section className="py-16 md:py-24 px-6 bg-teal-600">
+      {/* Quote section */}
+      <section className="py-16 md:py-24 px-6 bg-foreground">
         <div className="container max-w-5xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Quote */}
             <ScrollReveal animation="fade-left" className="order-2 lg:order-1">
-              <blockquote className="text-2xl md:text-3xl lg:text-4xl text-white leading-snug font-serif">
-                <span className="text-5xl leading-none">"</span>Most people don't fail because of ability — they fail because they{' '}
+              <blockquote className="text-2xl md:text-3xl lg:text-4xl text-background leading-snug font-serif">
+                <span className="text-5xl leading-none text-accent">"</span>Most people don't fail because of ability — they fail because they{' '}
                 <span className="italic">lack structure.</span>"
               </blockquote>
-              <p className="mt-6 text-white/70 text-sm uppercase tracking-wider">
+              <p className="mt-6 text-background/60 text-sm uppercase tracking-wider">
                 Aggregated coaching and career transition data
               </p>
             </ScrollReveal>
-            {/* Image */}
             <ScrollReveal animation="fade-right" className="order-1 lg:order-2">
               <img
                 src={quoteImage}
                 alt="Professional with tablet"
                 className="w-full max-w-sm mx-auto lg:max-w-none chamfer"
+                loading="lazy"
               />
             </ScrollReveal>
           </div>
         </div>
       </section>
 
-      {/* Collaboration Section */}
+      {/* How it works */}
       <section className="py-20 md:py-28 px-6 bg-background">
         <div className="container max-w-5xl">
           <ScrollReveal animation="fade-up" className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-4">
-              Start with clarity. Build momentum
+              Start with clarity. Build momentum.
             </h2>
             <p className="text-muted-foreground text-lg max-w-lg mx-auto">
               Understand how you operate, then execute with intention.
@@ -191,21 +209,24 @@ export default function Index() {
                 step: '01',
                 title: 'Discover',
                 description: 'Meet Aura, your AI coach. Share your challenge and uncover your unique profile through guided assessments.',
+                accent: 'border-accent/40',
               },
               {
                 step: '02',
                 title: 'Plan',
                 description: 'Receive a personalised strategy and structured roadmap built around your strengths, values, and goals.',
+                accent: 'border-pop/40',
               },
               {
                 step: '03',
                 title: 'Execute',
                 description: 'Follow weekly action plans, track milestones, and get adaptive coaching as you make real progress.',
+                accent: 'border-accent/40',
               },
             ].map((item, index) => (
               <ScrollReveal key={item.step} animation="fade-up" delay={100 + index * 150}>
-                <div className="chamfer bg-card border border-border p-6 space-y-3 h-full">
-                  <span className="text-3xl font-serif text-primary/40">{item.step}</span>
+                <div className={`chamfer bg-card border-2 ${item.accent} p-6 space-y-3 h-full`}>
+                  <span className="text-3xl font-serif text-accent/50">{item.step}</span>
                   <h3 className="font-sans font-semibold text-lg">{item.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
                 </div>
@@ -215,19 +236,18 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Strategy Section - Split */}
-      <section className="py-16 md:py-24 px-6 bg-secondary">
+      {/* Strategy split */}
+      <section className="py-16 md:py-24 px-6 bg-secondary section-dots">
         <div className="container max-w-5xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Image */}
             <ScrollReveal animation="fade-right">
               <img
                 src={teacherImage}
                 alt="Professional educator"
                 className="w-full chamfer"
+                loading="lazy"
               />
             </ScrollReveal>
-            {/* Content */}
             <ScrollReveal animation="fade-left" delay={100}>
               <div className="space-y-6">
                 <h2 className="text-2xl md:text-3xl lg:text-4xl font-serif leading-tight">
@@ -239,12 +259,17 @@ export default function Index() {
                   Our platform combines AI coaching with evidence-based assessments to craft your personalised path to success. No generic advice. No vague promises. Just clear thinking and practical steps.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <Button className="rounded-full" onClick={handleGetStarted}>
+                  <Button
+                    className="rounded-full bg-accent hover:bg-accent/90 text-white shadow-accent btn-lift"
+                    onClick={handleGetStarted}
+                  >
                     Start free
                   </Button>
-                  <Button variant="outline" className="rounded-full" onClick={() => {
-                    document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
-                  }}>
+                  <Button
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                  >
                     See pricing
                   </Button>
                 </div>
@@ -254,7 +279,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Pricing Section */}
+      {/* Pricing */}
       <section id="pricing" className="py-20 md:py-28 px-6 bg-background">
         <div className="container max-w-5xl">
           <ScrollReveal animation="fade-up" className="text-center mb-12">
@@ -265,22 +290,18 @@ export default function Index() {
               Start free and upgrade when you're ready.
             </p>
           </ScrollReveal>
-          
+
           <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-            {/* Free Tier */}
+            {/* Free */}
             <ScrollReveal animation="fade-up" delay={100}>
-              <div className="chamfer bg-card p-8 space-y-6 h-full">
+              <div className="chamfer bg-card border border-border p-8 space-y-6 h-full">
                 <div>
                   <h3 className="text-lg font-sans font-semibold mb-1">Free</h3>
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-serif">£0</span>
                   </div>
                 </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full rounded-full"
-                  onClick={handleGetStarted}
-                >
+                <Button variant="outline" className="w-full rounded-full" onClick={handleGetStarted}>
                   Start with Free
                 </Button>
                 <div className="pt-2">
@@ -293,7 +314,7 @@ export default function Index() {
                       'High-level insights',
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-3 text-sm">
-                        <Check className="w-4 h-4 mt-0.5 text-foreground shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 mt-0.5 text-success shrink-0" />
                         <span>{item}</span>
                       </li>
                     ))}
@@ -302,11 +323,11 @@ export default function Index() {
               </div>
             </ScrollReveal>
 
-            {/* Pro Tier */}
+            {/* Pro */}
             <ScrollReveal animation="fade-up" delay={200}>
               <div className="chamfer bg-foreground text-background p-8 space-y-6 relative h-full">
                 <div className="absolute top-4 right-6">
-                  <span className="bg-background text-foreground text-xs px-3 py-1 rounded-full font-medium">
+                  <span className="bg-accent text-white text-xs px-3 py-1 rounded-full font-medium">
                     Recommended
                   </span>
                 </div>
@@ -314,17 +335,17 @@ export default function Index() {
                   <h3 className="text-lg font-sans font-semibold mb-1">Pro</h3>
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-serif">£49</span>
-                    <span className="text-background/70 text-sm">/mo</span>
+                    <span className="text-background/60 text-sm">/mo</span>
                   </div>
                 </div>
-                <Button 
-                  className="w-full rounded-full bg-background text-foreground hover:bg-background/90"
+                <Button
+                  className="w-full rounded-full bg-accent hover:bg-accent/90 text-white shadow-accent btn-lift"
                   onClick={() => navigate('/paywall')}
                 >
                   Start with Pro
                 </Button>
                 <div className="pt-2">
-                  <p className="text-sm text-background/70 mb-4">Everything in Free, plus:</p>
+                  <p className="text-sm text-background/60 mb-4">Everything in Free, plus:</p>
                   <ul className="space-y-3">
                     {[
                       'Full AI coaching access',
@@ -335,7 +356,7 @@ export default function Index() {
                       'Progress tracking dashboard',
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-3 text-sm">
-                        <Check className="w-4 h-4 mt-0.5 text-background shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 mt-0.5 text-accent shrink-0" />
                         <span>{item}</span>
                       </li>
                     ))}
@@ -345,7 +366,6 @@ export default function Index() {
             </ScrollReveal>
           </div>
 
-          {/* Premium Note */}
           <ScrollReveal animation="fade-up" delay={300}>
             <div className="text-center mt-12 pt-8 border-t border-border">
               <h3 className="font-sans font-semibold mb-2">Need human coaching?</h3>
@@ -364,18 +384,21 @@ export default function Index() {
       <footer className="border-t border-border py-16 px-6 bg-foreground text-background">
         <div className="container max-w-5xl">
           <div className="grid md:grid-cols-3 gap-12 mb-12">
-            {/* Brand */}
             <div className="md:col-span-1">
-              <span className="font-sans font-semibold tracking-wide text-lg block mb-4">be:more</span>
-              <p className="text-background/70 text-sm leading-relaxed">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-7 h-7 chamfer-sm bg-accent flex items-center justify-center">
+                  <span className="text-white font-sans font-bold text-xs">b</span>
+                </div>
+                <span className="font-sans font-semibold tracking-wide text-base">Be:More</span>
+              </div>
+              <p className="text-background/60 text-sm leading-relaxed">
                 A structured career coaching platform for professionals who want direction, not noise.
               </p>
             </div>
-            
-            {/* Links */}
+
             <div>
               <h4 className="font-sans font-semibold mb-4 text-sm uppercase tracking-wider">Links</h4>
-              <ul className="space-y-2 text-background/70 text-sm">
+              <ul className="space-y-2 text-background/60 text-sm">
                 <li><a href="#" className="hover:text-background transition-colors">How it works</a></li>
                 <li><a href="#pricing" className="hover:text-background transition-colors">Pricing</a></li>
                 <li><a href="#" className="hover:text-background transition-colors">Privacy</a></li>
@@ -383,38 +406,36 @@ export default function Index() {
               </ul>
             </div>
 
-            {/* Newsletter */}
             <div>
               <h4 className="font-sans font-semibold mb-4 text-sm uppercase tracking-wider">Stay updated</h4>
+              <Label htmlFor="newsletter-email" className="sr-only">Email address</Label>
               <div className="flex gap-2">
-                <Input 
-                  placeholder="you@email.com" 
-                  className="bg-background/10 border-background/20 text-background placeholder:text-background/50"
+                <Input
+                  id="newsletter-email"
+                  type="email"
+                  placeholder="you@email.com"
+                  className="bg-background/10 border-background/20 text-background placeholder:text-background/40"
                 />
-                <Button size="sm" variant="secondary" className="rounded-full">
+                <Button size="sm" variant="secondary" className="rounded-full shrink-0">
                   Join
                 </Button>
               </div>
             </div>
           </div>
-          
-          {/* Bottom */}
+
           <div className="pt-8 border-t border-background/20">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-xs text-background/50">
-                © 2026 be:more. All rights reserved.
-              </p>
-              <div className="text-xs text-background/50 flex gap-4">
-                <a href="#" className="hover:text-background/70">Terms of Service</a>
-                <a href="#" className="hover:text-background/70">Privacy Policy</a>
+              <p className="text-xs text-background/40">© 2026 Be:More. All rights reserved.</p>
+              <div className="text-xs text-background/40 flex gap-4">
+                <a href="#" className="hover:text-background/60">Terms of Service</a>
+                <a href="#" className="hover:text-background/60">Privacy Policy</a>
               </div>
             </div>
           </div>
-          
-          {/* Large Brand Name */}
+
           <div className="mt-12 pt-8">
-            <span className="text-6xl md:text-8xl lg:text-9xl font-sans font-bold tracking-tight text-background/10">
-              be:more
+            <span className="text-6xl md:text-8xl lg:text-9xl font-sans font-bold tracking-tight text-background/8">
+              Be:More
             </span>
           </div>
         </div>

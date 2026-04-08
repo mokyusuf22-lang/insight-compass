@@ -82,22 +82,23 @@ export default function AuraAssessmentIntro() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 pt-16 pb-8">
+    <div className="min-h-screen flex items-center justify-center px-4 pt-16 pb-8 bg-gradient-to-b from-secondary/50 via-background to-background">
       <div className="w-full max-w-xl">
-        <AuraProgressBar currentStep={4} className="mb-8" />
+        <AuraProgressBar currentStep={4} className="mb-10" />
+
         {/* Aura Avatar */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-accent" />
+        <div className="flex items-center gap-4 mb-7">
+          <div className="w-12 h-12 chamfer-sm gradient-coral flex items-center justify-center shadow-accent flex-shrink-0">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Aura</p>
-            <p className="text-xs text-muted-foreground/60">Step 4 of 7</p>
+            <p className="text-sm font-semibold text-foreground leading-none mb-1">Aura</p>
+            <p className="text-xs text-muted-foreground">Step 4 of 7</p>
           </div>
         </div>
 
         {/* Chat bubble */}
-        <div className="bg-card border border-border rounded-2xl rounded-tl-sm p-6 mb-8 shadow-[var(--shadow-soft)]">
+        <div className="bg-secondary/25 border border-border/60 rounded-2xl rounded-tl-sm p-6 mb-8 shadow-card">
           <p className="text-foreground text-lg leading-relaxed font-serif">
             {displayed}
             {!done && <span className="inline-block w-0.5 h-5 bg-accent animate-pulse ml-0.5 align-text-bottom" />}
@@ -108,34 +109,33 @@ export default function AuraAssessmentIntro() {
         <div
           className={`transition-all duration-500 ${showButton ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
         >
-          <div className="bg-card border border-border rounded-2xl p-6 mb-6 shadow-[var(--shadow-card)]">
-            <div className="flex items-center gap-3 mb-4">
-              <ClipboardCheck className="w-5 h-5 text-accent" />
-              <p className="font-medium text-foreground">What to expect</p>
+          <div className="bg-card border border-border/70 rounded-2xl p-6 mb-5 shadow-elevated">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+                <ClipboardCheck className="w-4 h-4 text-accent" />
+              </div>
+              <p className="font-semibold text-foreground">What to expect</p>
             </div>
-            <ul className="space-y-2 text-muted-foreground text-sm">
-              <li className="flex items-start gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0" />
-                A series of short, focused assessments tailored to your needs
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0" />
-                Each takes only a few minutes to complete
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0" />
-                Your results will create a comprehensive personal profile
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0" />
-                We'll use these insights to match you with the ideal coach
-              </li>
+            <ul className="space-y-3">
+              {[
+                'A series of short, focused assessments tailored to your needs',
+                'Each takes only a few minutes to complete',
+                'Your results will create a comprehensive personal profile',
+                'We\'ll use these insights to match you with the ideal coach',
+              ].map((item, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
+                  <span className="w-5 h-5 rounded-full bg-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                  </span>
+                  {item}
+                </li>
+              ))}
             </ul>
           </div>
 
           <Button
             onClick={handleContinue}
-            className="w-full h-12 text-base rounded-full"
+            className="w-full h-12 text-base rounded-full btn-lift"
             size="lg"
           >
             Let's begin

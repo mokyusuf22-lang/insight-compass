@@ -197,7 +197,7 @@ export default function BlobTreeAssessment() {
                     <button
                       key={num}
                       onClick={() => handleBlobClick(num)}
-                      className={`absolute w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-all duration-200 -translate-x-1/2 -translate-y-1/2 ${
+                      className={`absolute w-11 h-11 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 -translate-x-1/2 -translate-y-1/2 ${
                         isSelected
                           ? 'bg-primary text-primary-foreground scale-125 shadow-lg ring-2 ring-primary ring-offset-2'
                           : isPreviouslySelected

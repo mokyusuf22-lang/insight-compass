@@ -32,10 +32,12 @@ interface AuthContextType {
   subscription: SubscriptionState;
   loading: boolean;
   isAdmin: boolean;
+  emailVerified: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  resendVerificationEmail: (email: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
@@ -62,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<SubscriptionState>(defaultSubscription);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -162,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        setEmailVerified(!!session?.user?.email_confirmed_at);
 
         if (session?.user) {
           setTimeout(() => {
@@ -171,6 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setProfile(null);
           setIsAdmin(false);
+          setEmailVerified(false);
           setSubscription({ ...defaultSubscription, loading: false });
         }
       }
@@ -180,6 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setEmailVerified(!!session?.user?.email_confirmed_at);
 
       if (session?.user) {
         fetchProfile(session.user.id);
@@ -241,6 +247,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error as Error | null };
   };
 
+  const resendVerificationEmail = async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
+    return { error: error as Error | null };
+  };
+
   const updatePassword = async (newPassword: string) => {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     return { error: error as Error | null };
@@ -261,10 +276,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription,
       loading,
       isAdmin,
+      emailVerified,
       signIn,
       signUp,
       signInWithGoogle,
       resetPassword,
+      resendVerificationEmail,
       signOut,
       refreshProfile,
       refreshSubscription,

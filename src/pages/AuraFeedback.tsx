@@ -67,7 +67,6 @@ export default function AuraFeedback() {
     setIsSubmitting(true);
 
     try {
-      // Save feedback to aura_sessions as part of the session data
       const { data: session } = await supabase
         .from('aura_sessions')
         .select('id')
@@ -100,22 +99,23 @@ export default function AuraFeedback() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 pt-16 pb-8">
+    <div className="min-h-screen flex items-center justify-center px-4 pt-16 pb-8 bg-gradient-to-b from-secondary/50 via-background to-background">
       <div className="w-full max-w-xl">
-        <AuraProgressBar currentStep={6} className="mb-8" />
+        <AuraProgressBar currentStep={6} className="mb-10" />
+
         {/* Aura Avatar */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-accent" />
+        <div className="flex items-center gap-4 mb-7">
+          <div className="w-12 h-12 chamfer-sm gradient-coral flex items-center justify-center shadow-accent flex-shrink-0">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Aura</p>
-            <p className="text-xs text-muted-foreground/60">Step 6.5 — Your Feedback</p>
+            <p className="text-sm font-semibold text-foreground leading-none mb-1">Aura</p>
+            <p className="text-xs text-muted-foreground">Step 6.5 — Your Feedback</p>
           </div>
         </div>
 
         {/* Prompt */}
-        <div className="bg-card border border-border rounded-2xl rounded-tl-sm p-6 mb-6 shadow-[var(--shadow-soft)]">
+        <div className="bg-secondary/25 border border-border/60 rounded-2xl rounded-tl-sm p-6 mb-6 shadow-card">
           <p className="text-foreground text-lg leading-relaxed font-serif">
             {displayed}
             {!done && <span className="inline-block w-0.5 h-5 bg-accent animate-pulse ml-0.5 align-text-bottom" />}
@@ -126,46 +126,48 @@ export default function AuraFeedback() {
         <div
           className={`transition-all duration-500 ${showForm ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
         >
-          <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-[var(--shadow-card)]">
-            {questions.map((q) => (
-              <div key={q.id}>
-                <p className="text-sm font-medium text-foreground mb-3">{q.label}</p>
-                <div className="flex gap-2">
-                  {[1, 2, 3, 4, 5].map(star => (
-                    <button
-                      key={star}
-                      onClick={() => handleRate(q.id, star)}
-                      className="transition-transform hover:scale-110 focus:outline-none"
-                    >
-                      <Star
-                        className={`w-8 h-8 transition-colors ${
-                          (ratings[q.id] || 0) >= star
-                            ? 'text-accent fill-accent'
-                            : 'text-border'
-                        }`}
-                      />
-                    </button>
-                  ))}
+          <div className="bg-card border border-border/70 rounded-2xl p-6 shadow-elevated">
+            <div className="space-y-6">
+              {questions.map((q, qi) => (
+                <div key={q.id} className={qi > 0 ? 'pt-6 border-t border-border/50' : ''}>
+                  <p className="text-sm font-medium text-foreground mb-3">{q.label}</p>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        onClick={() => handleRate(q.id, star)}
+                        className="transition-transform hover:scale-110 focus:outline-none"
+                      >
+                        <Star
+                          className={`w-8 h-8 transition-colors ${
+                            (ratings[q.id] || 0) >= star
+                              ? 'text-accent fill-accent'
+                              : 'text-border hover:text-accent/40'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            <div>
-              <p className="text-sm font-medium text-foreground mb-3">
-                Anything else you'd like to share? <span className="text-muted-foreground font-normal">(optional)</span>
-              </p>
-              <Textarea
-                placeholder="Tell us what you liked, what could be improved, or any suggestions..."
-                value={freeText}
-                onChange={(e) => setFreeText(e.target.value)}
-                className="min-h-[100px] resize-none"
-              />
+              <div className="pt-6 border-t border-border/50">
+                <p className="text-sm font-medium text-foreground mb-3">
+                  Anything else you'd like to share? <span className="text-muted-foreground font-normal">(optional)</span>
+                </p>
+                <Textarea
+                  placeholder="Tell us what you liked, what could be improved, or any suggestions..."
+                  value={freeText}
+                  onChange={(e) => setFreeText(e.target.value)}
+                  className="min-h-[100px] resize-none"
+                />
+              </div>
             </div>
 
             <Button
               onClick={handleSubmit}
               disabled={!allRated || isSubmitting}
-              className="w-full h-12 text-base rounded-full"
+              className="w-full h-12 text-base rounded-full btn-lift mt-6"
               size="lg"
             >
               {isSubmitting ? 'Submitting...' : 'Submit Feedback'}

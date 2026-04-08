@@ -48,17 +48,17 @@ function PlanCard({ tier, isCurrentPlan, onSelect, isLoading, loadingTier }: Pla
   const config = SUBSCRIPTION_TIERS[tier];
   const features = tier === 'pro' ? proFeatures : premiumFeatures;
   const isPremium = tier === 'premium';
-  
+
   return (
-    <div className={`chamfer p-6 md:p-8 ${isPremium ? 'bg-primary/5 border-2 border-primary' : 'bg-card'} ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}>
+    <div className={`chamfer p-6 md:p-8 ${isPremium ? 'bg-accent/5 border-2 border-accent/30' : 'bg-card border border-border'} ${isCurrentPlan ? 'ring-2 ring-success' : ''}`}>
       {isPremium && (
         <div className="flex items-center gap-2 mb-4">
-          <Crown className="w-5 h-5 text-primary" />
-          <span className="text-sm font-medium text-primary">Most Popular</span>
+          <Crown className="w-5 h-5 text-accent" />
+          <span className="text-sm font-medium text-accent">Most Popular</span>
         </div>
       )}
       {isCurrentPlan && (
-        <div className="inline-flex items-center gap-1 bg-green-500/10 text-green-600 px-3 py-1 rounded-full text-sm font-medium mb-4">
+        <div className="inline-flex items-center gap-1 bg-success/10 text-success px-3 py-1 rounded-full text-sm font-medium mb-4">
           <Check className="w-4 h-4" />
           Your Plan
         </div>
@@ -83,7 +83,7 @@ function PlanCard({ tier, isCurrentPlan, onSelect, isLoading, loadingTier }: Pla
       </ul>
       
       <Button
-        className={`w-full ${isPremium ? 'gradient-primary text-primary-foreground' : ''}`}
+        className={`w-full ${isPremium ? 'gradient-coral text-white shadow-accent btn-lift' : ''}`}
         variant={isPremium ? 'default' : 'outline'}
         size="lg"
         onClick={() => onSelect(tier)}
@@ -178,8 +178,8 @@ export default function Paywall() {
       {/* Content */}
       <main className="container max-w-5xl py-8 px-4 md:px-8">
         <div className="text-center mb-12 animate-fade-up">
-          <div className="w-20 h-20 chamfer gradient-primary flex items-center justify-center mx-auto mb-6">
-            <Crown className="w-10 h-10 text-primary-foreground" />
+          <div className="w-20 h-20 chamfer gradient-coral flex items-center justify-center mx-auto mb-6 shadow-accent animate-float">
+            <Crown className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl md:text-4xl font-serif font-semibold text-foreground mb-4">
             Unlock Your Full Potential

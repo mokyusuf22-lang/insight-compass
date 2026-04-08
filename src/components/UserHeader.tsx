@@ -12,26 +12,27 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { 
-  Sparkles, 
-  User, 
-  CheckCircle, 
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import {
+  LayoutDashboard,
+  Route,
+  LineChart,
+  Globe,
+  BotMessageSquare,
+  CircleUser,
+  CheckCircle,
   ChevronDown,
-  History,
   RefreshCw,
   LogOut,
-  Home,
   Settings,
   Crown,
-  Users,
-  MessageCircle
+  Menu,
+  X,
 } from 'lucide-react';
 
 interface UserHeaderProps {
@@ -47,21 +48,19 @@ interface AssessmentStats {
 export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
   const { user, signOut, subscription } = useAuth();
   const navigate = useNavigate();
-  const [showSwitchDialog, setShowSwitchDialog] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [stats, setStats] = useState<AssessmentStats>({ completed: 0, lastActive: null });
 
   useEffect(() => {
     const loadStats = async () => {
       if (!user) return;
 
-      // Get completed assessments count
       const { count } = await supabase
         .from('assessments')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('is_complete', true);
 
-      // Get last activity from step1_assessments
       const { data: step1 } = await supabase
         .from('step1_assessments')
         .select('updated_at')
@@ -79,10 +78,9 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
     loadStats();
   }, [user]);
 
-  const handleSwitchAccount = async () => {
+  const handleLogOut = async () => {
     await signOut();
-    setShowSwitchDialog(false);
-    navigate('/auth');
+    navigate('/');
   };
 
   const formatLastActive = (dateStr: string | null) => {
@@ -90,7 +88,6 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
     const date = new Date(dateStr);
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays} days ago`;
@@ -99,152 +96,183 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
 
   if (!user) return null;
 
-  return (
-    <>
-      <header className="p-4 md:p-6 flex justify-between items-center border-b border-border">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="font-serif font-semibold text-lg">MindMap</span>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          {/* Custom children (additional nav items) */}
-          {children}
+  const navLinks = [
+    ...(showHomeLink ? [{ to: '/welcome', icon: LayoutDashboard, label: 'Home' }] : []),
+    { to: '/path',    icon: Route,           label: 'Skill Path' },
+    { to: '/results', icon: LineChart,        label: 'Results' },
+    {
+      href: 'https://www.linkedin.com/groups/your-community-group',
+      icon: Globe,
+      label: 'Community',
+    },
+    { to: '/human-coaching', icon: BotMessageSquare, label: 'Coaching' },
+  ];
 
-          {showHomeLink && (
-            <Link to="/welcome">
-              <Button variant="ghost" size="sm">
-                <Home className="w-4 h-4 mr-2" />
-                Home
+  return (
+    <header className="p-4 md:p-5 flex justify-between items-center border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-40">
+      {/* Brand */}
+      <div className="flex items-center gap-2.5">
+        <div className="w-8 h-8 chamfer-sm bg-accent flex items-center justify-center flex-shrink-0">
+          <span className="text-white font-sans font-bold text-sm leading-none">b</span>
+        </div>
+        <span className="font-sans font-semibold tracking-wide text-base">Be:More</span>
+      </div>
+
+      {/* Desktop nav */}
+      <div className="hidden md:flex items-center gap-1">
+        {children}
+
+        {navLinks.map((link) =>
+          'href' in link ? (
+            <a
+              key={link.label}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground">
+                <link.icon className="w-4 h-4" />
+                {link.label}
+              </Button>
+            </a>
+          ) : (
+            <Link key={link.label} to={link.to}>
+              <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground">
+                <link.icon className="w-4 h-4" />
+                {link.label}
               </Button>
             </Link>
-          )}
+          )
+        )}
 
-          <Link to="/path">
-            <Button variant="ghost" size="sm">
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Skill Path
+        {/* Account Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2 ml-1">
+              <CircleUser className="w-4 h-4" />
+              <span className="hidden lg:inline max-w-[140px] truncate text-xs">
+                {user.email}
+              </span>
+              <ChevronDown className="w-3 h-3" />
             </Button>
-          </Link>
-
-          <Link to="/results">
-            <Button variant="ghost" size="sm">
-              <History className="w-4 h-4 mr-2" />
-              Results
-            </Button>
-          </Link>
-
-          <a 
-            href="https://www.linkedin.com/groups/your-community-group" 
-            target="_blank" 
-            rel="noopener noreferrer"
-          >
-            <Button variant="ghost" size="sm">
-              <Users className="w-4 h-4 mr-2" />
-              Community
-            </Button>
-          </a>
-
-          <Link to="/human-coaching">
-            <Button variant="ghost" size="sm">
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Coaching
-            </Button>
-          </Link>
-
-
-          {/* Account Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <User className="w-4 h-4" />
-                <span className="hidden sm:inline max-w-[150px] truncate">
-                  {user.email}
-                </span>
-                <ChevronDown className="w-3 h-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium">Progress saved</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {user.email}
-                  </p>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-accent" />
+                  <span className="text-sm font-medium">Progress saved</span>
                 </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="px-2 py-2 text-xs text-muted-foreground space-y-1">
-                <div className="flex justify-between">
-                  <span>Assessments completed:</span>
-                  <span className="font-medium text-foreground">{stats.completed}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Last active:</span>
-                  <span className="font-medium text-foreground">{formatLastActive(stats.lastActive)}</span>
-                </div>
+                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
               </div>
-              <DropdownMenuSeparator />
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <div className="px-2 py-2 text-xs text-muted-foreground space-y-1">
+              <div className="flex justify-between">
+                <span>Assessments completed:</span>
+                <span className="font-medium text-foreground">{stats.completed}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Last active:</span>
+                <span className="font-medium text-foreground">{formatLastActive(stats.lastActive)}</span>
+              </div>
+            </div>
+            <DropdownMenuSeparator />
+            {subscription.tier !== 'free' && (
+              <div className="px-2 py-1.5 flex items-center gap-2 text-xs">
+                <Crown className="w-3 h-3 text-accent" />
+                <span className="text-accent font-medium">{subscription.tierName} Plan</span>
+              </div>
+            )}
+            <DropdownMenuItem onClick={() => navigate('/account')} className="cursor-pointer gap-2">
+              <Settings className="w-4 h-4" />
+              Account Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogOut} className="cursor-pointer gap-2 text-destructive focus:text-destructive">
+              <LogOut className="w-4 h-4" />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Mobile — hamburger */}
+      <div className="flex md:hidden items-center gap-2">
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="Open navigation menu">
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-72 pt-8">
+            <SheetHeader className="mb-6 text-left">
+              <SheetTitle className="flex items-center gap-2">
+                <div className="w-7 h-7 chamfer-sm bg-accent flex items-center justify-center">
+                  <span className="text-white font-sans font-bold text-xs">b</span>
+                </div>
+                Be:More
+              </SheetTitle>
+            </SheetHeader>
+
+            {/* User info */}
+            <div className="mb-6 p-3 bg-secondary rounded-lg">
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
               {subscription.tier !== 'free' && (
-                <div className="px-2 py-1.5 flex items-center gap-2 text-xs">
-                  <Crown className="w-3 h-3 text-primary" />
-                  <span className="text-primary font-medium">{subscription.tierName} Plan</span>
+                <div className="flex items-center gap-1 mt-1">
+                  <Crown className="w-3 h-3 text-accent" />
+                  <span className="text-xs text-accent font-medium">{subscription.tierName}</span>
                 </div>
               )}
-              <DropdownMenuItem 
-                onClick={() => navigate('/account')}
-                className="cursor-pointer"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Account Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setShowSwitchDialog(true)}
-                className="cursor-pointer"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Switch account
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setShowSwitchDialog(true)}
-                className="cursor-pointer text-muted-foreground text-xs"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </header>
+            </div>
 
-      {/* Switch Account Confirmation Dialog */}
-      <Dialog open={showSwitchDialog} onOpenChange={setShowSwitchDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Switch Account?</DialogTitle>
-            <DialogDescription className="space-y-2">
-              <p>You're currently signed in as:</p>
-              <p className="font-medium text-foreground bg-muted px-3 py-2 rounded-md">
-                {user.email}
-              </p>
-              <p>Switching accounts will sign you out. Your progress is saved and will be here when you return.</p>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setShowSwitchDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSwitchAccount}>
-              Switch Account
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+            {/* Nav items */}
+            <nav className="space-y-1" aria-label="Main navigation">
+              {navLinks.map((link) =>
+                'href' in link ? (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <link.icon className="w-4 h-4 flex-shrink-0" />
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.label}
+                    to={link.to}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <link.icon className="w-4 h-4 flex-shrink-0" />
+                    {link.label}
+                  </Link>
+                )
+              )}
+            </nav>
+
+            <div className="absolute bottom-8 left-6 right-6 space-y-1">
+              <button
+                onClick={() => { navigate('/account'); setMobileOpen(false); }}
+                className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+                Account Settings
+              </button>
+              <button
+                onClick={handleLogOut}
+                className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Log out
+              </button>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+    </header>
   );
 }
