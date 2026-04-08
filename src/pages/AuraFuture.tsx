@@ -30,7 +30,7 @@ export default function AuraFuture() {
   const navigate = useNavigate();
   const [showContent, setShowContent] = useState(false);
 
-  const prompt = "Looking ahead, we are also developing an advanced Gen AI complete coaching service for those who prefer an AI-driven, continuous coaching experience. This will be available as a premium, fee-based service in the future.";
+  const prompt = "Looking ahead, we are developing an advanced Gen AI complete coaching service for those who prefer an AI-driven, continuous coaching experience. This will be available as a premium service in the future.";
   const { displayed, done } = useTypingEffect(prompt, true);
 
   useEffect(() => {

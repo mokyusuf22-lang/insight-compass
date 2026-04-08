@@ -327,6 +327,34 @@ export default function Auth() {
     );
   }
 
+  // Email verified — show success screen
+  if (mode === 'email-verified') {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <header className="py-6 px-6 text-center border-b border-border">
+          <Link to="/" className="font-sans font-semibold tracking-wide text-lg">Be:More</Link>
+        </header>
+        <main className="flex-1 flex items-center justify-center px-6 py-12">
+          <div className="w-full max-w-sm space-y-6 text-center">
+            <div className="space-y-2">
+              <CheckCircle className="w-16 h-16 text-success mx-auto" />
+              <h1 className="text-2xl font-serif font-semibold">Email Verified!</h1>
+              <p className="text-muted-foreground">
+                Your email has been verified successfully. You can now sign in to your account.
+              </p>
+            </div>
+            <Button onClick={() => setMode('login')} className="w-full rounded-full">
+              Sign In
+            </Button>
+          </div>
+        </main>
+        <footer className="py-6 text-center">
+          <p className="text-xs text-muted-foreground">©2025 Be:More</p>
+        </footer>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
