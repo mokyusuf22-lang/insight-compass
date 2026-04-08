@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Sparkles, ArrowRight, User, Mail, Phone } from 'lucide-react';
 import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
+import { AuraOrb } from '@/components/aura/AuraOrb';
 
 const TYPING_SPEED = 30;
 
@@ -50,6 +51,27 @@ export default function AuraWelcome() {
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
+      return;
+    }
+    // Restore existing session
+    if (user) {
+      supabase
+        .from('aura_sessions')
+        .select('id, name, email, preferred_contact, current_step')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) {
+            if (data.name) setName(data.name);
+            if (data.email) setEmail(data.email);
+            if (data.preferred_contact) setPreferredContact(data.preferred_contact);
+            if ((data.current_step ?? 0) >= 2) {
+              navigate('/aura/challenge');
+            }
+          }
+        });
     }
   }, [user, loading, navigate]);
 
@@ -123,9 +145,7 @@ export default function AuraWelcome() {
 
         {/* Aura Avatar */}
         <div className="flex items-center gap-4 mb-7">
-          <div className="w-12 h-12 chamfer-sm gradient-coral flex items-center justify-center shadow-accent flex-shrink-0">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
+          <AuraOrb size="sm" interactive />
           <div>
             <p className="text-sm font-semibold text-foreground leading-none mb-1">Aura</p>
             <p className="text-xs text-muted-foreground">Your coaching guide</p>

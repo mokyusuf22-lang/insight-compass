@@ -59,7 +59,7 @@ export default function Index() {
               src={heroImage}
               alt="Professional at work"
               className="w-full h-full object-cover"
-              fetchpriority="high"
+              fetchPriority="high"
             />
           </div>
           {/* Content */}
@@ -265,13 +265,6 @@ export default function Index() {
                   >
                     Start free
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="rounded-full"
-                    onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-                  >
-                    See pricing
-                  </Button>
                 </div>
               </div>
             </ScrollReveal>
@@ -279,103 +272,20 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-20 md:py-28 px-6 bg-background">
-        <div className="container max-w-5xl">
-          <ScrollReveal animation="fade-up" className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-4">
-              Simple pricing, real value
-            </h2>
-            <p className="text-muted-foreground text-lg">
-              Start free and upgrade when you're ready.
-            </p>
-          </ScrollReveal>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-            {/* Free */}
-            <ScrollReveal animation="fade-up" delay={100}>
-              <div className="chamfer bg-card border border-border p-8 space-y-6 h-full">
-                <div>
-                  <h3 className="text-lg font-sans font-semibold mb-1">Free</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-serif">£0</span>
-                  </div>
-                </div>
-                <Button variant="outline" className="w-full rounded-full" onClick={handleGetStarted}>
-                  Start with Free
-                </Button>
-                <div className="pt-2">
-                  <p className="text-sm text-muted-foreground mb-4">Included:</p>
-                  <ul className="space-y-3">
-                    {[
-                      'AI-powered suggestions',
-                      'Core profile building',
-                      'Basic assessments',
-                      'High-level insights',
-                    ].map((item) => (
-                      <li key={item} className="flex items-start gap-3 text-sm">
-                        <CheckCircle2 className="w-4 h-4 mt-0.5 text-success shrink-0" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </ScrollReveal>
-
-            {/* Pro */}
-            <ScrollReveal animation="fade-up" delay={200}>
-              <div className="chamfer bg-foreground text-background p-8 space-y-6 relative h-full">
-                <div className="absolute top-4 right-6">
-                  <span className="bg-accent text-white text-xs px-3 py-1 rounded-full font-medium">
-                    Recommended
-                  </span>
-                </div>
-                <div>
-                  <h3 className="text-lg font-sans font-semibold mb-1">Pro</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-serif">£49</span>
-                    <span className="text-background/60 text-sm">/mo</span>
-                  </div>
-                </div>
-                <Button
-                  className="w-full rounded-full bg-accent hover:bg-accent/90 text-white shadow-accent btn-lift"
-                  onClick={() => navigate('/paywall')}
-                >
-                  Start with Pro
-                </Button>
-                <div className="pt-2">
-                  <p className="text-sm text-background/60 mb-4">Everything in Free, plus:</p>
-                  <ul className="space-y-3">
-                    {[
-                      'Full AI coaching access',
-                      'Personality-led guidance',
-                      '3 core assessments',
-                      'Personalized career roadmap',
-                      'Weekly execution guidance',
-                      'Progress tracking dashboard',
-                    ].map((item) => (
-                      <li key={item} className="flex items-start gap-3 text-sm">
-                        <CheckCircle2 className="w-4 h-4 mt-0.5 text-accent shrink-0" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </ScrollReveal>
-          </div>
-
-          <ScrollReveal animation="fade-up" delay={300}>
-            <div className="text-center mt-12 pt-8 border-t border-border">
-              <h3 className="font-sans font-semibold mb-2">Need human coaching?</h3>
-              <p className="text-muted-foreground text-sm mb-4">
-                Premium includes AI coaching + human coaches, complete personality profile, advanced strategy reviews, and priority support.
-              </p>
-              <Button variant="outline" size="sm" className="rounded-full">
-                Learn about Premium — £149/mo
-              </Button>
-            </div>
+      {/* CTA */}
+      <section className="py-20 md:py-28 px-6 bg-background text-center">
+        <div className="container max-w-3xl">
+          <ScrollReveal animation="fade-up">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-4">Ready to start?</h2>
+            <p className="text-muted-foreground text-lg mb-8">Begin your journey with a free AI coaching session.</p>
+            <Button
+              className="rounded-full bg-accent hover:bg-accent/90 text-white shadow-accent btn-lift gap-2"
+              size="lg"
+              onClick={handleGetStarted}
+            >
+              Get started free
+              <ArrowRight className="w-4 h-4" />
+            </Button>
           </ScrollReveal>
         </div>
       </section>
@@ -400,8 +310,8 @@ export default function Index() {
               <h4 className="font-sans font-semibold mb-4 text-sm uppercase tracking-wider">Links</h4>
               <ul className="space-y-2 text-background/60 text-sm">
                 <li><a href="#" className="hover:text-background transition-colors">How it works</a></li>
-                <li><a href="#pricing" className="hover:text-background transition-colors">Pricing</a></li>
                 <li><a href="#" className="hover:text-background transition-colors">Privacy</a></li>
+                <li><a href="#" className="hover:text-background transition-colors">Contact</a></li>
                 <li><a href="#" className="hover:text-background transition-colors">Contact</a></li>
               </ul>
             </div>

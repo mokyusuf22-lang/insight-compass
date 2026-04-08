@@ -18,6 +18,7 @@ import {
   Compass,
   Activity,
   TrendingUp,
+  Target,
 } from 'lucide-react';
 
 export default function Welcome() {

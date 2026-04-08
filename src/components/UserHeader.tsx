@@ -30,7 +30,6 @@ import {
   RefreshCw,
   LogOut,
   Settings,
-  Crown,
   Menu,
   X,
 } from 'lucide-react';
@@ -178,12 +177,6 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
               </div>
             </div>
             <DropdownMenuSeparator />
-            {subscription.tier !== 'free' && (
-              <div className="px-2 py-1.5 flex items-center gap-2 text-xs">
-                <Crown className="w-3 h-3 text-accent" />
-                <span className="text-accent font-medium">{subscription.tierName} Plan</span>
-              </div>
-            )}
             <DropdownMenuItem onClick={() => navigate('/account')} className="cursor-pointer gap-2">
               <Settings className="w-4 h-4" />
               Account Settings
@@ -217,12 +210,6 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
             {/* User info */}
             <div className="mb-6 p-3 bg-secondary rounded-lg">
               <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-              {subscription.tier !== 'free' && (
-                <div className="flex items-center gap-1 mt-1">
-                  <Crown className="w-3 h-3 text-accent" />
-                  <span className="text-xs text-accent font-medium">{subscription.tierName}</span>
-                </div>
-              )}
             </div>
 
             {/* Nav items */}
