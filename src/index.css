@@ -136,12 +136,12 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Lato', sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Instrument Serif', Georgia, serif;
-    font-weight: 400;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
   }
 
   /* Smooth theme transitions */
@@ -162,7 +162,7 @@
 @layer utilities {
   /* Typography */
   .font-editorial {
-    font-family: 'Instrument Serif', Georgia, serif;
+    font-family: 'Montserrat', sans-serif;
     font-style: italic;
   }
 
@@ -338,6 +338,20 @@
 .animate-pulse-soft   { animation: pulse-soft  2s ease-in-out infinite; }
 .animate-pop-in       { animation: pop-in      0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .animate-float        { animation: float       3s ease-in-out infinite; }
+
+/* AuraOrb animations */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes orb-glow {
+  0%, 100% { box-shadow: 0 0 12px 2px hsl(var(--accent) / 0.3); }
+  50%      { box-shadow: 0 0 24px 6px hsl(var(--accent) / 0.5); }
+}
+
+.animate-spin-slow { animation: spin-slow 8s linear infinite; }
+.animate-orb-glow  { animation: orb-glow 3s ease-in-out infinite; }
 
 /* Shimmer — for skeleton/loading states */
 .animate-shimmer {
