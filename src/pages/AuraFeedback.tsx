@@ -5,8 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Sparkles, ArrowRight, Star } from 'lucide-react';
+import { ArrowRight, Star } from 'lucide-react';
 import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
+import { AuraOrb } from '@/components/aura/AuraOrb';
 
 const TYPING_SPEED = 25;
 

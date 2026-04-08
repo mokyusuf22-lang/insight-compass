@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Sparkles, ArrowRight, ClipboardCheck } from 'lucide-react';
+import { ArrowRight, ClipboardCheck } from 'lucide-react';
 import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
+import { AuraOrb } from '@/components/aura/AuraOrb';
 
 const TYPING_SPEED = 25;
 
