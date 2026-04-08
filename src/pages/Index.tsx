@@ -59,7 +59,7 @@ export default function Index() {
               src={heroImage}
               alt="Professional at work"
               className="w-full h-full object-cover"
-              fetchpriority="high"
+              fetchPriority="high"
             />
           </div>
           {/* Content */}
