@@ -10,6 +10,7 @@ import { SignInConfirmation } from '@/components/SignInConfirmation';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 import { Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { z } from 'zod';
+import { lovable } from '@/integrations/lovable/index';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -116,11 +117,18 @@ export default function Auth() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      const { error } = await signInWithGoogle();
-      if (error) {
+      const result = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: window.location.origin,
+      });
+
+      if (result.redirected) {
+        return;
+      }
+
+      if (result.error) {
         toast({
           title: 'Google sign in failed',
-          description: error.message,
+          description: result.error.message,
           variant: 'destructive',
         });
       }
