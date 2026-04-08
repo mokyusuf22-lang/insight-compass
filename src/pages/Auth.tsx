@@ -21,13 +21,14 @@ const emailSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
 });
 
-type AuthMode = 'login' | 'signup' | 'forgot' | 'reset-sent' | 'verify-email';
+type AuthMode = 'login' | 'signup' | 'forgot' | 'reset-sent' | 'verify-email' | 'email-verified';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const isReset = searchParams.get('reset') === 'true';
+  const isVerified = searchParams.get('verified') === 'true';
   
-  const [mode, setMode] = useState<AuthMode>(isReset ? 'login' : 'login');
+  const [mode, setMode] = useState<AuthMode>(isVerified ? 'email-verified' : isReset ? 'login' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);

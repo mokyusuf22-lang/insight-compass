@@ -52,6 +52,9 @@ import AuraAssessments from "./pages/AuraAssessments";
 import AuraInsights from "./pages/AuraInsights";
 import AuraFeedback from "./pages/AuraFeedback";
 import AuraFuture from "./pages/AuraFuture";
+import CoachDashboard from "./pages/CoachDashboard";
+import CoachUserProfile from "./pages/CoachUserProfile";
+import CoachMessages from "./pages/CoachMessages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -74,7 +77,10 @@ const App = () => (
             <Route path="/aura/insights" element={<AuraInsights />} />
             <Route path="/aura/feedback" element={<AuraFeedback />} />
             <Route path="/aura/future" element={<AuraFuture />} />
-            <Route path="/onboarding" element={<Onboarding />} />
+            {/* Coach routes */}
+            <Route path="/coach" element={<RequireStep><CoachDashboard /></RequireStep>} />
+            <Route path="/coach/user/:userId" element={<RequireStep><CoachUserProfile /></RequireStep>} />
+            <Route path="/coach/messages/:userId" element={<RequireStep><CoachMessages /></RequireStep>} />
             <Route path="/onboarding" element={<Onboarding />} />
             {/* Be:More Flow — gated routes in sequence */}
             <Route path="/initial-assessment" element={<RequireStep requireAuth={false}><InitialAssessment /></RequireStep>} />
