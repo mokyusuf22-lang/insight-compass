@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import { ArrowRight, Send, Loader2, Sparkles } from 'lucide-react';
 import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 import { AuraOrb } from '@/components/aura/AuraOrb';
-import { AuraOrb } from '@/components/aura/AuraOrb';
 
 const TYPING_SPEED = 25;
 
