@@ -1,126 +1,111 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { UserHeader } from '@/components/UserHeader';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Send } from 'lucide-react';
 
 interface Message {
   id: string;
   sender_id: string;
+  coach_id: string;
+  user_id: string;
   content: string;
   is_read: boolean;
   created_at: string;
 }
 
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = now.getTime() - d.getTime();
+  if (diff < 86400000 && d.getDate() === now.getDate()) return 'Today';
+  if (diff < 172800000) return 'Yesterday';
+  return d.toLocaleDateString();
+}
+
 export default function CoachMessages() {
   const { userId } = useParams<{ userId: string }>();
-  const { user, loading } = useAuth();
+  const { user, isCoach, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [assignmentId, setAssignmentId] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
-  const [sending, setSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth');
-  }, [user, loading, navigate]);
+  }, [user, loading]);
 
-  // Load assignment and messages
   useEffect(() => {
     const load = async () => {
       if (!user || !userId) return;
 
-      // Find assignment (coach or user side)
-      const { data: assignment } = await supabase
-        .from('coach_assignments')
-        .select('id')
-        .or(`coach_id.eq.${user.id},user_id.eq.${user.id}`)
-        .or(`coach_id.eq.${userId},user_id.eq.${userId}`)
-        .limit(1)
-        .maybeSingle();
-
-      if (!assignment) {
-        setIsLoading(false);
-        return;
-      }
-
-      setAssignmentId(assignment.id);
-
-      const { data: msgs } = await supabase
+      const { data } = await supabase
         .from('coach_messages')
         .select('*')
-        .eq('assignment_id', assignment.id)
+        .eq('coach_id' as any, user.id)
+        .eq('user_id' as any, userId)
         .order('created_at', { ascending: true });
 
-      setMessages(msgs || []);
+      if (data) setMessages(data as unknown as Message[]);
 
-      // Mark unread messages as read
       await supabase
         .from('coach_messages')
         .update({ is_read: true })
-        .eq('assignment_id', assignment.id)
-        .neq('sender_id', user.id)
+        .eq('coach_id' as any, user.id)
+        .eq('user_id' as any, userId)
+        .eq('sender_id', userId)
         .eq('is_read', false);
 
       setIsLoading(false);
     };
-    load();
-  }, [user, userId]);
 
-  // Realtime subscription
+    if (!loading && user) load();
+  }, [user, userId, loading]);
+
   useEffect(() => {
-    if (!assignmentId) return;
+    if (!user || !userId) return;
 
     const channel = supabase
-      .channel(`coach-messages-${assignmentId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'coach_messages',
-          filter: `assignment_id=eq.${assignmentId}`,
-        },
-        (payload) => {
-          const newMsg = payload.new as Message;
-          setMessages(prev => [...prev, newMsg]);
-
-          // Auto-mark as read if we're the recipient
-          if (newMsg.sender_id !== user?.id) {
-            supabase
-              .from('coach_messages')
-              .update({ is_read: true })
-              .eq('id', newMsg.id);
+      .channel(`coach-messages-${userId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'coach_messages',
+      }, (payload) => {
+        const msg = payload.new as Message;
+        if (msg.coach_id === user.id && msg.user_id === userId) {
+          setMessages(prev => [...prev, msg]);
+          if (msg.sender_id !== user.id) {
+            supabase.from('coach_messages').update({ is_read: true }).eq('id', msg.id);
           }
         }
-      )
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [assignmentId, user?.id]);
+  }, [user, userId]);
 
-  // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !assignmentId || !user) return;
+    if (!newMessage.trim() || !user || !userId || sending) return;
     setSending(true);
 
-    await supabase.from('coach_messages').insert({
-      assignment_id: assignmentId,
+    const { error } = await supabase.from('coach_messages').insert({
+      coach_id: user.id,
+      user_id: userId,
       sender_id: user.id,
       content: newMessage.trim(),
-    });
+    } as any);
 
-    setNewMessage('');
+    if (!error) setNewMessage('');
     setSending(false);
   };
 
@@ -131,78 +116,57 @@ export default function CoachMessages() {
     }
   };
 
-  if (loading || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <LoadingSpinner size="lg" text="Loading messages..." />
-      </div>
-    );
-  }
+  if (loading || isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><LoadingSpinner size="lg" /></div>;
 
-  if (!assignmentId) {
-    return (
-      <div className="min-h-screen bg-background">
-        <UserHeader showHomeLink />
-        <main className="container max-w-3xl py-12 px-4 text-center">
-          <p className="text-muted-foreground">No coaching assignment found.</p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate(-1)}>
-            Go Back
-          </Button>
-        </main>
-      </div>
-    );
-  }
+  const grouped: { date: string; msgs: Message[] }[] = [];
+  messages.forEach(msg => {
+    const dateLabel = formatDate(msg.created_at);
+    const last = grouped[grouped.length - 1];
+    if (last && last.date === dateLabel) last.msgs.push(msg);
+    else grouped.push({ date: dateLabel, msgs: [msg] });
+  });
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <UserHeader showHomeLink />
-      <main className="flex-1 flex flex-col container max-w-3xl px-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/coach')} className="self-start my-3">
-          <ArrowLeft className="w-4 h-4 mr-1" /> Back
-        </Button>
+      <header className="border-b border-border bg-card/50">
+        <div className="container max-w-3xl py-4 px-4 flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/coach')}><ArrowLeft className="w-4 h-4" /></Button>
+          <h1 className="text-lg font-serif font-semibold">Messages</h1>
+        </div>
+      </header>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-3 py-4 min-h-0">
-          {messages.length === 0 && (
-            <p className="text-center text-muted-foreground text-sm py-8">No messages yet. Start the conversation!</p>
-          )}
-          {messages.map(msg => {
-            const isMe = msg.sender_id === user?.id;
-            return (
-              <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                <div
-                  className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
-                    isMe
-                      ? 'bg-accent text-accent-foreground rounded-br-sm'
-                      : 'bg-secondary text-foreground rounded-bl-sm'
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
-                  <p className={`text-[10px] mt-1 ${isMe ? 'text-accent-foreground/60' : 'text-muted-foreground'}`}>
-                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
+      <div className="flex-1 overflow-y-auto">
+        <div className="container max-w-3xl py-4 px-4 space-y-4">
+          {grouped.map((group, gi) => (
+            <div key={gi}>
+              <div className="text-center my-4">
+                <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">{group.date}</span>
               </div>
-            );
-          })}
+              {group.msgs.map(msg => {
+                const isMine = msg.sender_id === user?.id;
+                return (
+                  <div key={msg.id} className={`flex mb-2 ${isMine ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm ${isMine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-card border border-border rounded-bl-sm'}`}>
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                      <p className={`text-xs mt-1 ${isMine ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
           <div ref={bottomRef} />
         </div>
+      </div>
 
-        {/* Input */}
-        <div className="border-t border-border py-3 flex gap-2">
-          <Input
-            placeholder="Type a message..."
-            value={newMessage}
-            onChange={e => setNewMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={sending}
-            className="flex-1"
-          />
-          <Button onClick={handleSend} disabled={sending || !newMessage.trim()} size="icon">
-            <Send className="w-4 h-4" />
-          </Button>
+      <div className="border-t border-border bg-card/50 p-4">
+        <div className="container max-w-3xl flex gap-2">
+          <Textarea value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={handleKeyDown} placeholder="Type a message..." rows={1} className="resize-none min-h-[44px]" />
+          <Button onClick={handleSend} disabled={!newMessage.trim() || sending} size="icon"><Send className="w-4 h-4" /></Button>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
