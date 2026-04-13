@@ -154,10 +154,10 @@ export default function SkillPath() {
               <Compass className="w-10 h-10 text-primary" />
             </div>
             <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">
-              No Path Generated Yet
+              Your Path Is on Its Way
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-              Complete the Be:More flow and commit to a path to generate your personalized execution plan.
+              Your coach is preparing a personalized execution plan for you. Check back soon!
             </p>
             <Button 
               size="lg" 
