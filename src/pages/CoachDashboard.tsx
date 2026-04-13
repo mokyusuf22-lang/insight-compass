@@ -73,7 +73,7 @@ export default function CoachDashboard() {
           userId: uid,
           email: profileRes.data?.email || 'Unknown',
           assessmentCount: assessmentRes.data?.length || 0,
-          unreadCount: unreadRes.data?.length || 0,
+          unreadCount,
         });
       }
 
