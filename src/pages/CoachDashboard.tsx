@@ -1,155 +1,148 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { UserHeader } from '@/components/UserHeader';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageSquare, User, Circle } from 'lucide-react';
+import { MessageSquare, Search, LogOut, User } from 'lucide-react';
 
-interface AssignedUser {
-  assignment_id: string;
-  user_id: string;
-  status: string;
-  notes: string | null;
-  email: string | null;
-  unread_count: number;
+interface ClientCard {
+  userId: string;
+  email: string;
+  assessmentCount: number;
+  unreadCount: number;
 }
 
 export default function CoachDashboard() {
-  const { user, loading } = useAuth();
+  const { user, isCoach, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const [clients, setClients] = useState<AssignedUser[]>([]);
+  const [clients, setClients] = useState<ClientCard[]>([]);
+  const [coachName, setCoachName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    if (!loading && !user) navigate('/auth');
-  }, [user, loading, navigate]);
+    if (!loading && !user) {
+      navigate('/auth');
+      return;
+    }
+    if (!loading && user && !isCoach && !isAdmin) {
+      navigate('/');
+      return;
+    }
+  }, [user, loading, isCoach, isAdmin, navigate]);
 
   useEffect(() => {
-    const loadClients = async () => {
+    const loadData = async () => {
       if (!user) return;
-      setIsLoading(true);
+
+      const { data: coachProfile } = await supabase
+        .from('coach_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const cp = coachProfile as any;
+      if (cp?.display_name) {
+        setCoachName(cp.display_name);
+      }
 
       const { data: assignments } = await supabase
         .from('coach_assignments')
-        .select('id, user_id, status, notes')
+        .select('user_id')
         .eq('coach_id', user.id)
         .eq('status', 'active');
 
-      if (!assignments?.length) {
-        setClients([]);
+      if (!assignments || assignments.length === 0) {
         setIsLoading(false);
         return;
       }
 
       const userIds = assignments.map(a => a.user_id);
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, email')
-        .in('user_id', userIds);
+      const clientCards: ClientCard[] = [];
 
-      const assignmentIds = assignments.map(a => a.id);
-      const { data: unreadMessages } = await supabase
-        .from('coach_messages')
-        .select('assignment_id')
-        .in('assignment_id', assignmentIds)
-        .eq('is_read', false)
-        .neq('sender_id', user.id);
+      for (const uid of userIds) {
+        const [profileRes, assessmentRes, unreadRes] = await Promise.all([
+          supabase.from('profiles').select('email').eq('user_id', uid).maybeSingle(),
+          supabase.from('assessments').select('id').eq('user_id', uid).eq('is_complete', true),
+          supabase.from('coach_messages').select('id').eq('coach_id' as any, user.id).eq('user_id' as any, uid).eq('is_read', false).neq('sender_id', user.id),
+        ]);
 
-      const unreadMap: Record<string, number> = {};
-      unreadMessages?.forEach(m => {
-        unreadMap[m.assignment_id] = (unreadMap[m.assignment_id] || 0) + 1;
-      });
+        clientCards.push({
+          userId: uid,
+          email: profileRes.data?.email || 'Unknown',
+          assessmentCount: assessmentRes.data?.length || 0,
+          unreadCount: unreadRes.data?.length || 0,
+        });
+      }
 
-      const profileMap: Record<string, string | null> = {};
-      profiles?.forEach(p => { profileMap[p.user_id] = p.email; });
-
-      setClients(assignments.map(a => ({
-        assignment_id: a.id,
-        user_id: a.user_id,
-        status: a.status,
-        notes: a.notes,
-        email: profileMap[a.user_id] || null,
-        unread_count: unreadMap[a.id] || 0,
-      })));
+      setClients(clientCards);
       setIsLoading(false);
     };
-    loadClients();
-  }, [user]);
 
-  const filtered = clients.filter(c =>
-    !search || (c.email?.toLowerCase().includes(search.toLowerCase()))
-  );
+    if (!loading && user && (isCoach || isAdmin)) loadData();
+  }, [user, loading, isCoach, isAdmin]);
 
   if (loading || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <LoadingSpinner size="lg" text="Loading dashboard..." />
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center bg-background"><LoadingSpinner size="lg" text="Loading dashboard..." /></div>;
   }
+
+  const filtered = search
+    ? clients.filter(c => c.email.toLowerCase().includes(search.toLowerCase()))
+    : clients;
 
   return (
     <div className="min-h-screen bg-background">
-      <UserHeader showHomeLink />
-      <main className="container max-w-4xl py-8 px-4">
-        <h1 className="text-3xl font-serif mb-6">Coach Dashboard</h1>
-
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search clients..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-10"
-          />
+      <header className="border-b border-border bg-card/50">
+        <div className="container max-w-4xl py-4 px-4 md:px-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-serif font-semibold">Coach Dashboard</h1>
+            {coachName && <p className="text-sm text-muted-foreground">{coachName}</p>}
+          </div>
+          <Button variant="ghost" size="sm" onClick={signOut}>
+            <LogOut className="w-4 h-4 mr-2" /> Sign Out
+          </Button>
         </div>
+      </header>
+
+      <main className="container max-w-4xl py-8 px-4 md:px-8">
+        {clients.length > 3 && (
+          <div className="mb-6 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input placeholder="Search clients..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+          </div>
+        )}
 
         {filtered.length === 0 ? (
-          <p className="text-muted-foreground text-center py-12">No assigned clients yet.</p>
+          <div className="text-center py-16">
+            <User className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-serif font-semibold mb-2">No Clients Yet</h2>
+            <p className="text-muted-foreground">Clients will appear here once they're assigned to you.</p>
+          </div>
         ) : (
           <div className="space-y-3">
             {filtered.map(client => (
-              <Card key={client.assignment_id} className="hover:shadow-card transition-shadow">
-                <CardContent className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                      <User className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{client.email || 'Unknown user'}</p>
-                      {client.notes && (
-                        <p className="text-xs text-muted-foreground truncate max-w-[200px]">{client.notes}</p>
-                      )}
-                    </div>
-                    {client.unread_count > 0 && (
-                      <Badge variant="destructive" className="text-xs">
-                        {client.unread_count} new
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/coach/user/${client.user_id}`)}
-                    >
-                      <User className="w-4 h-4 mr-1" /> Profile
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => navigate(`/coach/messages/${client.user_id}`)}
-                    >
-                      <MessageSquare className="w-4 h-4 mr-1" /> Chat
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div
+                key={client.userId}
+                className="chamfer bg-card border border-border p-5 flex items-center gap-4 cursor-pointer hover:bg-accent/50 transition-colors"
+                onClick={() => navigate(`/coach/user/${client.userId}`)}
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-semibold text-primary">{client.email.charAt(0).toUpperCase()}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{client.email}</p>
+                  <p className="text-sm text-muted-foreground">{client.assessmentCount} assessments completed</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {client.unreadCount > 0 && <Badge variant="destructive" className="text-xs">{client.unreadCount}</Badge>}
+                  <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); navigate(`/coach/messages/${client.userId}`); }}>
+                    <MessageSquare className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             ))}
           </div>
         )}

@@ -1,11 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, User } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -26,10 +26,11 @@ function formatDate(dateStr: string) {
   return d.toLocaleDateString();
 }
 
-export default function CoachMessages() {
-  const { userId } = useParams<{ userId: string }>();
-  const { user, isCoach, isAdmin, loading } = useAuth();
+export default function MyCoach() {
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [coachId, setCoachId] = useState<string | null>(null);
+  const [coachProfile, setCoachProfile] = useState<{ display_name: string | null; bio: string | null } | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -42,43 +43,63 @@ export default function CoachMessages() {
 
   useEffect(() => {
     const load = async () => {
-      if (!user || !userId) return;
+      if (!user) return;
 
-      const { data } = await (supabase
-        .from('coach_messages')
-        .select('*') as any)
-        .eq('coach_id', user.id)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: true });
+      const { data: assignment } = await supabase
+        .from('coach_assignments')
+        .select('coach_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
 
-      if (data) setMessages(data as unknown as Message[]);
+      if (!assignment) {
+        setIsLoading(false);
+        return;
+      }
 
+      setCoachId(assignment.coach_id);
+
+      // Use 'as any' to work around stale generated types
+      const [profileRes, messagesRes] = await Promise.all([
+        supabase.from('coach_profiles').select('*').eq('user_id', assignment.coach_id).maybeSingle(),
+        (supabase.from('coach_messages').select('*') as any).eq('coach_id', assignment.coach_id).eq('user_id', user.id).order('created_at', { ascending: true }),
+      ]);
+
+      if (profileRes.data) {
+        const cp = profileRes.data as any;
+        setCoachProfile({ display_name: cp.display_name || null, bio: cp.bio || null });
+      }
+      if (messagesRes.data) setMessages(messagesRes.data as unknown as Message[]);
+
+      // Mark coach's messages as read
       await (supabase
         .from('coach_messages')
         .update({ is_read: true }) as any)
-        .eq('coach_id', user.id)
-        .eq('user_id', userId)
-        .eq('sender_id', userId)
+        .eq('coach_id', assignment.coach_id)
+        .eq('user_id', user.id)
+        .eq('sender_id', assignment.coach_id)
         .eq('is_read', false);
 
       setIsLoading(false);
     };
 
     if (!loading && user) load();
-  }, [user, userId, loading]);
+  }, [user, loading]);
 
+  // Realtime
   useEffect(() => {
-    if (!user || !userId) return;
+    if (!user || !coachId) return;
 
     const channel = supabase
-      .channel(`coach-messages-${userId}`)
+      .channel(`my-coach-messages`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'coach_messages',
       }, (payload) => {
         const msg = payload.new as Message;
-        if (msg.coach_id === user.id && msg.user_id === userId) {
+        if (msg.coach_id === coachId && msg.user_id === user.id) {
           setMessages(prev => [...prev, msg]);
           if (msg.sender_id !== user.id) {
             supabase.from('coach_messages').update({ is_read: true }).eq('id', msg.id);
@@ -88,19 +109,19 @@ export default function CoachMessages() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user, userId]);
+  }, [user, coachId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !user || !userId || sending) return;
+    if (!newMessage.trim() || !user || !coachId || sending) return;
     setSending(true);
 
     const { error } = await supabase.from('coach_messages').insert({
-      coach_id: user.id,
-      user_id: userId,
+      coach_id: coachId,
+      user_id: user.id,
       sender_id: user.id,
       content: newMessage.trim(),
     } as any);
@@ -118,6 +139,25 @@ export default function CoachMessages() {
 
   if (loading || isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><LoadingSpinner size="lg" /></div>;
 
+  if (!coachId) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border bg-card/50">
+          <div className="container max-w-3xl py-4 px-4 flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/welcome')}><ArrowLeft className="w-4 h-4" /></Button>
+            <h1 className="text-lg font-serif font-semibold">My Coach</h1>
+          </div>
+        </header>
+        <main className="container max-w-3xl py-16 px-4 text-center">
+          <User className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-serif font-semibold mb-2">No Coach Assigned Yet</h2>
+          <p className="text-muted-foreground mb-6">You'll be notified when a coach is assigned to guide your journey.</p>
+          <Button variant="outline" onClick={() => navigate('/welcome')}>Back to Dashboard</Button>
+        </main>
+      </div>
+    );
+  }
+
   const grouped: { date: string; msgs: Message[] }[] = [];
   messages.forEach(msg => {
     const dateLabel = formatDate(msg.created_at);
@@ -130,10 +170,20 @@ export default function CoachMessages() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b border-border bg-card/50">
         <div className="container max-w-3xl py-4 px-4 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/coach')}><ArrowLeft className="w-4 h-4" /></Button>
-          <h1 className="text-lg font-serif font-semibold">Messages</h1>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/welcome')}><ArrowLeft className="w-4 h-4" /></Button>
+          <h1 className="text-lg font-serif font-semibold">{coachProfile?.display_name || 'My Coach'}</h1>
         </div>
       </header>
+
+      {messages.length === 0 && coachProfile?.bio && (
+        <div className="container max-w-3xl px-4 py-6">
+          <div className="chamfer bg-card border border-border p-6 text-center">
+            <User className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+            <h3 className="font-serif font-semibold mb-2">{coachProfile.display_name}</h3>
+            <p className="text-sm text-muted-foreground">{coachProfile.bio}</p>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto">
         <div className="container max-w-3xl py-4 px-4 space-y-4">

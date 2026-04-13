@@ -39,22 +39,29 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
 
-  const { signIn, signUp, signInWithGoogle, resetPassword, resendVerificationEmail, user, loading } = useAuth();
+  const { signIn, signUp, signInWithGoogle, resetPassword, resendVerificationEmail, user, loading, isCoach, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const returnTo = (location.state as any)?.from || '/aura/welcome';
+  const explicitReturnTo = (location.state as any)?.from;
+  const returnTo = explicitReturnTo || null;
   const isUnverified = (location.state as any)?.unverified === true;
 
+  const getRedirectTarget = useCallback(() => {
+    if (returnTo) return returnTo;
+    if (isCoach || isAdmin) return '/coach';
+    return '/aura/welcome';
+  }, [returnTo, isCoach, isAdmin]);
+
   const handleConfirmationComplete = useCallback(() => {
-    navigate(returnTo);
-  }, [navigate, returnTo]);
+    navigate(getRedirectTarget());
+  }, [navigate, getRedirectTarget]);
 
   useEffect(() => {
     if (!loading && user && !showConfirmation) {
-      navigate(returnTo);
+      navigate(getRedirectTarget());
     }
-  }, [user, loading, navigate, showConfirmation, returnTo]);
+  }, [user, loading, navigate, showConfirmation, getRedirectTarget]);
 
   // If redirected here because email isn't verified, show the verify-email screen
   useEffect(() => {
