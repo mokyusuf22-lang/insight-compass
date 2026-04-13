@@ -73,11 +73,11 @@ export default function MyCoach() {
       if (messagesRes.data) setMessages(messagesRes.data as unknown as Message[]);
 
       // Mark coach's messages as read
-      await supabase
+      await (supabase
         .from('coach_messages')
-        .update({ is_read: true })
-        .eq('coach_id' as any, assignment.coach_id)
-        .eq('user_id' as any, user.id)
+        .update({ is_read: true }) as any)
+        .eq('coach_id', assignment.coach_id)
+        .eq('user_id', user.id)
         .eq('sender_id', assignment.coach_id)
         .eq('is_read', false);
 
