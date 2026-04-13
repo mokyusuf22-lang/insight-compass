@@ -10,6 +10,8 @@ import { ArrowLeft, Send, User } from 'lucide-react';
 interface Message {
   id: string;
   sender_id: string;
+  coach_id: string;
+  user_id: string;
   content: string;
   is_read: boolean;
   created_at: string;
@@ -43,7 +45,6 @@ export default function MyCoach() {
     const load = async () => {
       if (!user) return;
 
-      // Find assignment
       const { data: assignment } = await supabase
         .from('coach_assignments')
         .select('coach_id')
@@ -59,21 +60,24 @@ export default function MyCoach() {
 
       setCoachId(assignment.coach_id);
 
-      // Load coach profile and messages in parallel
+      // Use 'as any' to work around stale generated types
       const [profileRes, messagesRes] = await Promise.all([
-        supabase.from('coach_profiles').select('display_name, bio').eq('user_id', assignment.coach_id).maybeSingle(),
-        supabase.from('coach_messages').select('*').eq('coach_id', assignment.coach_id).eq('user_id', user.id).order('created_at', { ascending: true }),
+        supabase.from('coach_profiles').select('*').eq('user_id', assignment.coach_id).maybeSingle(),
+        supabase.from('coach_messages').select('*').eq('coach_id' as any, assignment.coach_id).eq('user_id' as any, user.id).order('created_at', { ascending: true }),
       ]);
 
-      if (profileRes.data) setCoachProfile(profileRes.data);
-      if (messagesRes.data) setMessages(messagesRes.data as Message[]);
+      if (profileRes.data) {
+        const cp = profileRes.data as any;
+        setCoachProfile({ display_name: cp.display_name || null, bio: cp.bio || null });
+      }
+      if (messagesRes.data) setMessages(messagesRes.data as unknown as Message[]);
 
       // Mark coach's messages as read
       await supabase
         .from('coach_messages')
         .update({ is_read: true })
-        .eq('coach_id', assignment.coach_id)
-        .eq('user_id', user.id)
+        .eq('coach_id' as any, assignment.coach_id)
+        .eq('user_id' as any, user.id)
         .eq('sender_id', assignment.coach_id)
         .eq('is_read', false);
 
@@ -120,7 +124,7 @@ export default function MyCoach() {
       user_id: user.id,
       sender_id: user.id,
       content: newMessage.trim(),
-    });
+    } as any);
 
     if (!error) setNewMessage('');
     setSending(false);
@@ -133,19 +137,14 @@ export default function MyCoach() {
     }
   };
 
-  if (loading || isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-background"><LoadingSpinner size="lg" /></div>;
-  }
+  if (loading || isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><LoadingSpinner size="lg" /></div>;
 
-  // No coach assigned
   if (!coachId) {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b border-border bg-card/50">
           <div className="container max-w-3xl py-4 px-4 flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/welcome')}>
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
+            <Button variant="ghost" size="icon" onClick={() => navigate('/welcome')}><ArrowLeft className="w-4 h-4" /></Button>
             <h1 className="text-lg font-serif font-semibold">My Coach</h1>
           </div>
         </header>
@@ -159,34 +158,23 @@ export default function MyCoach() {
     );
   }
 
-  // Group messages by date
   const grouped: { date: string; msgs: Message[] }[] = [];
   messages.forEach(msg => {
     const dateLabel = formatDate(msg.created_at);
     const last = grouped[grouped.length - 1];
-    if (last && last.date === dateLabel) {
-      last.msgs.push(msg);
-    } else {
-      grouped.push({ date: dateLabel, msgs: [msg] });
-    }
+    if (last && last.date === dateLabel) last.msgs.push(msg);
+    else grouped.push({ date: dateLabel, msgs: [msg] });
   });
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b border-border bg-card/50">
         <div className="container max-w-3xl py-4 px-4 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/welcome')}>
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div>
-            <h1 className="text-lg font-serif font-semibold">
-              {coachProfile?.display_name || 'My Coach'}
-            </h1>
-          </div>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/welcome')}><ArrowLeft className="w-4 h-4" /></Button>
+          <h1 className="text-lg font-serif font-semibold">{coachProfile?.display_name || 'My Coach'}</h1>
         </div>
       </header>
 
-      {/* Coach bio banner when no messages */}
       {messages.length === 0 && coachProfile?.bio && (
         <div className="container max-w-3xl px-4 py-6">
           <div className="chamfer bg-card border border-border p-6 text-center">
@@ -225,17 +213,8 @@ export default function MyCoach() {
 
       <div className="border-t border-border bg-card/50 p-4">
         <div className="container max-w-3xl flex gap-2">
-          <Textarea
-            value={newMessage}
-            onChange={e => setNewMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a message..."
-            rows={1}
-            className="resize-none min-h-[44px]"
-          />
-          <Button onClick={handleSend} disabled={!newMessage.trim() || sending} size="icon">
-            <Send className="w-4 h-4" />
-          </Button>
+          <Textarea value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={handleKeyDown} placeholder="Type a message..." rows={1} className="resize-none min-h-[44px]" />
+          <Button onClick={handleSend} disabled={!newMessage.trim() || sending} size="icon"><Send className="w-4 h-4" /></Button>
         </div>
       </div>
     </div>

@@ -40,12 +40,13 @@ export default function CoachDashboard() {
 
       const { data: coachProfile } = await supabase
         .from('coach_profiles')
-        .select('display_name')
+        .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (coachProfile?.display_name) {
-        setCoachName(coachProfile.display_name);
+      const cp = coachProfile as any;
+      if (cp?.display_name) {
+        setCoachName(cp.display_name);
       }
 
       const { data: assignments } = await supabase
