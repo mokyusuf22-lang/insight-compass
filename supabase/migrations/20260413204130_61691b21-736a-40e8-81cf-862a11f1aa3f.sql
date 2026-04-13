@@ -1,0 +1,1 @@
+ALTER TABLE public.coach_messages ENABLE ROW LEVEL SECURITY;
