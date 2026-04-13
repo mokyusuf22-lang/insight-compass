@@ -66,8 +66,8 @@ export default function CoachDashboard() {
       for (const uid of userIds) {
         const profileRes = await supabase.from('profiles').select('email').eq('user_id', uid).maybeSingle();
         const assessmentRes = await supabase.from('assessments').select('id').eq('user_id', uid).eq('is_complete', true);
-        const messagesRes = await supabase.from('coach_messages').select('id, is_read, sender_id').eq('coach_id', user.id).eq('user_id', uid);
-        const unreadCount = messagesRes.data?.filter(m => !m.is_read && m.sender_id !== user.id).length || 0;
+        const { data: messages } = await supabase.from('coach_messages').select('id, is_read, sender_id').match({ coach_id: user.id, user_id: uid });
+        const unreadCount = messages?.filter((m: any) => !m.is_read && m.sender_id !== user.id).length || 0;
 
         clientCards.push({
           userId: uid,
