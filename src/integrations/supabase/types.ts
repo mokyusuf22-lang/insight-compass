@@ -188,6 +188,42 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_applications: {
+        Row: {
+          bio: string
+          created_at: string
+          display_name: string
+          experience: string | null
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          bio: string
+          created_at?: string
+          display_name: string
+          experience?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string
+          created_at?: string
+          display_name?: string
+          experience?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       coach_assignments: {
         Row: {
           coach_id: string
