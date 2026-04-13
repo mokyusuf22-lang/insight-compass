@@ -63,7 +63,7 @@ export default function MyCoach() {
       // Use 'as any' to work around stale generated types
       const [profileRes, messagesRes] = await Promise.all([
         supabase.from('coach_profiles').select('*').eq('user_id', assignment.coach_id).maybeSingle(),
-        supabase.from('coach_messages').select('*').eq('coach_id' as any, assignment.coach_id).eq('user_id' as any, user.id).order('created_at', { ascending: true }),
+        (supabase.from('coach_messages').select('*') as any).eq('coach_id', assignment.coach_id).eq('user_id', user.id).order('created_at', { ascending: true }),
       ]);
 
       if (profileRes.data) {

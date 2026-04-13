@@ -44,11 +44,11 @@ export default function CoachMessages() {
     const load = async () => {
       if (!user || !userId) return;
 
-      const { data } = await supabase
+      const { data } = await (supabase
         .from('coach_messages')
-        .select('*')
-        .eq('coach_id' as any, user.id)
-        .eq('user_id' as any, userId)
+        .select('*') as any)
+        .eq('coach_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: true });
 
       if (data) setMessages(data as unknown as Message[]);
