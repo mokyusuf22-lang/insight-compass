@@ -25,11 +25,10 @@ export default function Welcome() {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const [loadingData, setLoadingData] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [hasPersonalPath, setHasPersonalPath] = useState(false);
   const [pathTitle, setPathTitle] = useState('');
   const [pathProgress, setPathProgress] = useState(0);
-
+  const [hasCoach, setHasCoach] = useState(false);
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
@@ -56,6 +55,17 @@ export default function Welcome() {
           setPathTitle(pathData.title);
           setPathProgress(pathData.total_progress);
         }
+
+        // Check if user has a coach
+        const { data: coachAssignment } = await supabase
+          .from('coach_assignments')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
+
+        setHasCoach(!!coachAssignment);
       } catch (err) {
         console.error('Error loading welcome data:', err);
       } finally {
@@ -66,118 +76,6 @@ export default function Welcome() {
     if (!loading && user) loadData();
   }, [user, loading]);
 
-  // Auto-trigger path generation when committed but not generated
-  useEffect(() => {
-    const autoGenerate = async () => {
-      if (!user || !profile) return;
-      if (profile.path_committed && !profile.personal_path_generated && !isGenerating && !hasPersonalPath) {
-        await generatePersonalPath();
-      }
-    };
-
-    if (!loading && !loadingData && profile) {
-      autoGenerate();
-    }
-  }, [user, profile, loading, loadingData, hasPersonalPath]);
-
-  const generatePersonalPath = async () => {
-    if (!user) return;
-    setIsGenerating(true);
-
-    try {
-      // Fetch commitment, reality report, and onboarding data in parallel
-      const [commitRes, realityRes, profileRes] = await Promise.all([
-        supabase
-          .from('path_commitments')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from('reality_reports')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from('profiles')
-          .select('career_goals')
-          .eq('user_id', user.id)
-          .single(),
-      ]);
-
-      const commitment = commitRes.data;
-      const realityReport = realityRes.data;
-      const careerGoals = profileRes.data?.career_goals as Record<string, any> | null;
-
-      if (!commitment) {
-        toast.error('No commitment found. Please complete the commitment step first.');
-        navigate('/commit');
-        return;
-      }
-
-      // Call edge function
-      const { data, error } = await supabase.functions.invoke('generate-personal-path', {
-        body: {
-          commitment: {
-            time_budget: commitment.time_budget,
-            intent: commitment.intent,
-            constraints: commitment.constraints,
-            focus_area: commitment.focus_area,
-          },
-          reality_report: realityReport ? {
-            strengths: realityReport.strengths,
-            key_constraints: realityReport.key_constraints,
-            risks: realityReport.risks,
-            generated_summary: realityReport.generated_summary,
-          } : null,
-          onboarding: careerGoals || {},
-          chosen_path: commitment.chosen_path,
-        },
-      });
-
-      if (error) throw error;
-
-      const personalPath = data.personal_path;
-
-      // Save to personal_paths table
-      const { error: insertError } = await supabase
-        .from('personal_paths')
-        .insert({
-          user_id: user.id,
-          title: personalPath.title || 'My Personal Path',
-          description: personalPath.description || null,
-          phases: personalPath.phases as unknown as Json,
-          total_progress: 0,
-          is_active: true,
-        });
-
-      if (insertError) throw insertError;
-
-      // Update profile flag
-      await supabase
-        .from('profiles')
-        .update({ personal_path_generated: true } as any)
-        .eq('user_id', user.id);
-
-      setHasPersonalPath(true);
-      setPathTitle(personalPath.title);
-      setPathProgress(0);
-      toast.success('Your personal path has been generated!');
-    } catch (err: any) {
-      console.error('Error generating personal path:', err);
-      if (err.message?.includes('429')) {
-        toast.error('Rate limit exceeded. Please try again in a moment.');
-      } else {
-        toast.error('Failed to generate your path. Please try again.');
-      }
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   if (loading || loadingData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -187,29 +85,6 @@ export default function Welcome() {
   }
 
   const userName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'there';
-
-  // Generating state
-  if (isGenerating) {
-    return (
-      <div className="min-h-screen bg-background">
-        <UserHeader showHomeLink={false} />
-        <main className="container max-w-3xl py-20 px-4 md:px-8">
-          <div className="text-center animate-fade-up">
-            <div className="inline-flex items-center justify-center w-20 h-20 chamfer bg-primary/10 mb-6">
-              <RefreshCw className="w-10 h-10 text-primary animate-spin" />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">
-              Building Your Personal Path
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-4">
-              Our AI is crafting a personalized execution plan based on your commitment, personality, and goals...
-            </p>
-            <p className="text-sm text-muted-foreground">This usually takes 15-30 seconds.</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -283,8 +158,8 @@ export default function Welcome() {
           </div>
         )}
 
-        {/* Committed but generation failed - manual retry */}
-        {profile?.path_committed && !hasPersonalPath && !isGenerating && (
+        {/* Committed but no path yet — coach-driven */}
+        {profile?.path_committed && !hasPersonalPath && hasCoach && (
           <div className="chamfer bg-card border border-border p-8 mb-8">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 chamfer-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -292,15 +167,34 @@ export default function Welcome() {
               </div>
               <div>
                 <h2 className="text-xl font-serif font-semibold text-foreground mb-2">
-                  Generate Your Personal Path
+                  Your Coach is Building Your Path
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  You've committed to a path. Let our AI create your personalized execution plan.
+                  Your coach is preparing a personalized skill path for you. In the meantime, you can message them.
                 </p>
-                <Button onClick={generatePersonalPath} className="rounded-full">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate My Path
+                <Button onClick={() => navigate('/my-coach')} className="rounded-full">
+                  Message Your Coach
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Committed but no path and no coach */}
+        {profile?.path_committed && !hasPersonalPath && !hasCoach && (
+          <div className="chamfer bg-card border border-border p-8 mb-8">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 chamfer-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Target className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-xl font-serif font-semibold text-foreground mb-2">
+                  Your Path Will Appear Here
+                </h2>
+                <p className="text-muted-foreground">
+                  Your path will appear here once your coach sets it up.
+                </p>
               </div>
             </div>
           </div>
