@@ -32,6 +32,7 @@ interface AuthContextType {
   subscription: SubscriptionState;
   loading: boolean;
   isAdmin: boolean;
+  isCoach: boolean;
   emailVerified: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -64,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<SubscriptionState>(defaultSubscription);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isCoach, setIsCoach] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
 
   const fetchProfile = async (userId: string) => {
@@ -78,25 +80,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const checkAdminRole = async (userId: string) => {
+  const checkUserRoles = async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'admin')
-        .maybeSingle();
+        .eq('user_id', userId);
 
-      if (!error && data) {
-        setIsAdmin(true);
-        return true;
+      if (!error && data && data.length > 0) {
+        const roles = data.map((r: any) => r.role as string);
+        const userIsAdmin = roles.includes('admin');
+        const userIsCoach = roles.includes('coach') || userIsAdmin;
+        setIsAdmin(userIsAdmin);
+        setIsCoach(userIsCoach);
+        return { isAdmin: userIsAdmin, isCoach: userIsCoach };
       }
       setIsAdmin(false);
-      return false;
+      setIsCoach(false);
+      return { isAdmin: false, isCoach: false };
     } catch (err) {
-      console.error('Error checking admin role:', err);
+      console.error('Error checking user roles:', err);
       setIsAdmin(false);
-      return false;
+      setIsCoach(false);
+      return { isAdmin: false, isCoach: false };
     }
   };
 
@@ -107,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Check if user is admin first
-    const userIsAdmin = await checkAdminRole(user.id);
+    const { isAdmin: userIsAdmin } = await checkUserRoles(user.id);
     
     // If admin, grant full access without checking Stripe
     if (userIsAdmin) {
@@ -170,11 +176,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           setTimeout(() => {
             fetchProfile(session.user.id);
-            checkAdminRole(session.user.id);
+            checkUserRoles(session.user.id);
           }, 0);
         } else {
           setProfile(null);
           setIsAdmin(false);
+          setIsCoach(false);
           setEmailVerified(false);
           setSubscription({ ...defaultSubscription, loading: false });
         }
@@ -189,7 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (session?.user) {
         fetchProfile(session.user.id);
-        checkAdminRole(session.user.id);
+        checkUserRoles(session.user.id);
       }
       setLoading(false);
     });
@@ -265,6 +272,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setProfile(null);
     setIsAdmin(false);
+    setIsCoach(false);
     setSubscription({ ...defaultSubscription, loading: false });
   };
 
@@ -276,6 +284,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription,
       loading,
       isAdmin,
+      isCoach,
       emailVerified,
       signIn,
       signUp,
