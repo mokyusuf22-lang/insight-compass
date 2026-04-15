@@ -850,6 +850,10 @@ export type Database = {
         Args: { _assignment_id: string; _user_id: string }
         Returns: boolean
       }
+      upsert_coach_profile: {
+        Args: { p_bio: string; p_display_name: string; target_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "coach"
