@@ -292,8 +292,10 @@ export type Database = {
       coach_profiles: {
         Row: {
           availability: string | null
+          avatar_url: string | null
           bio: string | null
           created_at: string
+          display_name: string | null
           id: string
           specialties: Json | null
           updated_at: string
@@ -301,8 +303,10 @@ export type Database = {
         }
         Insert: {
           availability?: string | null
+          avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          display_name?: string | null
           id?: string
           specialties?: Json | null
           updated_at?: string
@@ -310,8 +314,10 @@ export type Database = {
         }
         Update: {
           availability?: string | null
+          avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          display_name?: string | null
           id?: string
           specialties?: Json | null
           updated_at?: string
