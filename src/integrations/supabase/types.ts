@@ -229,6 +229,7 @@ export type Database = {
           coach_id: string
           created_at: string
           id: string
+          is_demo: boolean
           notes: string | null
           status: string
           updated_at: string
@@ -238,6 +239,7 @@ export type Database = {
           coach_id: string
           created_at?: string
           id?: string
+          is_demo?: boolean
           notes?: string | null
           status?: string
           updated_at?: string
@@ -247,6 +249,7 @@ export type Database = {
           coach_id?: string
           created_at?: string
           id?: string
+          is_demo?: boolean
           notes?: string | null
           status?: string
           updated_at?: string
@@ -830,6 +833,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_demo_to_all_coaches: {
+        Args: { p_demo_user_id: string }
+        Returns: number
+      }
       bootstrap_admin: { Args: { _user_id: string }; Returns: boolean }
       get_my_roles: {
         Args: never
