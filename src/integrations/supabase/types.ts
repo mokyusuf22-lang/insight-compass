@@ -825,6 +825,12 @@ export type Database = {
     }
     Functions: {
       bootstrap_admin: { Args: { _user_id: string }; Returns: boolean }
+      get_my_roles: {
+        Args: never
+        Returns: {
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
