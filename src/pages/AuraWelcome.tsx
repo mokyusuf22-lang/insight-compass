@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Sparkles, ArrowRight, User, Mail, Phone } from 'lucide-react';
+import { ArrowRight, User, Mail, Phone } from 'lucide-react';
 import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 import { AuraOrb } from '@/components/aura/AuraOrb';
+import { setAuraReturnFlag } from '@/hooks/useAuraReturn';
 
 const TYPING_SPEED = 30;
 
@@ -82,10 +83,66 @@ export default function AuraWelcome() {
     }
   }, [greetingDone]);
 
-  // Pre-fill email from auth
+  // Restore previous session data or pre-fill from auth
   useEffect(() => {
-    if (user?.email) setEmail(user.email);
-  }, [user]);
+    const restore = async () => {
+      if (!user) return;
+
+      // Pre-fill email
+      if (user.email) setEmail(user.email);
+
+      // Try to restore existing session
+      const { data: existing } = await supabase
+        .from('aura_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        const s = existing as any;
+        if (s.name) setName(s.name);
+        if (s.email) setEmail(s.email);
+        if (s.preferred_contact) setPreferredContact(s.preferred_contact);
+
+        const step = s.current_step ?? 0;
+
+        // Route user to the correct page based on how far they got
+        if (step >= 7) {
+          // Keep the aura flag set so RequireStep lets the user reach /welcome;
+          // Welcome.tsx will clear it once it renders.
+          navigate('/welcome');
+          return;
+        }
+        if (step >= 6) {
+          navigate('/aura/insights');
+          return;
+        }
+        if (step >= 5) {
+          setAuraReturnFlag(user.id);
+          navigate('/aura/assessments');
+          return;
+        }
+        if (step >= 3) {
+          // step 3 = challenge confirmed, user should be on assessment-intro
+          setAuraReturnFlag(user.id);
+          navigate('/aura/assessment-intro');
+          return;
+        }
+        if (step >= 2) {
+          setAuraReturnFlag(user.id);
+          navigate('/aura/challenge');
+          return;
+        }
+
+        // Mark aura flow as active for return navigation
+        setAuraReturnFlag(user.id);
+      }
+    };
+
+    restore();
+  }, [user, navigate]);
 
   const isValid = name.trim().length >= 2 && email.trim().includes('@');
 
@@ -127,6 +184,7 @@ export default function AuraWelcome() {
           } as any);
       }
 
+      setAuraReturnFlag(user.id);
       navigate('/aura/challenge');
     } catch (err) {
       console.error('Error saving:', err);

@@ -61,6 +61,10 @@ export default function AuraAssessmentIntro() {
         .maybeSingle();
 
       if (data) {
+        const step = (data as any).current_step ?? 0;
+        if (step >= 7) { navigate('/welcome'); return; }
+        if (step >= 6) { navigate('/aura/insights'); return; }
+        if (step >= 5) { navigate('/aura/assessments'); return; }
         setSessionId(data.id);
         setUserName((data as any).name || '');
       } else {

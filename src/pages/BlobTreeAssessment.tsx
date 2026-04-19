@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuraReturn } from '@/hooks/useAuraReturn';
 import { setLocalProgress } from '@/components/RequireStep';
 import { blobPositions } from '@/data/blobTreeData';
 import { UserHeader } from '@/components/UserHeader';
@@ -18,6 +19,9 @@ export default function BlobTreeAssessment() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { hasAuraSession } = useAuraReturn();
+  const auraRef = useRef(hasAuraSession);
+  useEffect(() => { auraRef.current = hasAuraSession; }, [hasAuraSession]);
 
   const [step, setStep] = useState<Step>('intro');
   const [currentBlob, setCurrentBlob] = useState<number | null>(null);
@@ -97,7 +101,7 @@ export default function BlobTreeAssessment() {
         }
         setLocalProgress('blob_tree_complete', true);
       }
-      navigate(`/assessment/blob-tree/results?id=${assessmentId}`);
+      navigate(auraRef.current ? '/aura/assessments' : `/assessment/blob-tree/results?id=${assessmentId}`);
     }
   };
 

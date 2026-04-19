@@ -2,23 +2,22 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { clearAuraReturnFlag } from '@/hooks/useAuraReturn';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { UserHeader } from '@/components/UserHeader';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { toast } from 'sonner';
-import { Json } from '@/integrations/supabase/types';
+import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   Sparkles,
-  RefreshCw,
   CheckCircle2,
   Waypoints,
   Compass,
   Activity,
   TrendingUp,
-  Target,
+  MessageSquare,
+  Clock,
 } from 'lucide-react';
 
 export default function Welcome() {
@@ -28,44 +27,65 @@ export default function Welcome() {
   const [hasPersonalPath, setHasPersonalPath] = useState(false);
   const [pathTitle, setPathTitle] = useState('');
   const [pathProgress, setPathProgress] = useState(0);
+  const [coachName, setCoachName] = useState<string | null>(null);
   const [hasCoach, setHasCoach] = useState(false);
+  const [coachAppPending, setCoachAppPending] = useState(false);
+
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
 
+  // Clear the Aura flow flag now that the user has successfully reached the dashboard.
+  useEffect(() => { clearAuraReturnFlag(); }, []);
+
   useEffect(() => {
     const loadData = async () => {
       if (!user) return;
 
       try {
-        // Check for existing active personal path
-        const { data: pathData } = await supabase
-          .from('personal_paths')
-          .select('id, title, total_progress')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        const [pathRes, assignmentRes, appRes] = await Promise.all([
+          supabase
+            .from('personal_paths')
+            .select('id, title, total_progress')
+            .eq('user_id', user.id)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('coach_assignments' as any)
+            .select('coach_id')
+            .eq('user_id', user.id)
+            .eq('status', 'active')
+            .maybeSingle(),
+          supabase
+            .from('coach_applications' as any)
+            .select('status')
+            .eq('user_id', user.id)
+            .maybeSingle(),
+        ]);
 
-        if (pathData) {
-          setHasPersonalPath(true);
-          setPathTitle(pathData.title);
-          setPathProgress(pathData.total_progress);
+        if ((appRes.data as any)?.status === 'pending') {
+          setCoachAppPending(true);
         }
 
-        // Check if user has a coach
-        const { data: coachAssignment } = await supabase
-          .from('coach_assignments')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .limit(1)
-          .maybeSingle();
+        if (pathRes.data) {
+          setHasPersonalPath(true);
+          setPathTitle(pathRes.data.title);
+          setPathProgress(pathRes.data.total_progress);
+        }
 
-        setHasCoach(!!coachAssignment);
+        if (assignmentRes.data) {
+          setHasCoach(true);
+          const { data: coachProfile } = await supabase
+            .from('coach_profiles' as any)
+            .select('display_name')
+            .eq('user_id', (assignmentRes.data as any).coach_id)
+            .maybeSingle();
+          setCoachName((coachProfile as any)?.display_name || 'Your Coach');
+        }
       } catch (err) {
         console.error('Error loading welcome data:', err);
       } finally {
@@ -98,20 +118,35 @@ export default function Welcome() {
           </h1>
           <p className="text-muted-foreground text-lg">
             {hasPersonalPath
-              ? 'Your personal path is ready. Let\'s make progress.'
-              : 'Complete the Be:More flow to unlock your personal path.'
+              ? "Your skill path is ready. Let's make progress."
+              : hasCoach
+                ? 'Your coach is preparing your skill path.'
+                : 'Complete the Be:More flow to unlock your skill path.'
             }
           </p>
         </div>
+
+        {/* Coach application pending banner */}
+        {coachAppPending && (
+          <div className="mb-6 flex items-center gap-3 bg-accent/8 border border-accent/20 rounded-2xl px-5 py-4">
+            <Clock className="w-4 h-4 text-accent flex-shrink-0" />
+            <p className="text-sm text-foreground">
+              Your coach application is under review.{' '}
+              <Link to="/become-a-coach" className="text-accent underline underline-offset-2 font-medium">
+                View status
+              </Link>
+            </p>
+          </div>
+        )}
 
         {/* Personal Path Card */}
         {hasPersonalPath && (
           <div className="chamfer bg-secondary p-8 md:p-10 mb-8 animate-fade-up">
             <div className="flex items-center gap-2 text-secondary-foreground/70 text-sm mb-4">
-              <Sparkles className="w-4 h-4" />
-              <span>Your Personal Path</span>
+              <Waypoints className="w-4 h-4" />
+              <span>Your Skill Path</span>
             </div>
-            
+
             <h2 className="text-xl md:text-2xl font-serif font-semibold text-secondary-foreground mb-2">
               {pathTitle}
             </h2>
@@ -147,7 +182,7 @@ export default function Welcome() {
                   Complete Your Be:More Journey
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  Finish the assessment flow and commit to a path to unlock your personalized execution plan.
+                  Finish the assessment flow and commit to a path to unlock your personalized skill path.
                 </p>
                 <Button onClick={() => navigate('/onboarding')} className="rounded-full">
                   Continue Journey
@@ -158,44 +193,71 @@ export default function Welcome() {
           </div>
         )}
 
-        {/* Committed but no path yet — coach-driven */}
+        {/* Committed — coach preparing path */}
         {profile?.path_committed && !hasPersonalPath && hasCoach && (
-          <div className="chamfer bg-card border border-border p-8 mb-8">
+          <div className="chamfer bg-card border border-border p-8 mb-8 animate-fade-up">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 chamfer-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Target className="w-6 h-6 text-primary" />
+              <div className="w-12 h-12 chamfer-sm bg-accent/10 flex items-center justify-center flex-shrink-0">
+                <Clock className="w-6 h-6 text-accent" />
               </div>
               <div>
                 <h2 className="text-xl font-serif font-semibold text-foreground mb-2">
                   Your Coach is Building Your Path
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  Your coach is preparing a personalized skill path for you. In the meantime, you can message them.
+                  {coachName || 'Your coach'} is crafting a personalized skill path for you. You'll see it here as soon as it's ready.
                 </p>
-                <Button onClick={() => navigate('/my-coach')} className="rounded-full">
-                  Message Your Coach
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/my-coach')}
+                  className="rounded-full gap-2"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Message {coachName || 'Your Coach'}
                 </Button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Committed but no path and no coach */}
+        {/* Committed — no coach, no path (edge case) */}
         {profile?.path_committed && !hasPersonalPath && !hasCoach && (
           <div className="chamfer bg-card border border-border p-8 mb-8">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 chamfer-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Target className="w-6 h-6 text-primary" />
+                <Sparkles className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <h2 className="text-xl font-serif font-semibold text-foreground mb-2">
-                  Your Path Will Appear Here
+                  Path Coming Soon
                 </h2>
                 <p className="text-muted-foreground">
-                  Your path will appear here once your coach sets it up.
+                  Your skill path will appear here once your coach sets it up.
                 </p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* My Coach card */}
+        {coachName && (
+          <div className="chamfer bg-card border border-border p-6 mb-8 animate-fade-up">
+            <div className="flex items-center gap-4">
+              <div className="w-11 h-11 chamfer-sm bg-accent/15 flex items-center justify-center flex-shrink-0 text-base font-semibold text-accent">
+                {coachName[0].toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Your Coach</p>
+                <p className="font-semibold text-foreground truncate">{coachName}</p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => navigate('/my-coach')}
+                className="rounded-full bg-accent hover:bg-accent/90 text-white shadow-accent btn-lift gap-2 flex-shrink-0"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                Message
+              </Button>
             </div>
           </div>
         )}
@@ -221,7 +283,7 @@ export default function Welcome() {
             </div>
             <div className="chamfer bg-card border border-border p-5">
               <div className="flex items-center gap-2 mb-3">
-                <Waypoints className="w-4 h-4 text-accent" />
+                <CheckCircle2 className="w-4 h-4 text-accent" />
                 <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Path</span>
               </div>
               <p className="text-lg font-semibold truncate">{pathTitle}</p>

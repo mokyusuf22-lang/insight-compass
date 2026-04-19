@@ -1,24 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
+export const AURA_RETURN_KEY = 'aura_flow_active';
 
 export function useAuraReturn() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [hasActiveAura, setHasActiveAura] = useState(false);
+  // Initialize synchronously so it's correct on the first render — avoids the
+  // race condition where hasAuraSession is still false when an assessment
+  // completes and calls navigate().
+  const [hasAuraSession, setHasAuraSession] = useState(
+    () => !!localStorage.getItem(AURA_RETURN_KEY)
+  );
 
   useEffect(() => {
     const check = async () => {
-      // Check localStorage first
-      const flag = localStorage.getItem('aura_active');
-      if (flag === 'true') {
-        setHasActiveAura(true);
+      if (!user) return;
+
+      // Quick localStorage check first (avoids extra DB round-trip)
+      const flag = localStorage.getItem(AURA_RETURN_KEY);
+      if (flag === user.id) {
+        setHasAuraSession(true);
         return;
       }
 
-      // Check DB
-      if (!user) return;
+      // Fallback: check DB for an active session that hasn't reached insights yet
       const { data } = await supabase
         .from('aura_sessions')
         .select('id, current_step')
@@ -27,11 +35,14 @@ export function useAuraReturn() {
         .limit(1)
         .maybeSingle();
 
-      if (data && (data.current_step ?? 0) < 7) {
-        setHasActiveAura(true);
-        localStorage.setItem('aura_active', 'true');
+      if (data && (data as any).current_step !== null && (data as any).current_step < 6) {
+        setHasAuraSession(true);
+        localStorage.setItem(AURA_RETURN_KEY, user.id);
+      } else if (!flag) {
+        setHasAuraSession(false);
       }
     };
+
     check();
   }, [user]);
 
@@ -39,5 +50,13 @@ export function useAuraReturn() {
     navigate('/aura/assessments');
   };
 
-  return { hasActiveAura, returnToAura };
+  return { hasAuraSession, returnToAura };
+}
+
+export function clearAuraReturnFlag() {
+  localStorage.removeItem(AURA_RETURN_KEY);
+}
+
+export function setAuraReturnFlag(userId: string) {
+  localStorage.setItem(AURA_RETURN_KEY, userId);
 }

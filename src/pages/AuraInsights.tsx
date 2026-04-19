@@ -5,7 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import {
-  Sparkles,
   ArrowRight,
   BarChart3,
   Target,
@@ -179,6 +178,8 @@ export default function AuraInsights() {
         .update({ current_step: 7 } as any)
         .eq('id', sessionId);
     }
+    // Do NOT clear the aura flag here — it must survive until the user
+    // lands on /welcome so RequireStep can bypass the path_committed gate.
     navigate('/aura/feedback');
   };
 

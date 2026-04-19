@@ -91,10 +91,22 @@ export default function AuraChallenge() {
         .maybeSingle();
 
       if (data) {
+        const step = (data as any).current_step ?? 0;
+        if (step >= 7) { navigate('/welcome'); return; }
+        if (step >= 6) { navigate('/aura/insights'); return; }
+
         setSessionId(data.id);
         setUserName((data as any).name || '');
         if ((data as any).challenge_text) {
           setChallengeText((data as any).challenge_text);
+        }
+
+        // Restore analysis results if they already completed this step so we
+        // don't burn another AI prompt on refresh.
+        if (step >= 3 && (data as any).identified_themes && (data as any).aura_summary) {
+          setThemes((data as any).identified_themes as IdentifiedTheme[]);
+          setAuraSummary((data as any).aura_summary as string);
+          setShowResults(true);
         }
       } else {
         // No session found — go back to step 1

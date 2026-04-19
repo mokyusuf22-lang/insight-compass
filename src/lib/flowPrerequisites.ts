@@ -40,7 +40,9 @@ const FLOW_STEPS: { route: string; requires: (keyof FlowProgress)[]; label: stri
   { route: '/reality', requires: ['blob_tree_complete', 'value_map_complete'], label: 'Reality Report' },
   { route: '/path-options', requires: ['reality_report_generated'], label: 'Path Options' },
   { route: '/commit', requires: ['path_options_shown'], label: 'Commitment' },
-  { route: '/welcome', requires: ['path_committed'], label: 'Dashboard' },
+  // /welcome (dashboard) is intentionally not gated here — both the Be:More flow
+  // and the Aura onboarding flow land users there. Access control is handled inside
+  // the page itself rather than at the route level.
   { route: '/path', requires: ['personal_path_generated'], label: 'Personal Path' },
 ];
 

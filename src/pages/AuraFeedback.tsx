@@ -81,9 +81,8 @@ export default function AuraFeedback() {
           .from('aura_sessions')
           .update({
             current_step: 7,
-            identified_themes: {
-              feedback: { ratings, freeText: freeText.trim() || null },
-            },
+            feedback_ratings: ratings as any,
+            feedback_text: freeText.trim() || null,
           } as any)
           .eq('id', session.id);
       }

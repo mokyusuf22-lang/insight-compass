@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuraReturn } from '@/hooks/useAuraReturn';
 import { discQuestions, answerOptions, DISCQuestion } from '@/data/discQuestions';
 import { calculateDISCResult, DISCResponse } from '@/lib/discScoring';
 import { UserHeader } from '@/components/UserHeader';
@@ -16,7 +17,10 @@ export default function DISCAssessment() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+  const { hasAuraSession } = useAuraReturn();
+  const auraRef = useRef(hasAuraSession);
+  useEffect(() => { auraRef.current = hasAuraSession; }, [hasAuraSession]);
+
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [responses, setResponses] = useState<DISCResponse[]>([]);
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
@@ -121,7 +125,7 @@ export default function DISCAssessment() {
           .update({ disc_completed: true })
           .eq('user_id', user?.id);
           
-        navigate(`/assessment/disc/results?id=${assessmentId}`);
+        navigate(auraRef.current ? '/aura/assessments' : `/assessment/disc/results?id=${assessmentId}`);
       }
     } catch (error) {
       console.error('Error saving progress:', error);

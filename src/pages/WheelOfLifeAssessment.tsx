@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuraReturn } from '@/hooks/useAuraReturn';
 import { wheelCategories } from '@/data/wheelOfLifeCategories';
 import { UserHeader } from '@/components/UserHeader';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
@@ -15,6 +16,9 @@ export default function WheelOfLifeAssessment() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { hasAuraSession } = useAuraReturn();
+  const auraRef = useRef(hasAuraSession);
+  useEffect(() => { auraRef.current = hasAuraSession; }, [hasAuraSession]);
 
   const [scores, setScores] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {};
@@ -96,7 +100,7 @@ export default function WheelOfLifeAssessment() {
         if (user) {
           await supabase.from('profiles').update({ wheel_of_life_complete: true }).eq('user_id', user.id);
         }
-        navigate(`/assessment/wheel-of-life/results?id=${assessmentId}`);
+        navigate(auraRef.current ? '/aura/assessments' : `/assessment/wheel-of-life/results?id=${assessmentId}`);
       }
     } catch (err) {
       console.error('Error saving:', err);

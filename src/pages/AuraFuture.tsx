@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Rocket, MessageSquare, Calendar, Brain } from 'lucide-react';
+import { ArrowRight, Rocket, MessageSquare, Calendar, Brain, UserCheck } from 'lucide-react';
 import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 import { AuraOrb } from '@/components/aura/AuraOrb';
 
@@ -30,13 +31,31 @@ export default function AuraFuture() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [showContent, setShowContent] = useState(false);
+  const [hasCoach, setHasCoach] = useState(false);
 
-  const prompt = "Looking ahead, we are developing an advanced Gen AI complete coaching service for those who prefer an AI-driven, continuous coaching experience. This will be available as a premium service in the future.";
+  const prompt = "Looking ahead, we are developing an advanced Gen AI complete coaching service for those who prefer an AI-driven, continuous coaching experience — providing deeper guidance, real-time support, and evolving insights as you grow.";
   const { displayed, done } = useTypingEffect(prompt, true);
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth');
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    // Do NOT clear the aura flag here — it must survive until /welcome so
+    // RequireStep can bypass the path_committed prerequisite gate.
+    // Check if user has an assigned coach
+    const checkCoach = async () => {
+      const { data } = await supabase
+        .from('coach_assignments' as any)
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+      setHasCoach(!!data);
+    };
+    checkCoach();
+  }, [user]);
 
   useEffect(() => {
     if (done) {
@@ -117,8 +136,19 @@ export default function AuraFuture() {
           </div>
 
           <div className="space-y-3">
+            {hasCoach && (
+              <Button
+                onClick={() => navigate('/my-coach')}
+                className="w-full h-12 text-base rounded-full btn-lift bg-accent hover:bg-accent/90 text-white"
+                size="lg"
+              >
+                <UserCheck className="w-5 h-5 mr-2" />
+                Message My Coach
+              </Button>
+            )}
             <Button
               onClick={() => navigate('/welcome')}
+              variant={hasCoach ? 'outline' : 'default'}
               className="w-full h-12 text-base rounded-full btn-lift"
               size="lg"
             >

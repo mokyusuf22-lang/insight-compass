@@ -62,13 +62,12 @@ export default function AuraAssessments() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [completionStatus, setCompletionStatus] = useState<Record<string, boolean>>({});
   const [showAssessments, setShowAssessments] = useState(false);
+  // introText is stored in state and set exactly once after data loads,
+  // so the typing animation never restarts when navigating back from an assessment.
+  const [introText, setIntroText] = useState('');
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  const themeAreas = themes.map(t => t.area.toLowerCase()).join(', ');
-  const introText = userName
-    ? `Fantastic, ${userName}! Based on our earlier conversation, we've identified some key areas to explore further${themeAreas ? ` — particularly around ${themeAreas}` : ''}. To truly understand your motivations, values, and goals, we'll guide you through a selection of assessments designed specifically for your needs.`
-    : `Based on our earlier conversation, we'll guide you through assessments designed specifically for your needs.`;
-
-  const { displayed, done } = useTypingEffect(introText, true);
+  const { displayed, done } = useTypingEffect(introText, dataLoaded);
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth');
@@ -101,10 +100,21 @@ export default function AuraAssessments() {
       ]);
 
       if (sessionRes.data) {
+        const step = (sessionRes.data as any).current_step ?? 0;
+        if (step >= 7) { navigate('/welcome'); return; }
+        if (step >= 6) { navigate('/aura/insights'); return; }
         setSessionId(sessionRes.data.id);
-        setUserName((sessionRes.data as any).name || '');
+        const name = (sessionRes.data as any).name || '';
+        setUserName(name);
         const rawThemes = (sessionRes.data as any).identified_themes;
-        if (Array.isArray(rawThemes)) setThemes(rawThemes);
+        const loadedThemes: IdentifiedTheme[] = Array.isArray(rawThemes) ? rawThemes : [];
+        if (loadedThemes.length) setThemes(loadedThemes);
+        // Build introText once here so the typing animation never restarts mid-play
+        const themeAreas = loadedThemes.map(t => t.area.toLowerCase()).join(', ');
+        setIntroText(name
+          ? `Fantastic, ${name}! Based on our earlier conversation, we've identified some key areas to explore further${themeAreas ? ` — particularly around ${themeAreas}` : ''}. To truly understand your motivations, values, and goals, we'll guide you through a selection of assessments designed specifically for your needs.`
+          : `Based on our earlier conversation, we'll guide you through assessments designed specifically for your needs.`);
+        setDataLoaded(true);
       } else {
         navigate('/aura/welcome');
       }

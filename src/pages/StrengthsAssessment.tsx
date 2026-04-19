@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuraReturn } from '@/hooks/useAuraReturn';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProgressBar } from '@/components/assessment/ProgressBar';
@@ -16,7 +17,10 @@ import { Json } from '@/integrations/supabase/types';
 export default function StrengthsAssessment() {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
-  
+  const { hasAuraSession } = useAuraReturn();
+  const auraRef = useRef(hasAuraSession);
+  useEffect(() => { auraRef.current = hasAuraSession; }, [hasAuraSession]);
+
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [responses, setResponses] = useState<StrengthsResponse[]>([]);
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
@@ -25,16 +29,12 @@ export default function StrengthsAssessment() {
 
   const totalQuestions = strengthsQuestions.length;
 
-  // Redirect if not authenticated or not paid
+  // Redirect if not authenticated
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        navigate('/auth');
-      } else if (!profile?.has_paid) {
-        navigate('/paywall');
-      }
+    if (!loading && !user) {
+      navigate('/auth');
     }
-  }, [user, profile, loading, navigate]);
+  }, [user, loading, navigate]);
 
   // Load existing assessment or create new one
   useEffect(() => {
@@ -80,10 +80,10 @@ export default function StrengthsAssessment() {
       }
     };
 
-    if (user && profile?.has_paid) {
+    if (user) {
       loadOrCreateAssessment();
     }
-  }, [user, profile]);
+  }, [user]);
 
   // Save progress to database
   const saveProgress = useCallback(async (
@@ -127,7 +127,7 @@ export default function StrengthsAssessment() {
           .eq('user_id', user!.id);
 
         toast.success('Assessment complete!');
-        navigate(`/assessment/strengths/results?id=${assessmentId}`);
+        navigate(auraRef.current ? '/aura/assessments' : `/assessment/strengths/results?id=${assessmentId}`);
       }
     } catch (error) {
       console.error('Error saving progress:', error);
