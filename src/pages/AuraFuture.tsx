@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Rocket, MessageSquare, Calendar, Brain, UserCheck } from 'lucide-react';
 import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 import { AuraOrb } from '@/components/aura/AuraOrb';
+import { clearAuraReturnFlag } from '@/hooks/useAuraReturn';
+import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 
 const TYPING_SPEED = 25;
 
@@ -42,20 +44,36 @@ export default function AuraFuture() {
 
   useEffect(() => {
     if (!user) return;
-    // Do NOT clear the aura flag here — it must survive until /welcome so
-    // RequireStep can bypass the path_committed prerequisite gate.
-    // Check if user has an assigned coach
-    const checkCoach = async () => {
-      const { data } = await supabase
+
+    const init = async () => {
+      // BUG-013: Verify the user has a completed session (step >= 6) before
+      // showing the future page. Previously any authenticated user could land
+      // here directly.
+      const { data: session } = await supabase
+        .from('aura_sessions')
+        .select('id, current_step')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!session || (session as any).current_step < 6) {
+        navigate('/aura/welcome');
+        return;
+      }
+
+      // Check if user has an assigned coach
+      const { data: assignment } = await supabase
         .from('coach_assignments' as any)
         .select('id')
         .eq('user_id', user.id)
         .eq('status', 'active')
         .maybeSingle();
-      setHasCoach(!!data);
+      setHasCoach(!!assignment);
     };
-    checkCoach();
-  }, [user]);
+
+    init();
+  }, [user, navigate]);
 
   useEffect(() => {
     if (done) {
@@ -87,7 +105,11 @@ export default function AuraFuture() {
     },
   ];
 
-  if (loading) return null;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <LoadingSpinner size="lg" text="Loading..." />
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 pt-16 pb-8 bg-gradient-to-b from-secondary/50 via-background to-background">
@@ -138,7 +160,7 @@ export default function AuraFuture() {
           <div className="space-y-3">
             {hasCoach && (
               <Button
-                onClick={() => navigate('/my-coach')}
+                onClick={() => { clearAuraReturnFlag(); navigate('/my-coach'); }}
                 className="w-full h-12 text-base rounded-full btn-lift bg-accent hover:bg-accent/90 text-white"
                 size="lg"
               >
@@ -146,8 +168,12 @@ export default function AuraFuture() {
                 Message My Coach
               </Button>
             )}
+            {/* BUG-006: clearAuraReturnFlag() called here so the flag is
+                cleared regardless of which button the user taps. Welcome.tsx
+                also clears it, but if the user goes to /my-coach instead the
+                flag would otherwise persist indefinitely. */}
             <Button
-              onClick={() => navigate('/welcome')}
+              onClick={() => { clearAuraReturnFlag(); navigate('/welcome'); }}
               variant={hasCoach ? 'outline' : 'default'}
               className="w-full h-12 text-base rounded-full btn-lift"
               size="lg"

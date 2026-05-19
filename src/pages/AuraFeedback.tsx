@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { ArrowRight, Star } from 'lucide-react';
 import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 import { AuraOrb } from '@/components/aura/AuraOrb';
+import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 
 const TYPING_SPEED = 25;
 
@@ -42,12 +43,41 @@ export default function AuraFeedback() {
   const [freeText, setFreeText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   const prompt = "Before we wrap up, I'd love to hear your thoughts! Your feedback helps us improve and make the experience even better for future users. This will only take a moment.";
   const { displayed, done } = useTypingEffect(prompt, true);
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth');
+  }, [user, loading, navigate]);
+
+  // BUG-004: Validate the session exists and the user has reached the
+  // insights step before showing feedback. Previously any authenticated user
+  // could open /aura/feedback directly and submit ratings.
+  useEffect(() => {
+    const validateSession = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('aura_sessions')
+        .select('id, current_step')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!data || (data as any).current_step < 6) {
+        navigate('/aura/welcome');
+        return;
+      }
+      // BNI-003: Feedback already submitted — skip the form on browser back.
+      if ((data as any).current_step >= 7) {
+        navigate('/aura/future');
+        return;
+      }
+      setSessionId(data.id);
+    };
+    if (!loading && user) validateSession();
   }, [user, loading, navigate]);
 
   useEffect(() => {
@@ -64,28 +94,18 @@ export default function AuraFeedback() {
   const allRated = questions.every(q => ratings[q.id]);
 
   const handleSubmit = async () => {
-    if (!user || !allRated) return;
+    if (!user || !allRated || !sessionId) return;
     setIsSubmitting(true);
 
     try {
-      const { data: session } = await supabase
+      await supabase
         .from('aura_sessions')
-        .select('id')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (session) {
-        await supabase
-          .from('aura_sessions')
-          .update({
-            current_step: 7,
-            feedback_ratings: ratings as any,
-            feedback_text: freeText.trim() || null,
-          } as any)
-          .eq('id', session.id);
-      }
+        .update({
+          current_step: 7,
+          feedback_ratings: ratings as any,
+          feedback_text: freeText.trim() || null,
+        } as any)
+        .eq('id', sessionId);
 
       toast.success('Thank you for your feedback!');
       navigate('/aura/future');
@@ -96,12 +116,19 @@ export default function AuraFeedback() {
     }
   };
 
-  if (loading) return null;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <LoadingSpinner size="lg" text="Loading..." />
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 pt-16 pb-8 bg-gradient-to-b from-secondary/50 via-background to-background">
       <div className="w-full max-w-xl">
-        <AuraProgressBar currentStep={6} className="mb-10" />
+        {/* BUG-008: Step 6.5 sits between insights (6) and future (7).
+            Show 7 so the bar advances past insights rather than staying
+            identical to the previous screen. */}
+        <AuraProgressBar currentStep={7} className="mb-10" />
 
         {/* Aura Avatar */}
         <div className="flex items-center gap-4 mb-7">

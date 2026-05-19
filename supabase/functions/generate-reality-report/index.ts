@@ -37,6 +37,7 @@ interface RequestBody {
   blob_tree: BlobTreeData;
   value_map: ValueMapData;
   onboarding: OnboardingData;
+  disc_primary?: string;
 }
 
 serve(async (req) => {
@@ -53,22 +54,39 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are an expert career and personal development coach creating a Reality Report.
+    const disc = body.disc_primary || '';
+    const toneGuide = disc === 'D'
+      ? 'Direct and results-focused. Short sentences. Lead with the bottom line. No filler.'
+      : disc === 'I'
+      ? 'Warm and energising. Friendly tone. Focus on possibilities and what excites them.'
+      : disc === 'S'
+      ? 'Calm and supportive. Reassuring tone. Emphasise stability and manageable next steps.'
+      : disc === 'C'
+      ? 'Precise and logical. Reference specific data points. Structured and factual.'
+      : 'Clear, warm, and direct.';
 
-Your task is to synthesize data from TWO assessments and personal context into a clear, actionable reality report.
+    const systemPrompt = `You are a career and life coach generating a personal Reality Report.
 
-The report must be honest but encouraging — point out gaps without being harsh.
+Tone: ${toneGuide}
 
-You MUST respond with valid JSON only. The JSON must follow this exact structure:
+Write for the person — make it feel like you know them. Be honest, not harsh. Be specific, not generic.
+
+Return ONLY valid JSON in this exact structure:
 {
-  "headline": "string (a 5-8 word summary of their current reality)",
-  "summary": "string (2-3 paragraph synthesis of who they are right now — their emotional state, values, and context)",
-  "strengths": ["array of 3-4 key strengths identified from the data"],
-  "constraints": ["array of 2-3 realistic constraints or barriers they face"],
-  "risks": ["array of 2-3 risks or blind spots to watch for"],
-  "growth_direction": "string (1-2 sentences on the gap between where they are and where they want to be)",
-  "key_insight": "string (one powerful, specific insight that connects their emotional state, values, and goals)"
-}`;
+  "headline": "5-8 words summarising their current reality",
+  "summary": "2-3 sentences max. Who they are right now — emotional state, context, and what's driving them.",
+  "strengths": ["3-4 specific strengths from the data — short phrases"],
+  "constraints": ["2-3 real barriers they face — honest and specific"],
+  "risks": ["2-3 blind spots or risks — named plainly"],
+  "growth_direction": "One sentence: the gap between where they are and where they want to be.",
+  "key_insight": "One sentence: the most important thing for them to hear right now."
+}
+
+Rules:
+- summary: 2-3 sentences ONLY. Not paragraphs.
+- strengths/constraints/risks: short, punchy phrases — 5-10 words each
+- growth_direction and key_insight: one sentence each, no more
+- Reference their actual data, not generic advice`;
 
     const userPrompt = `Here is the data from a user's assessments and personal context:
 

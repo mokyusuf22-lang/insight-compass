@@ -67,6 +67,12 @@ export default function Welcome() {
             .maybeSingle(),
         ]);
 
+        // BUG-H007: Check for DB errors rather than silently treating them
+        // as "no data", which made failed queries look like empty state.
+        if (pathRes.error) console.error('Error loading personal path:', pathRes.error);
+        if (assignmentRes.error) console.error('Error loading coach assignment:', assignmentRes.error);
+        if (appRes.error) console.error('Error loading coach application:', appRes.error);
+
         if ((appRes.data as any)?.status === 'pending') {
           setCoachAppPending(true);
         }
@@ -84,7 +90,10 @@ export default function Welcome() {
             .select('display_name')
             .eq('user_id', (assignmentRes.data as any).coach_id)
             .maybeSingle();
-          setCoachName((coachProfile as any)?.display_name || 'Your Coach');
+          // BUG-H001: Guard against empty-string display_name before the
+          // avatar renders coachName[0].toUpperCase() below.
+          const name = (coachProfile as any)?.display_name;
+          setCoachName(name && name.trim() ? name.trim() : 'Your Coach');
         }
       } catch (err) {
         console.error('Error loading welcome data:', err);
@@ -139,8 +148,11 @@ export default function Welcome() {
           </div>
         )}
 
-        {/* Personal Path Card */}
-        {hasPersonalPath && (
+        {/* BUG-H002: Use else-if so only one primary state card renders at a
+            time. Previously four independent conditions could stack when DB
+            state was inconsistent (e.g. hasPersonalPath=true AND
+            path_committed=false both true simultaneously). */}
+        {hasPersonalPath ? (
           <div className="chamfer bg-secondary p-8 md:p-10 mb-8 animate-fade-up">
             <div className="flex items-center gap-2 text-secondary-foreground/70 text-sm mb-4">
               <Waypoints className="w-4 h-4" />
@@ -168,10 +180,7 @@ export default function Welcome() {
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
-        )}
-
-        {/* Not committed yet */}
-        {!profile?.path_committed && (
+        ) : !profile?.path_committed ? (
           <div className="chamfer bg-card border border-border p-8 mb-8">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 chamfer-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -191,10 +200,7 @@ export default function Welcome() {
               </div>
             </div>
           </div>
-        )}
-
-        {/* Committed — coach preparing path */}
-        {profile?.path_committed && !hasPersonalPath && hasCoach && (
+        ) : hasCoach ? (
           <div className="chamfer bg-card border border-border p-8 mb-8 animate-fade-up">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 chamfer-sm bg-accent/10 flex items-center justify-center flex-shrink-0">
@@ -218,10 +224,7 @@ export default function Welcome() {
               </div>
             </div>
           </div>
-        )}
-
-        {/* Committed — no coach, no path (edge case) */}
-        {profile?.path_committed && !hasPersonalPath && !hasCoach && (
+        ) : (
           <div className="chamfer bg-card border border-border p-8 mb-8">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 chamfer-sm bg-primary/10 flex items-center justify-center flex-shrink-0">

@@ -13,15 +13,13 @@ import {
   Sparkles,
   Loader2,
   Clock,
-  Zap,
-  Target,
   CheckCircle2,
-  AlertTriangle,
   RotateCcw,
   HelpCircle,
   Lightbulb,
   Users,
   History,
+  Target,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
@@ -390,37 +388,10 @@ export default function PathOptions() {
                           </Badge>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-4">
+                      <CardContent>
                         <p className="text-sm text-muted-foreground leading-relaxed">
                           {path.description}
                         </p>
-
-                        {/* Key Actions */}
-                        <div>
-                          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">
-                            Key Actions
-                          </p>
-                          <ul className="space-y-1.5">
-                            {path.key_actions.map((action, j) => (
-                              <li key={j} className="flex items-start gap-2 text-sm">
-                                <span className="text-primary font-bold mt-0.5">→</span>
-                                {action}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        {/* Why it fits */}
-                        <div className="p-3 rounded-lg bg-primary/5">
-                          <p className="text-xs font-medium text-primary mb-1">Why this fits you</p>
-                          <p className="text-sm">{path.fits_because}</p>
-                        </div>
-
-                        {/* Risk note */}
-                        <div className="flex items-start gap-2 text-xs text-muted-foreground">
-                          <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                          <p>{path.risk_note}</p>
-                        </div>
                       </CardContent>
                     </Card>
                   );

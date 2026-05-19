@@ -84,15 +84,17 @@ export default function RealityReport() {
     setIsGenerating(true);
 
     try {
-      // Fetch blob tree data
-      const { data: blobData } = await supabase
-        .from('blob_tree_assessments')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_complete', true)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // Fetch all assessment data in parallel
+      const [blobRes, valueRes, profileRes, discRes] = await Promise.all([
+        supabase.from('blob_tree_assessments').select('*').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('value_map_assessments').select('*').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('profiles').select('career_goals').eq('user_id', user.id).single(),
+        supabase.from('disc_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      ]);
+
+      const blobData = blobRes.data;
+      const valueData = valueRes.data;
+      const profile = profileRes.data;
 
       if (!blobData) {
         toast.error('Please complete the Blob Tree assessment first.');
@@ -100,28 +102,17 @@ export default function RealityReport() {
         return;
       }
 
-      // Fetch value map data
-      const { data: valueData } = await supabase
-        .from('value_map_assessments')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_complete', true)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
       if (!valueData) {
         toast.error('Please complete the Value Map assessment first.');
         navigate('/assessment/value-map');
         return;
       }
 
-      // Get onboarding data from profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('career_goals')
-        .eq('user_id', user.id)
-        .single();
+      // Extract DISC primary letter (e.g. "High D" → "D")
+      const discResult = discRes.data?.result as any;
+      const discPrimary = discResult?.primaryStyle
+        ? discResult.primaryStyle.replace('High ', '').split(' ')[0]
+        : '';
 
       const onboarding = (profile?.career_goals as any)?.onboarding || {};
 
@@ -160,6 +151,7 @@ export default function RealityReport() {
           personalGoal: onboarding.personalGoal || 'Not specified',
           careerGoal: onboarding.careerGoal || 'Not specified',
         },
+        disc_primary: discPrimary,
       };
 
       const { data: fnData, error: fnError } = await supabase.functions.invoke(

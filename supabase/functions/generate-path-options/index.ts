@@ -14,32 +14,44 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const systemPrompt = `You are an elite career strategist. Given a user's Reality Report (strengths, constraints, risks, growth direction) and their demographic/goal context, generate 2-4 distinct career path options.
+    const discType = (reality_report as any)?.disc_primary || '';
+    const toneGuide = discType === 'D'
+      ? 'Be direct and results-focused. Short sentences. No fluff.'
+      : discType === 'I'
+      ? 'Be warm and energising. Focus on possibilities and excitement.'
+      : discType === 'S'
+      ? 'Be supportive and steady. Emphasise stability and manageable steps.'
+      : discType === 'C'
+      ? 'Be precise and logical. Reference data and structured reasoning.'
+      : 'Be clear, warm, and encouraging.';
 
-Each path must be realistic given the user's constraints and leverage their strengths.
+    const systemPrompt = `You are a life and career coach. Given someone's reality snapshot and personal context, generate 3-4 genuinely different life options they could pursue. Think broadly — not just career moves, but also coaching, relocation, study, life redesign, business, community, and more.
 
-Return ONLY valid JSON matching this structure:
+Tone: ${toneGuide}
+
+Return ONLY valid JSON:
 {
   "paths": [
     {
-      "title": "Short compelling title (3-6 words)",
-      "tagline": "One sentence hook",
-      "description": "2-3 sentences explaining this path",
-      "time_horizon": "e.g. 6-12 months",
+      "title": "2-4 word title",
+      "tagline": "One punchy sentence — what this option IS and why it could work for them",
+      "description": "1-2 sentences max. What the next 6-12 months actually looks like on this path.",
+      "time_horizon": "e.g. 3-6 months",
       "difficulty": "moderate" | "challenging" | "ambitious",
-      "key_actions": ["action 1", "action 2", "action 3"],
-      "fits_because": "1 sentence on why this suits them specifically",
-      "risk_note": "1 sentence on the main risk or tradeoff"
+      "key_actions": ["First step (very specific)", "Second step"],
+      "fits_because": "One sentence tied to their actual strengths or values",
+      "risk_note": "One sentence on the real tradeoff"
     }
   ]
 }
 
 Rules:
-- Generate 2-4 paths, ordered from most conservative to most ambitious
-- Each path must be meaningfully different (not variations of the same thing)
-- Use the user's actual profession, goals, and constraints — no generic advice
-- Key actions must be specific and executable, not vague
-- Time horizons should be realistic given constraints`;
+- 3-4 paths, from most grounded to most ambitious
+- Each path must be a meaningfully different TYPE of move (e.g. one career pivot, one coaching/support route, one relocation/new environment, one life redesign)
+- Include at least one option that involves getting external support (coach, mentor, community)
+- Titles must be specific to THEM — no generic "Career Change" — e.g. "Move to Berlin, Lead Tech", "Train as a Coach", "Go Independent in 90 Days"
+- tagline is the most important field — make it compelling and personal
+- key_actions: 2 only, ultra-specific, completable this month`;
 
     const reflectionsBlock = user_reflections?.length
       ? `\nUSER'S OWN REFLECTIONS (incorporate these — they reveal what the user is already thinking):\n${user_reflections.map((r: any) => `- Q: ${r.question}\n  A: ${r.answer}`).join("\n")}`

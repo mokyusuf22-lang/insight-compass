@@ -4,19 +4,22 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { UserHeader } from '@/components/UserHeader';
-import { 
-  Brain, 
-  Zap, 
+import {
+  Brain,
+  Zap,
   Users,
   TrendingUp,
   Sparkles,
   ArrowRight,
-  Star,
   TreePine,
   Heart,
-  Target
+  Target,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 interface AssessmentResult {
   mbtiType?: string;
@@ -31,6 +34,8 @@ interface AssessmentResult {
   wheelOfLife?: { scores: Record<string, number>; average: number };
 }
 
+interface IdentifiedTheme { area: string; confidence: number }
+
 // DISC color mapping
 const discColors: Record<string, { bg: string; text: string; gradient: string }> = {
   D: { bg: 'bg-red-500', text: 'text-white', gradient: 'from-red-500 to-red-600' },
@@ -39,22 +44,20 @@ const discColors: Record<string, { bg: string; text: string; gradient: string }>
   C: { bg: 'bg-blue-500', text: 'text-white', gradient: 'from-blue-500 to-blue-600' },
 };
 
+const DISC_LABELS: Record<string, string> = {
+  D: 'Dominance', I: 'Influence', S: 'Steadiness', C: 'Conscientiousness',
+};
+
 // MBTI color mapping by temperament
 const getMBTIColor = (type?: string): { bg: string; gradient: string } => {
   if (!type) return { bg: 'from-primary/20 via-primary/10 to-background', gradient: 'from-primary/20' };
-  
-  const lastTwo = type.slice(-2);
   if (['NT'].includes(type.slice(1, 3))) {
-    // Analysts (INTJ, INTP, ENTJ, ENTP) - Purple
     return { bg: 'from-purple-500/20 via-purple-500/10 to-background', gradient: 'from-purple-500/30' };
   } else if (['NF'].includes(type.slice(1, 3))) {
-    // Diplomats (INFJ, INFP, ENFJ, ENFP) - Green
     return { bg: 'from-emerald-500/20 via-emerald-500/10 to-background', gradient: 'from-emerald-500/30' };
   } else if (type.includes('S') && type.includes('J')) {
-    // Sentinels (ISTJ, ISFJ, ESTJ, ESFJ) - Blue
     return { bg: 'from-blue-500/20 via-blue-500/10 to-background', gradient: 'from-blue-500/30' };
   } else if (type.includes('S') && type.includes('P')) {
-    // Explorers (ISTP, ISFP, ESTP, ESFP) - Orange
     return { bg: 'from-orange-500/20 via-orange-500/10 to-background', gradient: 'from-orange-500/30' };
   }
   return { bg: 'from-primary/20 via-primary/10 to-background', gradient: 'from-primary/20' };
@@ -67,6 +70,10 @@ export default function Results() {
   const [loadingResults, setLoadingResults] = useState(true);
   const [completedCount, setCompletedCount] = useState(0);
   const [animationReady, setAnimationReady] = useState(false);
+  const [auraSummary, setAuraSummary] = useState<string | null>(null);
+  const [auraThemes, setAuraThemes] = useState<IdentifiedTheme[]>([]);
+  const [profileName, setProfileName] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -77,80 +84,29 @@ export default function Results() {
   useEffect(() => {
     const fetchResults = async () => {
       if (!user) return;
-      
+
       try {
-        // Fetch Step1 assessment
-        const { data: step1Data } = await supabase
-          .from('step1_assessments')
-          .select('ai_hypothesis')
-          .eq('user_id', user.id)
-          .eq('is_complete', true)
-          .maybeSingle();
-
-        // Fetch MBTI result
-        const { data: mbtiData } = await supabase
-          .from('mbti_assessments')
-          .select('result')
-          .eq('user_id', user.id)
-          .eq('is_complete', true)
-          .order('updated_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        // Fetch DISC result
-        const { data: discData } = await supabase
-          .from('disc_assessments')
-          .select('result')
-          .eq('user_id', user.id)
-          .eq('is_complete', true)
-          .order('updated_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        // Fetch Strengths result
-        const { data: strengthsData } = await supabase
-          .from('strengths_assessments')
-          .select('result')
-          .eq('user_id', user.id)
-          .eq('is_complete', true)
-          .order('updated_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        // Fetch Blob Tree result
-        const { data: blobData } = await supabase
-          .from('blob_tree_assessments')
-          .select('current_blob, desired_blob')
-          .eq('user_id', user.id)
-          .eq('is_complete', true)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        // Fetch Value Map result
-        const { data: valueData } = await supabase
-          .from('value_map_assessments')
-          .select('top_five')
-          .eq('user_id', user.id)
-          .eq('is_complete', true)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        // Fetch Wheel of Life result
-        const { data: wolData } = await supabase
-          .from('wheel_of_life_assessments')
-          .select('scores')
-          .eq('user_id', user.id)
-          .eq('is_complete', true)
-          .order('updated_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        const [step1Data, mbtiData, discData, strengthsData, blobData, valueData, wolData, auraData] = await Promise.all([
+          supabase.from('step1_assessments').select('ai_hypothesis').eq('user_id', user.id).eq('is_complete', true).maybeSingle().then(r => r.data),
+          supabase.from('mbti_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data),
+          supabase.from('disc_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data),
+          supabase.from('strengths_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data),
+          supabase.from('blob_tree_assessments').select('current_blob, desired_blob').eq('user_id', user.id).eq('is_complete', true).order('created_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data),
+          supabase.from('value_map_assessments').select('top_five').eq('user_id', user.id).eq('is_complete', true).order('created_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data),
+          supabase.from('wheel_of_life_assessments').select('scores').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data),
+          supabase.from('aura_sessions').select('aura_summary, identified_themes, name').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data),
+        ]);
 
         const mbtiResult = mbtiData?.result as { type?: string; axisResults?: Record<string, { percentage: number }> } | null;
         const discResult = discData?.result as { D?: number; I?: number; S?: number; C?: number; primaryStyle?: string; secondaryStyle?: string | null } | null;
         const strengthsResult = strengthsData?.result as { ranked_strengths?: { name: string; score: number }[] } | null;
         const step1Hypothesis = step1Data?.ai_hypothesis as { mbtiTendency?: string; confidence?: number } | null;
+
+        // Aura data
+        setAuraSummary((auraData as any)?.aura_summary || null);
+        setAuraThemes(((auraData as any)?.identified_themes as IdentifiedTheme[]) || []);
+        const name = (auraData as any)?.name || user.user_metadata?.display_name || '';
+        setProfileName(name);
 
         let count = 0;
         if (step1Data) count++;
@@ -162,13 +118,10 @@ export default function Results() {
         if (wolData) count++;
         setCompletedCount(count);
 
-        // Extract primary letter from "High C" -> "C"
         const primaryLetter = discResult?.primaryStyle?.replace('High ', '').split(' ')[0] || '';
         const secondaryLetter = discResult?.secondaryStyle?.replace('High ', '') || undefined;
-
         const topFiveValues = (valueData?.top_five as any[]) || [];
 
-        // Process Wheel of Life scores
         const wolScores = wolData?.scores as Record<string, number> | null;
         let wolResult: AssessmentResult['wheelOfLife'] = undefined;
         if (wolScores) {
@@ -179,8 +132,8 @@ export default function Results() {
 
         setResults({
           mbtiType: mbtiResult?.type,
-          discProfile: discResult ? { 
-            primary: primaryLetter, 
+          discProfile: discResult ? {
+            primary: primaryLetter,
             secondary: secondaryLetter,
             scores: { D: discResult.D || 0, I: discResult.I || 0, S: discResult.S || 0, C: discResult.C || 0 }
           } : undefined,
@@ -200,6 +153,51 @@ export default function Results() {
 
     fetchResults();
   }, [user]);
+
+  const buildCoachSummary = (): string => {
+    const lines: string[] = [];
+    lines.push('=== CLIENT PROFILE SUMMARY ===');
+    if (profileName) lines.push(`Name: ${profileName}`);
+    lines.push(`Date: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`);
+    lines.push('');
+
+    if (auraSummary) {
+      lines.push('COACHING FOCUS');
+      lines.push(auraSummary);
+      if (auraThemes.length > 0) {
+        lines.push(`Focus Areas: ${auraThemes.map(t => t.area).join(', ')}`);
+      }
+      lines.push('');
+    }
+
+    lines.push('ASSESSMENT RESULTS');
+    const type = results.mbtiType || (results.step1Hypothesis?.mbtiTendency ? `${results.step1Hypothesis.mbtiTendency} (preliminary)` : null);
+    if (type) lines.push(`Personality Type: ${type}`);
+    if (results.discProfile?.primary) {
+      const letter = results.discProfile.primary.charAt(0);
+      const label = DISC_LABELS[letter] || results.discProfile.primary;
+      const score = results.discProfile.scores?.[letter];
+      lines.push(`Behavioural Style: ${label}${score ? ` (${score}%)` : ''}`);
+    }
+    if (results.topStrengths?.length) lines.push(`Top Strengths: ${results.topStrengths.join(', ')}`);
+    if (results.valueMap?.topFive.length) lines.push(`Core Values: ${results.valueMap.topFive.join(', ')}`);
+    if (results.wheelOfLife) lines.push(`Life Balance Average: ${results.wheelOfLife.average}/10`);
+    if (results.blobTree?.currentBlob !== null && results.blobTree?.currentBlob !== undefined) {
+      lines.push(`Emotional State: Position ${results.blobTree.currentBlob} → ${results.blobTree.desiredBlob} (current → desired)`);
+    }
+    return lines.join('\n');
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(buildCoachSummary());
+      setCopied(true);
+      toast.success('Profile summary copied to clipboard');
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      toast.error('Could not copy to clipboard');
+    }
+  };
 
   if (loading || loadingResults) {
     return (
@@ -222,12 +220,30 @@ export default function Results() {
             Your Quick Assessment Result
           </h1>
           <p className="text-muted-foreground">
-            {hasResults 
+            {hasResults
               ? `${completedCount} assessment${completedCount > 1 ? 's' : ''} completed`
               : 'Complete assessments to see your results'
             }
           </p>
         </div>
+
+        {/* Aura Coaching Focus — shown when Aura flow has been completed */}
+        {auraSummary && (
+          <div className="chamfer bg-secondary/30 border border-border/60 p-6 mb-8 animate-fade-up">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-4 h-4 text-accent" />
+              <span className="text-xs font-semibold text-accent uppercase tracking-wide">Coaching Focus</span>
+            </div>
+            <p className="text-foreground leading-relaxed mb-4">{auraSummary}</p>
+            {auraThemes.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {auraThemes.map(t => (
+                  <Badge key={t.area} variant="secondary" className="text-xs">{t.area}</Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {!hasResults ? (
           <div className="chamfer bg-card border border-border p-12 text-center">
@@ -243,12 +259,12 @@ export default function Results() {
           <>
             {/* Bento Grid Layout with staggered animations */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
-              
+
             {/* Hero Card - Personality Type */}
               {(() => {
                 const mbtiColor = getMBTIColor(results.mbtiType || results.step1Hypothesis?.mbtiTendency);
                 return (
-                  <button 
+                  <button
                     onClick={() => navigate('/assessment/mbti/results')}
                     className={`md:col-span-2 lg:col-span-2 chamfer bg-gradient-to-br ${mbtiColor.bg} p-8 md:p-10 relative overflow-hidden transition-all duration-700 hover:${mbtiColor.gradient} text-left ${
                       animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
@@ -256,16 +272,16 @@ export default function Results() {
                     style={{ transitionDelay: '0ms' }}
                   >
                     <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                    
+
                     <p className="text-primary text-sm font-medium mb-2">Your Personality Profile</p>
-                    
+
                     <h2 className="text-5xl md:text-7xl font-serif font-bold text-foreground mb-6">
                       {results.mbtiType || results.step1Hypothesis?.mbtiTendency || '????'}
                     </h2>
-                    
+
                     <div className="chamfer-sm bg-background/80 backdrop-blur-sm p-4 max-w-md">
                       <p className="text-foreground text-sm">
-                        {results.mbtiType 
+                        {results.mbtiType
                           ? "Your complete personality type based on 93 questions."
                           : results.step1Hypothesis?.mbtiTendency
                             ? "Preliminary type based on quick assessment. Complete full MBTI for accuracy."
@@ -282,9 +298,9 @@ export default function Results() {
                 const primaryType = results.discProfile?.primary?.charAt(0) || '';
                 const discColor = discColors[primaryType] || { bg: 'bg-card', text: 'text-foreground', gradient: 'from-muted to-muted' };
                 const hasDisc = !!results.discProfile;
-                
+
                 return (
-                  <button 
+                  <button
                     onClick={() => navigate('/assessment/disc/results')}
                     className={`chamfer ${hasDisc ? `bg-gradient-to-br ${discColor.gradient}` : 'bg-card border border-border'} p-6 flex flex-col transition-all duration-700 hover:opacity-90 text-left ${
                       animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
@@ -297,18 +313,18 @@ export default function Results() {
                       </span>
                       <Sparkles className={`w-4 h-4 ${hasDisc ? 'text-white/70' : 'text-muted-foreground'}`} />
                     </div>
-                    
+
                     <div className="flex-1 flex flex-col items-center justify-center">
                       <div className={`w-16 h-16 chamfer-sm ${hasDisc ? 'bg-white/20' : 'bg-foreground'} flex items-center justify-center mb-3`}>
                         <span className={`text-3xl font-bold ${hasDisc ? 'text-white' : 'text-background'}`}>
                           {primaryType || '?'}
                         </span>
                       </div>
-                      
+
                       <h3 className={`text-2xl font-serif font-semibold ${hasDisc ? 'text-white' : 'text-foreground'} mb-1`}>
                         {results.discProfile?.primary || 'DISC'}
                       </h3>
-                      
+
                       {results.discProfile?.scores && (
                         <div className="flex gap-2 mt-3">
                           {['D', 'I', 'S', 'C'].map((dim) => {
@@ -323,9 +339,9 @@ export default function Results() {
                         </div>
                       )}
                     </div>
-                    
+
                     <p className={`text-xs text-center ${hasDisc ? 'text-white/80' : 'text-muted-foreground'} mt-2`}>
-                      {results.discProfile 
+                      {results.discProfile
                         ? `${results.discProfile.secondary ? `Secondary: ${results.discProfile.secondary}` : 'Your dominant style'}`
                         : 'Complete DISC assessment'
                       }
@@ -335,7 +351,7 @@ export default function Results() {
               })()}
 
               {/* Assessments Completed */}
-              <div 
+              <div
                 className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
                   animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                 }`}
@@ -353,7 +369,7 @@ export default function Results() {
               </div>
 
               {/* Top Strengths */}
-              <button 
+              <button
                 onClick={() => navigate('/assessment/strengths/results')}
                 className={`chamfer bg-card border border-border p-6 transition-all duration-700 hover:border-primary/50 text-left ${
                   animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
@@ -363,7 +379,7 @@ export default function Results() {
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4">
                   Top Strengths
                 </p>
-                
+
                 {results.topStrengths && results.topStrengths.length > 0 ? (
                   <div className="space-y-3">
                     {results.topStrengths.slice(0, 3).map((strength, index) => (
@@ -390,9 +406,9 @@ export default function Results() {
                 const primaryType = results.discProfile?.primary?.charAt(0) || '';
                 const discColor = discColors[primaryType] || { bg: 'bg-muted', text: 'text-foreground', gradient: 'from-muted to-muted' };
                 const hasDisc = !!results.discProfile;
-                
+
                 return (
-                  <button 
+                  <button
                     onClick={() => navigate('/assessment/disc/results')}
                     className={`chamfer bg-gradient-to-r ${hasDisc ? discColor.gradient : 'from-amber-500 to-orange-500'} p-6 text-white transition-all duration-700 hover:opacity-90 text-left ${
                       animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
@@ -406,7 +422,7 @@ export default function Results() {
                       {results.discProfile?.primary || 'DISC'}
                     </h3>
                     <p className="text-sm opacity-90">
-                      {results.discProfile 
+                      {results.discProfile
                         ? `Score: ${results.discProfile.scores?.[primaryType] || 0}%`
                         : 'Discover your DISC profile'
                       }
@@ -416,7 +432,7 @@ export default function Results() {
               })()}
 
               {/* Confidence Score */}
-              <div 
+              <div
                 className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
                   animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                 }`}
@@ -427,14 +443,14 @@ export default function Results() {
                 </p>
                 <div className="flex items-baseline gap-2 mb-4">
                   <span className="text-4xl font-serif font-bold text-foreground">
-                    {results.step1Hypothesis?.confidence 
+                    {results.step1Hypothesis?.confidence
                       ? `${Math.round(results.step1Hypothesis.confidence * 100)}%`
                       : '—'
                     }
                   </span>
                 </div>
                 <div className="h-2 bg-muted chamfer-sm overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-primary transition-all duration-500"
                     style={{ width: `${(results.step1Hypothesis?.confidence || 0) * 100}%` }}
                   />
@@ -442,7 +458,7 @@ export default function Results() {
               </div>
 
               {/* Team Dynamics */}
-              <div 
+              <div
                 className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
                   animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                 }`}
@@ -455,7 +471,7 @@ export default function Results() {
                   </p>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {results.discProfile 
+                  {results.discProfile
                     ? `As a ${results.discProfile.primary}, you excel in collaborative environments.`
                     : 'Complete DISC to understand your team role.'
                   }
@@ -463,7 +479,7 @@ export default function Results() {
               </div>
 
               {/* Growth Potential */}
-              <div 
+              <div
                 className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
                   animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                 }`}
@@ -476,7 +492,7 @@ export default function Results() {
                   </p>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {completedCount >= 4 
+                  {completedCount >= 4
                     ? 'All assessments complete. View your full strategy.'
                     : `Complete ${4 - completedCount} more assessment${4 - completedCount > 1 ? 's' : ''} for personalized growth plan.`
                   }
@@ -484,7 +500,7 @@ export default function Results() {
               </div>
 
               {/* Blob Tree Card */}
-              <button 
+              <button
                 onClick={() => navigate('/assessment/blob-tree/results')}
                 className={`chamfer bg-card border border-border p-6 transition-all duration-700 hover:border-primary/50 text-left ${
                   animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
@@ -512,7 +528,7 @@ export default function Results() {
               </button>
 
               {/* Value Map Card */}
-              <button 
+              <button
                 onClick={() => navigate('/assessment/value-map/results')}
                 className={`chamfer bg-card border border-border p-6 transition-all duration-700 hover:border-primary/50 text-left ${
                   animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
@@ -542,7 +558,7 @@ export default function Results() {
               </button>
 
               {/* Wheel of Life Card */}
-              <button 
+              <button
                 onClick={() => navigate('/assessment/wheel-of-life/results')}
                 className={`chamfer bg-card border border-border p-6 transition-all duration-700 hover:border-primary/50 text-left ${
                   animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
@@ -565,7 +581,7 @@ export default function Results() {
                       {Object.entries(results.wheelOfLife.scores).slice(0, 8).map(([key, score]) => (
                         <div key={key} className="text-center">
                           <div className="h-8 bg-muted rounded-sm overflow-hidden flex items-end">
-                            <div 
+                            <div
                               className="w-full bg-primary/70 rounded-sm transition-all"
                               style={{ height: `${(score / 10) * 100}%` }}
                             />
@@ -584,9 +600,9 @@ export default function Results() {
 
             {/* CTA to continue */}
             {completedCount < 4 && (
-              <div className="text-center">
-                <Button 
-                  size="lg" 
+              <div className="text-center mb-8">
+                <Button
+                  size="lg"
                   className="rounded-full"
                   onClick={() => {
                     if (!results.mbtiType) navigate('/assessment/mbti');
@@ -601,9 +617,9 @@ export default function Results() {
             )}
 
             {completedCount >= 4 && (
-              <div className="text-center">
-                <Button 
-                  size="lg" 
+              <div className="text-center mb-8">
+                <Button
+                  size="lg"
                   className="rounded-full"
                   onClick={() => navigate('/strategy')}
                 >
@@ -612,6 +628,28 @@ export default function Results() {
                 </Button>
               </div>
             )}
+
+            {/* Coach Profile Summary */}
+            <div className="chamfer bg-card border border-border p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="font-semibold text-foreground">Coach Summary</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Shareable profile for your coach or client</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopy}
+                  className="rounded-full gap-2 flex-shrink-0"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? 'Copied' : 'Copy'}
+                </Button>
+              </div>
+              <div className="bg-secondary/30 rounded-xl p-4 font-mono text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                {buildCoachSummary()}
+              </div>
+            </div>
           </>
         )}
       </main>

@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import {
   ArrowRight,
   BarChart3,
@@ -81,9 +82,13 @@ export default function AuraInsights() {
         supabase.from('strengths_assessments').select('result, is_complete').eq('user_id', user.id).eq('is_complete', true).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       ]);
 
+      // BUG-003: Guard against direct URL access with no session.
       if (sessionRes.data) {
         setSessionId(sessionRes.data.id);
         setUserName((sessionRes.data as any).name || '');
+      } else {
+        navigate('/aura/welcome');
+        return;
       }
 
       const sections: InsightSection[] = [];
@@ -144,6 +149,7 @@ export default function AuraInsights() {
 
       setInsights(sections);
 
+      const FALLBACK_RECOMMENDATION = 'Based on your profile, I recommend connecting with a coach who specialises in your identified focus areas. They can provide the personalised guidance and accountability you need to achieve your goals.';
       try {
         const { data: recData, error } = await supabase.functions.invoke('generate-coaching-recommendation', {
           body: {
@@ -157,13 +163,18 @@ export default function AuraInsights() {
           },
         });
 
-        if (recData?.recommendation) {
-          setRecommendation(recData.recommendation);
-        } else {
-          setRecommendation('Based on your profile, I recommend connecting with a coach who specialises in your identified focus areas. They can provide the personalised guidance and accountability you need to achieve your goals.');
+        // BUG-015: Log the error so it's visible in dev tools rather than
+        // silently falling through to the fallback text.
+        if (error) {
+          console.error('generate-coaching-recommendation error:', error);
+          toast.error('AI insights unavailable — showing a default recommendation.');
         }
-      } catch {
-        setRecommendation('Based on your profile, I recommend connecting with a coach who specialises in your identified focus areas. They can provide the personalised guidance and accountability you need to achieve your goals.');
+
+        setRecommendation(recData?.recommendation || FALLBACK_RECOMMENDATION);
+      } catch (err) {
+        // BUG-015: Surface unexpected errors rather than swallowing silently.
+        console.error('generate-coaching-recommendation unexpected error:', err);
+        setRecommendation(FALLBACK_RECOMMENDATION);
       }
 
       setIsGenerating(false);
@@ -183,7 +194,11 @@ export default function AuraInsights() {
     navigate('/aura/feedback');
   };
 
-  if (loading) return null;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <LoadingSpinner size="lg" text="Loading..." />
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex items-start justify-center px-4 pt-16 pb-12 bg-gradient-to-b from-secondary/50 via-background to-background">
@@ -240,8 +255,11 @@ export default function AuraInsights() {
                 </div>
               ))}
 
-              {/* Recommendation */}
-              {recommendation && insights.length > 0 && (
+              {/* Recommendation + Continue — BUG-014: Continue is always
+                  rendered when insights exist; it was previously gated on
+                  `recommendation` being truthy, hiding the button if the AI
+                  returned an empty string. */}
+              {insights.length > 0 && (
                 <div className="border border-accent/25 rounded-2xl p-6 shadow-elevated animate-fade-up" style={{ background: 'linear-gradient(135deg, hsl(22 92% 62% / 0.06) 0%, hsl(22 92% 62% / 0.02) 100%)' }}>
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-8 h-8 chamfer-sm gradient-coral flex items-center justify-center shadow-accent">
@@ -249,7 +267,9 @@ export default function AuraInsights() {
                     </div>
                     <h3 className="font-semibold text-foreground">Aura's Recommendation</h3>
                   </div>
-                  <p className="text-sm text-foreground leading-relaxed mb-5">{recommendation}</p>
+                  {recommendation && (
+                    <p className="text-sm text-foreground leading-relaxed mb-5">{recommendation}</p>
+                  )}
                   <Button
                     onClick={handleContinueToFeedback}
                     className="w-full h-12 text-base rounded-full btn-lift"

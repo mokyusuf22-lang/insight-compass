@@ -19,7 +19,7 @@ interface StoredResponse {
 }
 
 export default function MBTIAssessment() {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   
   const [currentQuestion, setCurrentQuestion] = useState(1);
@@ -102,12 +102,6 @@ export default function MBTIAssessment() {
     }
   }, [user, authLoading, navigate]);
 
-  // Redirect if not paid (premium feature)
-  useEffect(() => {
-    if (!authLoading && profile && !profile.has_paid) {
-      navigate('/paywall');
-    }
-  }, [profile, authLoading, navigate]);
 
   // Auto-save with debounce
   const saveProgress = useCallback(async (newResponses: Record<number, string>, newCurrentQuestion: number) => {
@@ -204,7 +198,7 @@ export default function MBTIAssessment() {
     return <LoadingSpinner />;
   }
 
-  if (!user || !profile) {
+  if (!user) {
     return <LoadingSpinner />;
   }
 

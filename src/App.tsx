@@ -99,8 +99,8 @@ const App = () => (
             <Route path="/initial-assessment" element={<RequireStep requireAuth={false}><InitialAssessment /></RequireStep>} />
             <Route path="/initial-results" element={<RequireStep requireAuth={false}><InitialResults /></RequireStep>} />
             <Route path="/goals-reality" element={<RequireStep requireAuth={false}><GoalsReality /></RequireStep>} />
-            <Route path="/assessment/wheel-of-life" element={<RequireStep><WheelOfLifeAssessment /></RequireStep>} />
-            <Route path="/assessment/wheel-of-life/results" element={<RequireStep><WheelOfLifeResults /></RequireStep>} />
+            <Route path="/assessment/wheel-of-life" element={<WheelOfLifeAssessment />} />
+            <Route path="/assessment/wheel-of-life/results" element={<WheelOfLifeResults />} />
             <Route path="/assessment/blob-tree" element={<RequireStep requireAuth={false}><BlobTreeAssessment /></RequireStep>} />
             <Route path="/assessment/blob-tree/results" element={<RequireStep requireAuth={false}><BlobTreeResults /></RequireStep>} />
             <Route path="/assessment/value-map" element={<RequireStep requireAuth={false}><ValueMapAssessment /></RequireStep>} />

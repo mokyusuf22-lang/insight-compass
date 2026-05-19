@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, ClipboardCheck } from 'lucide-react';
 import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 import { AuraOrb } from '@/components/aura/AuraOrb';
+import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 
 const TYPING_SPEED = 25;
 
@@ -64,9 +65,16 @@ export default function AuraAssessmentIntro() {
         const step = (data as any).current_step ?? 0;
         if (step >= 7) { navigate('/welcome'); return; }
         if (step >= 6) { navigate('/aura/insights'); return; }
-        if (step >= 5) { navigate('/aura/assessments'); return; }
         setSessionId(data.id);
         setUserName((data as any).name || '');
+        // BUG-007: Write step 4 so resume logic in AuraWelcome routes here
+        // correctly (step >= 3 → assessment-intro, step >= 5 → assessments).
+        if (step < 4) {
+          await supabase
+            .from('aura_sessions')
+            .update({ current_step: 4 } as any)
+            .eq('id', data.id);
+        }
       } else {
         navigate('/aura/welcome');
       }
@@ -84,7 +92,11 @@ export default function AuraAssessmentIntro() {
     navigate('/aura/assessments');
   };
 
-  if (loading) return null;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <LoadingSpinner size="lg" text="Loading..." />
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 pt-16 pb-8 bg-gradient-to-b from-secondary/50 via-background to-background">

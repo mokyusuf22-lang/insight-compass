@@ -60,18 +60,45 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
         .eq('user_id', user.id)
         .eq('is_complete', true);
 
-      const { data: step1 } = await supabase
-        .from('step1_assessments')
-        .select('updated_at')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // BUG-H005: The old query only checked step1_assessments, so users
+      // active only in the Aura flow or skill path always showed a stale
+      // "last active" date. Now we check multiple activity sources and use
+      // whichever timestamp is most recent.
+      const [step1Res, auraRes, pathRes] = await Promise.all([
+        supabase
+          .from('step1_assessments')
+          .select('updated_at')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('aura_sessions')
+          .select('updated_at')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('personal_paths')
+          .select('updated_at')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
 
-      setStats({
-        completed: count || 0,
-        lastActive: step1?.updated_at || null,
-      });
+      const timestamps = [
+        step1Res.data?.updated_at,
+        auraRes.data?.updated_at,
+        (pathRes.data as any)?.updated_at,
+      ].filter(Boolean) as string[];
+
+      const lastActive = timestamps.length > 0
+        ? timestamps.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0]
+        : null;
+
+      setStats({ completed: count || 0, lastActive });
     };
 
     loadStats();

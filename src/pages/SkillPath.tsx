@@ -67,18 +67,25 @@ export default function SkillPath() {
       }
     };
 
-    if (user) loadPath();
-  }, [user]);
+    // BUG-H003: Guard on !loading so we don't fire the DB query during the
+    // auth token refresh window. Previously only `user` was checked, causing
+    // a premature query that returned null and showed the empty state.
+    if (!loading && user) loadPath();
+  }, [user, loading]);
 
   const convertPersonalPathToSkillPath = (dbPath: any): SkillPathData => {
     const phases: PathPhase[] = ((dbPath.phases as any[]) || []).map((phase: any, idx: number) => {
-      const tasks: PathTask[] = (phase.tasks || []).map((task: any) => ({
+      const tasks: PathTask[] = (phase.tasks || []).map((task: any, taskIdx: number) => ({
         id: task.id,
         title: task.title,
         description: task.description || '',
         type: task.type || 'practice',
         estimatedMinutes: task.estimatedMinutes || 30,
-        status: task.status || 'locked',
+        // BUG-H006: Default to 'available' (not 'locked') for the first task
+        // of a phase when no explicit status is set. Defaulting everything to
+        // 'locked' meant coaches who didn't set statuses produced paths where
+        // no task was ever reachable and phase progress was stuck at 0%.
+        status: task.status || (taskIdx === 0 ? 'available' : 'locked'),
         successCriteria: task.successCriteria || '',
         instructions: task.instructions,
       }));

@@ -21,6 +21,9 @@ export default function DISCAssessment() {
   const auraRef = useRef(hasAuraSession);
   useEffect(() => { auraRef.current = hasAuraSession; }, [hasAuraSession]);
 
+  const isMountedRef = useRef(true);
+  useEffect(() => () => { isMountedRef.current = false; }, []);
+
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [responses, setResponses] = useState<DISCResponse[]>([]);
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
@@ -55,6 +58,23 @@ export default function DISCAssessment() {
           const typedResponses = existing.responses as unknown as DISCResponse[];
           setResponses(typedResponses || []);
         } else {
+          // BNI-008: Before creating a new record, check whether a completed
+          // assessment already exists. Browser-back from results would land
+          // here and create a duplicate — redirect to results instead.
+          const { data: completed } = await supabase
+            .from('disc_assessments')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('is_complete', true)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (completed) {
+            navigate(auraRef.current ? '/aura/assessments' : `/assessment/disc/results?id=${completed.id}`);
+            return;
+          }
+
           // Create new assessment
           const { data: newAssessment, error: createError } = await supabase
             .from('disc_assessments')
@@ -124,10 +144,14 @@ export default function DISCAssessment() {
           .from('profiles')
           .update({ disc_completed: true })
           .eq('user_id', user?.id);
-          
+
+        // BNI-004: Guard against ghost navigation if user left the page while
+        // the final save was in flight.
+        if (!isMountedRef.current) return;
         navigate(auraRef.current ? '/aura/assessments' : `/assessment/disc/results?id=${assessmentId}`);
       }
     } catch (error) {
+      if (!isMountedRef.current) return;
       console.error('Error saving progress:', error);
       toast({
         title: 'Save Error',
@@ -135,7 +159,7 @@ export default function DISCAssessment() {
         variant: 'destructive',
       });
     } finally {
-      setIsSaving(false);
+      if (isMountedRef.current) setIsSaving(false);
     }
   }, [assessmentId, user, navigate, toast]);
 
@@ -174,7 +198,12 @@ export default function DISCAssessment() {
 
   const goBack = () => {
     if (currentQuestion > 1) {
-      setCurrentQuestion(currentQuestion - 1);
+      const prevQuestion = currentQuestion - 1;
+      setCurrentQuestion(prevQuestion);
+      // BNI-006: Persist the new position so a refresh after going back
+      // restores the correct question instead of replaying from where the
+      // user went forward.
+      saveProgress(responses, prevQuestion);
     }
   };
 

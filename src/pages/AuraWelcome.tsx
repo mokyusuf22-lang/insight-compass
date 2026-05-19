@@ -11,6 +11,7 @@ import { ArrowRight, User, Mail, Phone } from 'lucide-react';
 import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 import { AuraOrb } from '@/components/aura/AuraOrb';
 import { setAuraReturnFlag } from '@/hooks/useAuraReturn';
+import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 
 const TYPING_SPEED = 30;
 
@@ -49,49 +50,20 @@ export default function AuraWelcome() {
   const greeting = "Welcome to your journey of growth! I'm Aura, your personal coaching guide. To get started, please share a few details about yourself.";
   const { displayed: typedGreeting, done: greetingDone } = useTypingEffect(greeting, true);
 
+  // BUG-001: Single effect handles both auth redirect and session restore.
+  // Previously two separate effects both called navigate(), causing a race on
+  // returning users where the first (incomplete) routing logic could win.
   useEffect(() => {
-    if (!loading && !user) {
+    if (loading) return;
+    if (!user) {
       navigate('/auth');
       return;
     }
-    // Restore existing session
-    if (user) {
-      supabase
-        .from('aura_sessions')
-        .select('id, name, email, preferred_contact, current_step')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-        .then(({ data }) => {
-          if (data) {
-            if (data.name) setName(data.name);
-            if (data.email) setEmail(data.email);
-            if (data.preferred_contact) setPreferredContact(data.preferred_contact);
-            if ((data.current_step ?? 0) >= 2) {
-              navigate('/aura/challenge');
-            }
-          }
-        });
-    }
-  }, [user, loading, navigate]);
 
-  useEffect(() => {
-    if (greetingDone) {
-      const timer = setTimeout(() => setShowForm(true), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [greetingDone]);
-
-  // Restore previous session data or pre-fill from auth
-  useEffect(() => {
     const restore = async () => {
-      if (!user) return;
-
-      // Pre-fill email
+      // Pre-fill email from auth metadata
       if (user.email) setEmail(user.email);
 
-      // Try to restore existing session
       const { data: existing } = await supabase
         .from('aura_sessions')
         .select('*')
@@ -108,43 +80,29 @@ export default function AuraWelcome() {
 
         const step = s.current_step ?? 0;
 
-        // Route user to the correct page based on how far they got
-        if (step >= 7) {
-          // Keep the aura flag set so RequireStep lets the user reach /welcome;
-          // Welcome.tsx will clear it once it renders.
-          navigate('/welcome');
-          return;
-        }
-        if (step >= 6) {
-          navigate('/aura/insights');
-          return;
-        }
-        if (step >= 5) {
-          setAuraReturnFlag(user.id);
-          navigate('/aura/assessments');
-          return;
-        }
-        if (step >= 3) {
-          // step 3 = challenge confirmed, user should be on assessment-intro
-          setAuraReturnFlag(user.id);
-          navigate('/aura/assessment-intro');
-          return;
-        }
-        if (step >= 2) {
-          setAuraReturnFlag(user.id);
-          navigate('/aura/challenge');
-          return;
-        }
+        if (step >= 7) { navigate('/welcome'); return; }
+        if (step >= 6) { navigate('/aura/insights'); return; }
+        if (step >= 5) { setAuraReturnFlag(user.id); navigate('/aura/assessments'); return; }
+        if (step >= 3) { setAuraReturnFlag(user.id); navigate('/aura/assessment-intro'); return; }
+        if (step >= 2) { setAuraReturnFlag(user.id); navigate('/aura/challenge'); return; }
 
-        // Mark aura flow as active for return navigation
         setAuraReturnFlag(user.id);
       }
     };
 
     restore();
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
 
-  const isValid = name.trim().length >= 2 && email.trim().includes('@');
+  useEffect(() => {
+    if (greetingDone) {
+      const timer = setTimeout(() => setShowForm(true), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [greetingDone]);
+
+  // BUG-002: Use proper email regex instead of includes('@') which accepts "@", "x@", "@y"
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const isValid = name.trim().length >= 2 && isValidEmail;
 
   const handleSubmit = async () => {
     if (!user || !isValid) return;
@@ -194,7 +152,11 @@ export default function AuraWelcome() {
     }
   };
 
-  if (loading) return null;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <LoadingSpinner size="lg" text="Loading..." />
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 pt-16 pb-8 bg-gradient-to-b from-secondary/50 via-background to-background">

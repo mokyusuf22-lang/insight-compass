@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useNavigationType } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,9 @@ import { toast } from 'sonner';
 import { ArrowRight, Send, Loader2, Sparkles } from 'lucide-react';
 import { AuraProgressBar } from '@/components/aura/AuraProgressBar';
 import { AuraOrb } from '@/components/aura/AuraOrb';
+import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
+
+const CHALLENGE_DRAFT_KEY = 'aura_challenge_draft';
 
 const TYPING_SPEED = 25;
 
@@ -47,6 +50,10 @@ interface IdentifiedTheme {
 export default function AuraChallenge() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const navType = useNavigationType();
+  const isMounted = useRef(true);
+  useEffect(() => () => { isMounted.current = false; }, []);
+
   const [challengeText, setChallengeText] = useState('');
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -93,23 +100,31 @@ export default function AuraChallenge() {
       if (data) {
         const step = (data as any).current_step ?? 0;
         if (step >= 7) { navigate('/welcome'); return; }
-        if (step >= 6) { navigate('/aura/insights'); return; }
+        // BNI-002: Skip the step>=6 redirect on browser back (POP) so users
+        // can navigate back through the flow without being bounced forward.
+        if (step >= 6 && navType !== 'POP') { navigate('/aura/insights'); return; }
 
         setSessionId(data.id);
         setUserName((data as any).name || '');
+
+        // BUG-009: Restore challenge text — prefer DB value, fall back to
+        // localStorage draft (typed but not yet submitted).
         if ((data as any).challenge_text) {
           setChallengeText((data as any).challenge_text);
+          localStorage.removeItem(CHALLENGE_DRAFT_KEY);
+        } else {
+          const draft = localStorage.getItem(CHALLENGE_DRAFT_KEY);
+          if (draft) setChallengeText(draft);
         }
 
-        // Restore analysis results if they already completed this step so we
-        // don't burn another AI prompt on refresh.
+        // Restore analysis results if already completed so we don't burn
+        // another AI prompt on refresh.
         if (step >= 3 && (data as any).identified_themes && (data as any).aura_summary) {
           setThemes((data as any).identified_themes as IdentifiedTheme[]);
           setAuraSummary((data as any).aura_summary as string);
           setShowResults(true);
         }
       } else {
-        // No session found — go back to step 1
         navigate('/aura/welcome');
       }
     };
@@ -144,10 +159,14 @@ export default function AuraChallenge() {
         } as any)
         .eq('id', sessionId);
 
+      // BNI-007: Guard against ghost state updates if the user navigated away
+      // during the async AI call.
+      if (!isMounted.current) return;
       setThemes(identifiedThemes);
       setAuraSummary(summary);
       setShowResults(true);
     } catch (err: any) {
+      if (!isMounted.current) return;
       console.error('Error analysing challenge:', err);
       if (err.message?.includes('429')) {
         toast.error('Rate limit reached. Please wait a moment and try again.');
@@ -157,28 +176,48 @@ export default function AuraChallenge() {
         toast.error('Failed to analyse your input. Please try again.');
       }
     } finally {
-      setIsAnalysing(false);
+      if (isMounted.current) setIsAnalysing(false);
     }
   };
 
   const handleConfirmAndContinue = async () => {
     if (!sessionId) return;
-    await supabase
-      .from('aura_sessions')
-      .update({ user_confirmed: true, current_step: 3 } as any)
-      .eq('id', sessionId);
-
-    navigate('/aura/assessment-intro');
+    // BUG-005: Wrap in try/catch so a DB failure doesn't silently navigate
+    // forward without persisting user_confirmed=true.
+    try {
+      const { error } = await supabase
+        .from('aura_sessions')
+        .update({ user_confirmed: true, current_step: 3 } as any)
+        .eq('id', sessionId);
+      if (error) throw error;
+      localStorage.removeItem(CHALLENGE_DRAFT_KEY);
+      navigate('/aura/assessment-intro');
+    } catch (err) {
+      console.error('Error confirming challenge:', err);
+      toast.error('Something went wrong. Please try again.');
+    }
   };
 
-  const handleExpand = () => {
+  const handleExpand = async () => {
+    // BUG-010: Also clear identified_themes and aura_summary in DB so a
+    // refresh doesn't restore the old AI results over the empty input form.
     setShowResults(false);
     setAuraSummary('');
     setThemes([]);
+    if (sessionId) {
+      await supabase
+        .from('aura_sessions')
+        .update({ identified_themes: null, aura_summary: null, current_step: 2 } as any)
+        .eq('id', sessionId);
+    }
     toast.info('Please expand on your situation below.');
   };
 
-  if (loading) return null;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <LoadingSpinner size="lg" text="Loading..." />
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex items-start justify-center px-4 pt-16 pb-12 bg-gradient-to-b from-secondary/50 via-background to-background">
@@ -213,7 +252,12 @@ export default function AuraChallenge() {
               <Textarea
                 placeholder="Tell Aura what's on your mind..."
                 value={challengeText}
-                onChange={(e) => setChallengeText(e.target.value)}
+                onChange={(e) => {
+                  setChallengeText(e.target.value);
+                  // BUG-009: Persist draft so text survives a page refresh
+                  // before the user hits "Share with Aura".
+                  localStorage.setItem(CHALLENGE_DRAFT_KEY, e.target.value);
+                }}
                 className="min-h-[180px] text-base leading-relaxed resize-none border-0 focus-visible:ring-0 p-0 mb-4"
                 disabled={isAnalysing}
               />

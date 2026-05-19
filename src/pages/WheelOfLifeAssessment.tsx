@@ -19,6 +19,8 @@ export default function WheelOfLifeAssessment() {
   const { hasAuraSession } = useAuraReturn();
   const auraRef = useRef(hasAuraSession);
   useEffect(() => { auraRef.current = hasAuraSession; }, [hasAuraSession]);
+  const isMountedRef = useRef(true);
+  useEffect(() => () => { isMountedRef.current = false; }, []);
 
   const [scores, setScores] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {};
@@ -54,6 +56,12 @@ export default function WheelOfLifeAssessment() {
           if (savedScores && Object.keys(savedScores).length > 0) {
             setScores((prev) => ({ ...prev, ...savedScores }));
           }
+          // BNI-005: Restore position from notes so browser-back doesn't reset
+          // the user to category 0 after they've already progressed.
+          const savedIndex = parseInt((existing as any).notes || '', 10);
+          if (!isNaN(savedIndex) && savedIndex > 0 && savedIndex < total) {
+            setCurrentIndex(savedIndex);
+          }
         } else {
           const { data: created, error } = await supabase
             .from('wheel_of_life_assessments' as any)
@@ -85,21 +93,26 @@ export default function WheelOfLifeAssessment() {
     setIsSaving(true);
     try {
       if (currentIndex < total - 1) {
+        const nextIndex = currentIndex + 1;
+        // BNI-005: Persist current position in notes so a refresh or
+        // browser-back resumes from the right category.
         await supabase
           .from('wheel_of_life_assessments' as any)
-          .update({ scores } as any)
+          .update({ scores, notes: String(nextIndex) } as any)
           .eq('id', assessmentId);
-        setCurrentIndex(currentIndex + 1);
+        setCurrentIndex(nextIndex);
       } else {
-        // Complete
+        // Complete — clear the position bookmark
         await supabase
           .from('wheel_of_life_assessments' as any)
-          .update({ scores, is_complete: true } as any)
+          .update({ scores, is_complete: true, notes: null } as any)
           .eq('id', assessmentId);
         // Set progress flag
         if (user) {
           await supabase.from('profiles').update({ wheel_of_life_complete: true }).eq('user_id', user.id);
         }
+        // BNI-004 (WoL): Guard against ghost navigation if user left mid-save.
+        if (!isMountedRef.current) return;
         navigate(auraRef.current ? '/aura/assessments' : `/assessment/wheel-of-life/results?id=${assessmentId}`);
       }
     } catch (err) {
@@ -170,7 +183,18 @@ export default function WheelOfLifeAssessment() {
             <div className="flex justify-between items-center mt-10">
               <Button
                 variant="ghost"
-                onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
+                onClick={async () => {
+                  if (currentIndex === 0) return;
+                  const prevIndex = currentIndex - 1;
+                  setCurrentIndex(prevIndex);
+                  // BNI-005: Persist position on back so refresh still lands here.
+                  if (assessmentId) {
+                    await supabase
+                      .from('wheel_of_life_assessments' as any)
+                      .update({ scores, notes: String(prevIndex) } as any)
+                      .eq('id', assessmentId);
+                  }
+                }}
                 disabled={currentIndex === 0}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
