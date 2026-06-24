@@ -35,7 +35,7 @@ serve(async (req) => {
   }
 
   // BUG-011: Verify the caller is an authenticated Supabase user before
-  // consuming the ANTHROPIC_API_KEY. Previously any request (including
+  // consuming the LOVABLE_API_KEY. Previously any request (including
   // unauthenticated ones) could burn API credits.
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
@@ -68,27 +68,25 @@ serve(async (req) => {
       );
     }
 
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) {
-      throw new Error("ANTHROPIC_API_KEY is not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     const userPrompt = user_name
       ? `The user's name is ${user_name}. Here is what they shared:\n\n"${challenge_text}"`
       : `Here is what the user shared:\n\n"${challenge_text}"`;
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 4096,
-        system: SYSTEM_PROMPT,
+        model: "google/gemini-3-flash-preview",
         messages: [
+          { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
         ],
       }),
@@ -101,13 +99,19 @@ serve(async (req) => {
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "AI service requires payment. Please add credits." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
       throw new Error(`AI gateway error: ${response.status}`);
     }
 
     const aiData = await response.json();
-    const content = aiData.content?.[0]?.text;
+    const content = aiData.choices?.[0]?.message?.content;
 
     if (!content) {
       throw new Error("No content in AI response");
