@@ -34,9 +34,9 @@ serve(async (req) => {
   try {
     const { mbti_result, disc_result, strengths_result, career_strategy, current_phase } = await req.json();
     
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) {
+      throw new Error("ANTHROPIC_API_KEY is not configured");
     }
 
     // Determine current phase from roadmap
@@ -70,16 +70,18 @@ Respond with ONLY valid JSON in exactly this format:
   "success_metric": "How to measure completion"
 }`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "claude-sonnet-4-6",
+        max_tokens: 4096,
+        system: SYSTEM_PROMPT,
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
         ],
       }),
@@ -92,12 +94,6 @@ Respond with ONLY valid JSON in exactly this format:
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required, please add credits to your workspace." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
       return new Response(JSON.stringify({ error: "AI gateway error" }), {
@@ -107,7 +103,7 @@ Respond with ONLY valid JSON in exactly this format:
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    const content = data.content?.[0]?.text;
 
     if (!content) {
       throw new Error("No content in AI response");
