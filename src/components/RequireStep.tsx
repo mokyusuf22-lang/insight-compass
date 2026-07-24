@@ -31,7 +31,7 @@ interface RequireStepProps {
 }
 
 export function RequireStep({ children, requireAuth = true }: RequireStepProps) {
-  const { user, loading: authLoading, isAdmin, emailVerified } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const location = useLocation();
   const [progress, setProgress] = useState<FlowProgress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,11 +78,6 @@ export function RequireStep({ children, requireAuth = true }: RequireStepProps) 
   // Auth check
   if (requireAuth && !user) {
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
-  }
-
-  // Email verification check
-  if (requireAuth && user && !emailVerified) {
-    return <Navigate to="/auth" state={{ from: location.pathname, unverified: true }} replace />;
   }
 
   // Admins bypass all prerequisite checks

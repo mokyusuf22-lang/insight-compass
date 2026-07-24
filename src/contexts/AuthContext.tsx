@@ -33,12 +33,10 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isCoach: boolean;
-  emailVerified: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
-  resendVerificationEmail: (email: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
@@ -66,7 +64,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isCoach, setIsCoach] = useState(false);
-  const [emailVerified, setEmailVerified] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -171,7 +168,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setEmailVerified(!!session?.user?.email_confirmed_at);
 
         if (session?.user) {
           setTimeout(() => {
@@ -182,7 +178,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(null);
           setIsAdmin(false);
           setIsCoach(false);
-          setEmailVerified(false);
           setSubscription({ ...defaultSubscription, loading: false });
         }
       }
@@ -192,7 +187,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setEmailVerified(!!session?.user?.email_confirmed_at);
 
       if (session?.user) {
         fetchProfile(session.user.id);
@@ -228,12 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/auth?verified=true`;
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: redirectUrl }
-    });
+    const { error } = await supabase.auth.signUp({ email, password });
     return { error: error as Error | null };
   };
 
@@ -250,15 +239,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth?reset=true`,
-    });
-    return { error: error as Error | null };
-  };
-
-  const resendVerificationEmail = async (email: string) => {
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/auth?verified=true` },
     });
     return { error: error as Error | null };
   };
@@ -285,12 +265,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       isAdmin,
       isCoach,
-      emailVerified,
       signIn,
       signUp,
       signInWithGoogle,
       resetPassword,
-      resendVerificationEmail,
       signOut,
       refreshProfile,
       refreshSubscription,

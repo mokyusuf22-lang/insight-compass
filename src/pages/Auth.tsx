@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { SignInConfirmation } from '@/components/SignInConfirmation';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
-import { Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { z } from 'zod';
 import { lovable } from '@/integrations/lovable/index';
 
@@ -21,14 +21,13 @@ const emailSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
 });
 
-type AuthMode = 'login' | 'signup' | 'forgot' | 'reset-sent' | 'verify-email' | 'email-verified';
+type AuthMode = 'login' | 'signup' | 'forgot' | 'reset-sent';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const isReset = searchParams.get('reset') === 'true';
-  const isVerified = searchParams.get('verified') === 'true';
-  
-  const [mode, setMode] = useState<AuthMode>(isVerified ? 'email-verified' : isReset ? 'login' : 'login');
+
+  const [mode, setMode] = useState<AuthMode>(isReset ? 'login' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -37,15 +36,13 @@ export default function Auth() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedEmail, setConfirmedEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [resendLoading, setResendLoading] = useState(false);
 
-  const { signIn, signUp, signInWithGoogle, resetPassword, resendVerificationEmail, user, loading, isCoach, isAdmin } = useAuth();
+  const { signIn, signUp, signInWithGoogle, resetPassword, user, loading, isCoach, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const explicitReturnTo = (location.state as any)?.from;
   const returnTo = explicitReturnTo || null;
-  const isUnverified = (location.state as any)?.unverified === true;
 
   const getRedirectTarget = useCallback(() => {
     if (returnTo) return returnTo;
@@ -62,13 +59,6 @@ export default function Auth() {
       navigate(getRedirectTarget());
     }
   }, [user, loading, navigate, showConfirmation, getRedirectTarget]);
-
-  // If redirected here because email isn't verified, show the verify-email screen
-  useEffect(() => {
-    if (isUnverified && mode === 'login') {
-      setMode('verify-email');
-    }
-  }, [isUnverified]);
 
   const validateForm = () => {
     try {
@@ -89,36 +79,6 @@ export default function Auth() {
         setErrors(fieldErrors);
       }
       return false;
-    }
-  };
-
-  const handleResendVerification = async () => {
-    const emailToResend = confirmedEmail || email;
-    if (!emailToResend) {
-      toast({
-        title: 'Email required',
-        description: 'Please go back to sign in and enter your email.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    setResendLoading(true);
-    try {
-      const { error } = await resendVerificationEmail(emailToResend);
-      if (error) {
-        toast({
-          title: 'Failed to resend',
-          description: error.message,
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Verification email sent',
-          description: `Check your inbox at ${emailToResend}.`,
-        });
-      }
-    } finally {
-      setResendLoading(false);
     }
   };
 
@@ -217,9 +177,8 @@ export default function Auth() {
             });
           }
         } else {
-          // Show email verification message for signup
           setConfirmedEmail(email);
-          setMode('verify-email');
+          setShowConfirmation(true);
         }
       }
     } finally {
@@ -277,84 +236,6 @@ export default function Auth() {
           </div>
         </main>
 
-        <footer className="py-6 text-center">
-          <p className="text-xs text-muted-foreground">©2025 Be:More</p>
-        </footer>
-      </div>
-    );
-  }
-
-  // Email verification confirmation after signup
-  if (mode === 'verify-email') {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <header className="py-6 px-6 text-center border-b border-border">
-          <Link to="/" className="font-sans font-semibold tracking-wide text-lg">
-            Be:More
-          </Link>
-        </header>
-
-        <main className="flex-1 flex items-center justify-center px-6 py-12">
-          <div className="w-full max-w-sm space-y-6 text-center">
-            <div className="space-y-2">
-              <CheckCircle className="w-16 h-16 text-primary mx-auto" />
-              <h1 className="text-2xl font-serif font-semibold">Check Your Email</h1>
-              <p className="text-muted-foreground">
-                We've sent a verification link to{' '}
-                <strong>{confirmedEmail || email}</strong>. Click the link to verify your account before signing in.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Didn't receive the email? Check your spam folder or resend it.
-              </p>
-              <Button
-                onClick={handleResendVerification}
-                disabled={resendLoading}
-                className="w-full"
-              >
-                {resendLoading ? <LoadingSpinner size="sm" /> : 'Resend verification email'}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setMode('login')}
-                className="w-full"
-              >
-                Back to Sign In
-              </Button>
-            </div>
-          </div>
-        </main>
-
-        <footer className="py-6 text-center">
-          <p className="text-xs text-muted-foreground">©2025 Be:More</p>
-        </footer>
-      </div>
-    );
-  }
-
-  // Email verified — show success screen
-  if (mode === 'email-verified') {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <header className="py-6 px-6 text-center border-b border-border">
-          <Link to="/" className="font-sans font-semibold tracking-wide text-lg">Be:More</Link>
-        </header>
-        <main className="flex-1 flex items-center justify-center px-6 py-12">
-          <div className="w-full max-w-sm space-y-6 text-center">
-            <div className="space-y-2">
-              <CheckCircle className="w-16 h-16 text-success mx-auto" />
-              <h1 className="text-2xl font-serif font-semibold">Email Verified!</h1>
-              <p className="text-muted-foreground">
-                Your email has been verified successfully. You can now sign in to your account.
-              </p>
-            </div>
-            <Button onClick={() => setMode('login')} className="w-full rounded-full">
-              Sign In
-            </Button>
-          </div>
-        </main>
         <footer className="py-6 text-center">
           <p className="text-xs text-muted-foreground">©2025 Be:More</p>
         </footer>
