@@ -33,9 +33,9 @@ serve(async (req) => {
     const body: RequestBody = await req.json();
     console.log("Received request:", JSON.stringify(body));
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) {
+      throw new Error("ANTHROPIC_API_KEY is not configured");
     }
 
     const systemPrompt = `You are an expert personality analyst and career assessment AI.
@@ -89,18 +89,18 @@ Return ONLY valid JSON with this structure:
   "confidence": number
 }`;
 
-    console.log("Calling Lovable AI...");
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 4096,
+        system: systemPrompt,
         messages: [
-          { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
       }),
@@ -129,7 +129,7 @@ Return ONLY valid JSON with this structure:
     const aiResponse = await response.json();
     console.log("AI response:", JSON.stringify(aiResponse));
 
-    const content = aiResponse.choices?.[0]?.message?.content;
+    const content = aiResponse.content?.[0]?.text;
     if (!content) {
       throw new Error("No content in AI response");
     }
