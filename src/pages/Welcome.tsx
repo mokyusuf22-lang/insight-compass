@@ -193,7 +193,7 @@ export default function Welcome() {
                 <p className="text-muted-foreground mb-4">
                   Finish the assessment flow and commit to a path to unlock your personalized skill path.
                 </p>
-                <Button onClick={() => navigate('/onboarding')} className="rounded-full">
+                <Button onClick={() => navigate('/goals-reality')} className="rounded-full">
                   Continue Journey
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>

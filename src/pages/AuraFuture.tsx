@@ -173,12 +173,12 @@ export default function AuraFuture() {
                 also clears it, but if the user goes to /my-coach instead the
                 flag would otherwise persist indefinitely. */}
             <Button
-              onClick={() => { clearAuraReturnFlag(); navigate('/goals-reality'); }}
+              onClick={() => { clearAuraReturnFlag(); navigate('/welcome'); }}
               variant={hasCoach ? 'outline' : 'default'}
               className="w-full h-12 text-base rounded-full btn-lift"
               size="lg"
             >
-              Set My Goals
+              Go to Dashboard
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
             <p className="text-center text-xs text-muted-foreground">
