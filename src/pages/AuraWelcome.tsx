@@ -43,6 +43,7 @@ export default function AuraWelcome() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [preferredContact, setPreferredContact] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -76,6 +77,7 @@ export default function AuraWelcome() {
         const s = existing as any;
         if (s.name) setName(s.name);
         if (s.email) setEmail(s.email);
+        if (s.phone) setPhone(s.phone);
         if (s.preferred_contact) setPreferredContact(s.preferred_contact);
 
         const step = s.current_step ?? 0;
@@ -125,6 +127,7 @@ export default function AuraWelcome() {
           .update({
             name: name.trim(),
             email: email.trim(),
+            phone: phone.trim() || null,
             preferred_contact: preferredContact || null,
             current_step: 2,
           } as any)
@@ -137,6 +140,7 @@ export default function AuraWelcome() {
             user_id: user.id,
             name: name.trim(),
             email: email.trim(),
+            phone: phone.trim() || null,
             preferred_contact: preferredContact || null,
             current_step: 2,
           } as any);
@@ -213,6 +217,22 @@ export default function AuraWelcome() {
                 placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="h-12 text-base"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="flex items-center gap-2 text-sm font-medium">
+                <Phone className="w-4 h-4 text-muted-foreground" />
+                Phone number
+                <span className="text-muted-foreground/50 text-xs font-normal">(optional)</span>
+              </Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="+44 7700 000000"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 className="h-12 text-base"
               />
             </div>

@@ -20,7 +20,6 @@ import {
 } from '@/components/ui/sheet';
 import {
   LayoutDashboard,
-  Route,
   LineChart,
   Globe,
   BotMessageSquare,
@@ -124,7 +123,6 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
 
   const navLinks = [
     ...(showHomeLink ? [{ to: '/welcome', icon: LayoutDashboard, label: 'Home' }] : []),
-    { to: '/path',    icon: Route,           label: 'Skill Path' },
     { to: '/results', icon: LineChart,        label: 'Results' },
     {
       href: 'https://www.linkedin.com/groups/your-community-group',

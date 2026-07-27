@@ -20,7 +20,7 @@ import { AuraOrb } from '@/components/aura/AuraOrb';
 
 const TYPING_SPEED = 25;
 
-function useTypingEffect(text: string, start: boolean) {
+function useTypingEffect(text: string, start: boolean, version: number = 0) {
   const [displayed, setDisplayed] = useState('');
   const [done, setDone] = useState(false);
   useEffect(() => {
@@ -34,7 +34,7 @@ function useTypingEffect(text: string, start: boolean) {
       if (i >= text.length) { clearInterval(interval); setDone(true); }
     }, TYPING_SPEED);
     return () => clearInterval(interval);
-  }, [text, start]);
+  }, [text, start, version]);
   return { displayed, done };
 }
 
@@ -62,12 +62,11 @@ export default function AuraAssessments() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [completionStatus, setCompletionStatus] = useState<Record<string, boolean>>({});
   const [showAssessments, setShowAssessments] = useState(false);
-  // introText is stored in state and set exactly once after data loads,
-  // so the typing animation never restarts when navigating back from an assessment.
   const [introText, setIntroText] = useState('');
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [animVersion, setAnimVersion] = useState(0);
 
-  const { displayed, done } = useTypingEffect(introText, dataLoaded);
+  const { displayed, done } = useTypingEffect(introText, dataLoaded, animVersion);
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth');
@@ -109,12 +108,12 @@ export default function AuraAssessments() {
         const rawThemes = (sessionRes.data as any).identified_themes;
         const loadedThemes: IdentifiedTheme[] = Array.isArray(rawThemes) ? rawThemes : [];
         if (loadedThemes.length) setThemes(loadedThemes);
-        // Build introText once here so the typing animation never restarts mid-play
         const themeAreas = loadedThemes.map(t => t.area.toLowerCase()).join(', ');
         setIntroText(name
           ? `Fantastic, ${name}! Based on our earlier conversation, we've identified some key areas to explore further${themeAreas ? ` — particularly around ${themeAreas}` : ''}. To truly understand your motivations, values, and goals, we'll guide you through a selection of assessments designed specifically for your needs.`
           : `Based on our earlier conversation, we'll guide you through assessments designed specifically for your needs.`);
         setDataLoaded(true);
+        setAnimVersion(v => v + 1);
       } else {
         navigate('/aura/welcome');
       }
