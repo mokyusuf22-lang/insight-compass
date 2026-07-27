@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { UserHeader } from '@/components/UserHeader';
 import { Progress } from '@/components/ui/progress';
 import { Link } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 import {
   ArrowRight,
   Sparkles,
@@ -18,6 +19,8 @@ import {
   TrendingUp,
   MessageSquare,
   Clock,
+  Lightbulb,
+  ChevronRight,
 } from 'lucide-react';
 
 export default function Welcome() {
@@ -30,6 +33,9 @@ export default function Welcome() {
   const [coachName, setCoachName] = useState<string | null>(null);
   const [hasCoach, setHasCoach] = useState(false);
   const [coachAppPending, setCoachAppPending] = useState(false);
+  const [realityReport, setRealityReport] = useState<{ headline?: string; key_insight?: string; summary?: string } | null>(null);
+  const [pathOptions, setPathOptions] = useState<Array<{ title: string; tagline: string; difficulty: string; time_horizon: string }>>([]);
+  const [selectedPathIndex, setSelectedPathIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -45,7 +51,7 @@ export default function Welcome() {
       if (!user) return;
 
       try {
-        const [pathRes, assignmentRes, appRes] = await Promise.all([
+        const [pathRes, assignmentRes, appRes, reportRes, pathRecRes] = await Promise.all([
           supabase
             .from('personal_paths')
             .select('id, title, total_progress')
@@ -64,6 +70,20 @@ export default function Welcome() {
             .from('coach_applications' as any)
             .select('status')
             .eq('user_id', user.id)
+            .maybeSingle(),
+          supabase
+            .from('reality_reports' as any)
+            .select('generated_summary')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('path_recommendations' as any)
+            .select('recommendations, selected_path_index')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
             .maybeSingle(),
         ]);
 
@@ -94,6 +114,21 @@ export default function Welcome() {
           // avatar renders coachName[0].toUpperCase() below.
           const name = (coachProfile as any)?.display_name;
           setCoachName(name && name.trim() ? name.trim() : 'Your Coach');
+        }
+
+        if ((reportRes as any).data?.generated_summary) {
+          try {
+            const parsed = JSON.parse((reportRes as any).data.generated_summary);
+            setRealityReport(parsed);
+          } catch { /* ignore parse errors */ }
+        }
+
+        if ((pathRecRes as any).data) {
+          const recs = (pathRecRes as any).data.recommendations as any;
+          const arr: any[] = Array.isArray(recs) ? recs : recs?.paths ?? [];
+          if (arr.length > 0) setPathOptions(arr);
+          const sel = (pathRecRes as any).data.selected_path_index;
+          if (sel !== null && sel !== undefined) setSelectedPathIndex(sel);
         }
       } catch (err) {
         console.error('Error loading welcome data:', err);
@@ -181,25 +216,119 @@ export default function Welcome() {
             </Button>
           </div>
         ) : !profile?.path_committed ? (
-          <div className="chamfer bg-card border border-border p-8 mb-8">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 chamfer-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Compass className="w-6 h-6 text-primary" />
+          realityReport ? (
+            <div className="mb-8 space-y-4 animate-fade-up">
+              {/* Reality Report summary */}
+              <div className="chamfer bg-card border border-border p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 chamfer-sm bg-accent/10 flex items-center justify-center flex-shrink-0">
+                    <Lightbulb className="w-4 h-4 text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Your Reality Report</p>
+                    <h2 className="text-lg font-serif font-semibold text-foreground leading-tight">
+                      {realityReport.headline || 'Your Growth Profile'}
+                    </h2>
+                  </div>
+                </div>
+                {realityReport.key_insight && (
+                  <p className="text-sm text-muted-foreground leading-relaxed border-l-2 border-accent/40 pl-3">
+                    {realityReport.key_insight}
+                  </p>
+                )}
               </div>
-              <div>
-                <h2 className="text-xl font-serif font-semibold text-foreground mb-2">
-                  Complete Your Be:More Journey
-                </h2>
-                <p className="text-muted-foreground mb-4">
-                  Finish the assessment flow and commit to a path to unlock your personalized skill path.
-                </p>
-                <Button onClick={() => navigate('/goals-reality')} className="rounded-full">
-                  Continue Journey
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+
+              {/* Path options */}
+              {pathOptions.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between px-1">
+                    <p className="text-sm font-medium text-foreground">Choose your direction</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate('/path-options')}
+                      className="text-xs text-accent gap-1"
+                    >
+                      View full options
+                      <ChevronRight className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  {pathOptions.map((path, i) => (
+                    <button
+                      key={i}
+                      onClick={() => navigate('/path-options')}
+                      className={`w-full text-left chamfer border p-5 transition-all hover:border-accent/40 hover:shadow-sm ${
+                        selectedPathIndex === i
+                          ? 'border-accent/60 bg-accent/5'
+                          : 'border-border bg-card'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-semibold text-foreground text-sm">{path.title}</p>
+                            {selectedPathIndex === i && (
+                              <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{path.tagline}</p>
+                        </div>
+                        <div className="flex-shrink-0 flex flex-col items-end gap-1">
+                          <Badge variant="secondary" className="text-xs capitalize whitespace-nowrap">
+                            {path.difficulty}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">{path.time_horizon}</span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                  <Button
+                    onClick={() => navigate('/path-options')}
+                    className="w-full rounded-full"
+                  >
+                    {selectedPathIndex !== null ? 'Review & Confirm Selection' : 'Select a Path'}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="chamfer bg-card border border-border p-6 flex items-start gap-4">
+                  <div className="w-10 h-10 chamfer-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-1">Generate Your Path Options</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Your report is ready. Generate AI-powered path options tailored to your profile.
+                    </p>
+                    <Button onClick={() => navigate('/path-options')} className="rounded-full">
+                      Explore Path Options
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="chamfer bg-card border border-border p-8 mb-8">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 chamfer-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Compass className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-serif font-semibold text-foreground mb-2">
+                    Complete Your Be:More Journey
+                  </h2>
+                  <p className="text-muted-foreground mb-4">
+                    Finish the assessment flow and commit to a path to unlock your personalized skill path.
+                  </p>
+                  <Button onClick={() => navigate('/goals-reality')} className="rounded-full">
+                    Continue Journey
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
+          )
         ) : hasCoach ? (
           <div className="chamfer bg-card border border-border p-8 mb-8 animate-fade-up">
             <div className="flex items-start gap-4">

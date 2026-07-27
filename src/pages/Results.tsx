@@ -265,7 +265,7 @@ export default function Results() {
                 const mbtiColor = getMBTIColor(results.mbtiType || results.step1Hypothesis?.mbtiTendency);
                 return (
                   <button
-                    onClick={() => navigate('/assessment/mbti/results')}
+                    onClick={() => navigate(results.mbtiType ? '/assessment/mbti/results' : '/assessment/mbti')}
                     className={`md:col-span-2 lg:col-span-2 chamfer bg-gradient-to-br ${mbtiColor.bg} p-8 md:p-10 relative overflow-hidden transition-all duration-700 hover:${mbtiColor.gradient} text-left ${
                       animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                     }`}
