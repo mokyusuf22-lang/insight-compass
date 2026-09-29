@@ -9,6 +9,10 @@ export interface PathTask {
   status: 'locked' | 'available' | 'in_progress' | 'completed';
   successCriteria: string;
   instructions?: string[];
+  /** Where/how to do this in the user's location (Aura-generated paths). */
+  where?: string;
+  /** Rough local-currency cost range (Aura-generated paths). */
+  costNote?: string;
 }
 
 export interface PathPhase {

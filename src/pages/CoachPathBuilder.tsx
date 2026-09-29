@@ -22,6 +22,8 @@ import {
 } from '@/components/ui/sheet';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { toast } from 'sonner';
+import { findCoachClientAssignment } from '@/lib/coaching';
+import { postCoachMessage } from '@/hooks/useCoachThread';
 import {
   ArrowLeft,
   Plus,
@@ -94,7 +96,7 @@ const emptyPhase = (index: number): DraftPhase => ({
 
 export default function CoachPathBuilder() {
   const { userId } = useParams<{ userId: string }>();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const [clientName, setClientName]     = useState('');
@@ -110,6 +112,8 @@ export default function CoachPathBuilder() {
   const [loading, setLoading]           = useState(true);
   const [publishing, setPublishing]     = useState(false);
   const [notFound, setNotFound]         = useState(false);
+  const [assignmentId, setAssignmentId] = useState<string | null>(null);
+  const [originalTasks, setOriginalTasks] = useState<Map<string, any>>(new Map());
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth');
@@ -119,15 +123,8 @@ export default function CoachPathBuilder() {
     const load = async () => {
       if (!user || !userId) return;
 
-      const { data: assignment } = await supabase
-        .from('coach_assignments' as any)
-        .select('id')
-        .eq('coach_id', user.id)
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      const { data: myRoles } = await supabase.rpc('get_my_roles');
-      const isAdmin = myRoles?.some((r) => r.role === 'admin') ?? false;
+      const assignment = await findCoachClientAssignment(user.id, userId);
+      setAssignmentId(assignment?.id ?? null);
 
       if (!assignment && !isAdmin) {
         setNotFound(true);
@@ -166,6 +163,8 @@ export default function CoachPathBuilder() {
         setPathDesc(existing.description || '');
 
         const rawPhases = (existing.phases as any[]) || [];
+        // Remember each task as stored so publishing keeps its status and extra fields.
+        setOriginalTasks(new Map(rawPhases.flatMap((ph: any) => (ph.tasks || []).map((t: any) => [t.id, t]))));
         setPhases(
           rawPhases.map((p: any) => ({
             id: p.id || uid(),
@@ -189,7 +188,7 @@ export default function CoachPathBuilder() {
     };
 
     if (!authLoading && user) load();
-  }, [user, authLoading, userId]);
+  }, [user, authLoading, userId, isAdmin]);
 
   const addPhase = () =>
     setPhases(prev => [...prev, emptyPhase(prev.length)]);
@@ -261,6 +260,8 @@ export default function CoachPathBuilder() {
     setPublishing(true);
 
     try {
+      // Keep the client's progress: existing tasks keep their status (and any extra
+      // fields such as instructions/where), new tasks start locked.
       const builtPhases = phases.map((phase, phaseIdx) => ({
         id: phase.id,
         phaseNumber: phaseIdx + 1,
@@ -268,17 +269,28 @@ export default function CoachPathBuilder() {
         duration: phase.duration,
         goal: phase.goal,
         successDefinition: phase.goal,
-        tasks: phase.tasks.map((task, taskIdx) => ({
-          id: task.id,
-          title: task.title,
-          description: task.description,
-          type: task.type,
-          estimatedMinutes: task.estimatedMinutes,
-          successCriteria: task.successCriteria || '',
-          instructions: [],
-          status: phaseIdx === 0 && taskIdx === 0 ? 'available' : 'locked',
-        })),
+        tasks: phase.tasks.map((task) => {
+          const original = originalTasks.get(task.id);
+          return {
+            ...original,
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            type: task.type,
+            estimatedMinutes: task.estimatedMinutes,
+            successCriteria: task.successCriteria || '',
+            instructions: original?.instructions ?? [],
+            status: original?.status ?? 'locked',
+          };
+        }),
       }));
+      // If nothing is currently doable, unlock the first unfinished task.
+      const allTasks = builtPhases.flatMap((ph) => ph.tasks);
+      if (!allTasks.some((t) => t.status === 'available' || t.status === 'in_progress')) {
+        const next = allTasks.find((t) => t.status !== 'completed');
+        if (next) next.status = 'available';
+      }
+      const completedCount = allTasks.filter((t) => t.status === 'completed').length;
 
       const payload: any = {
         user_id: userId,
@@ -286,7 +298,7 @@ export default function CoachPathBuilder() {
         title: pathTitle.trim(),
         description: pathDesc.trim() || null,
         phases: builtPhases,
-        total_progress: 0,
+        total_progress: allTasks.length ? Math.round((completedCount / allTasks.length) * 100) : 0,
         is_active: true,
       };
 
@@ -306,7 +318,11 @@ export default function CoachPathBuilder() {
         setExistingId((data as any).id);
       }
 
-      toast.success('Skill path published to mentee!');
+      if (assignmentId) {
+        await postCoachMessage(assignmentId, user!.id,
+          `I've updated your path “${pathTitle.trim()}”. Have a look and tell me what you think. Your completed tasks are still ticked off.`);
+      }
+      toast.success('Path published. Your client has been notified in your chat.');
       navigate(`/coach/user/${userId}`);
     } catch (err: any) {
       console.error('Publish error:', err);

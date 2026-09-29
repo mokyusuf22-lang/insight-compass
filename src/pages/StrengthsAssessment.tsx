@@ -1,8 +1,7 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuraReturn } from '@/hooks/useAuraReturn';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProgressBar } from '@/components/assessment/ProgressBar';
@@ -17,9 +16,6 @@ import { Json } from '@/integrations/supabase/types';
 export default function StrengthsAssessment() {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
-  const { hasAuraSession } = useAuraReturn();
-  const auraRef = useRef(hasAuraSession);
-  useEffect(() => { auraRef.current = hasAuraSession; }, [hasAuraSession]);
 
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [responses, setResponses] = useState<StrengthsResponse[]>([]);
@@ -58,7 +54,8 @@ export default function StrengthsAssessment() {
 
         if (existing) {
           setAssessmentId(existing.id);
-          setCurrentQuestion(existing.current_question);
+          // Questions are 1-based here but new rows default current_question to 0.
+          setCurrentQuestion(Math.min(Math.max(1, existing.current_question), strengthsQuestions.length));
           const existingResponses = existing.responses as unknown as StrengthsResponse[];
           setResponses(Array.isArray(existingResponses) ? existingResponses : []);
         } else {
@@ -127,7 +124,7 @@ export default function StrengthsAssessment() {
           .eq('user_id', user!.id);
 
         toast.success('Assessment complete!');
-        navigate(auraRef.current ? '/aura/assessments' : `/assessment/strengths/results?id=${assessmentId}`);
+        navigate(`/assessment/strengths/results?id=${assessmentId}`);
       }
     } catch (error) {
       console.error('Error saving progress:', error);

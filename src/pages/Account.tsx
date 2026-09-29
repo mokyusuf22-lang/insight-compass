@@ -8,20 +8,13 @@ import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 import { useToast } from '@/hooks/use-toast';
-import { SUBSCRIPTION_TIERS } from '@/lib/subscriptionTiers';
 import {
   CircleUser,
   ShieldCheck,
-  Wallet,
   UserMinus,
   ArrowLeft,
-  CheckCircle2,
-  Crown,
-  Calendar,
-  RefreshCw,
   Eye,
   EyeOff,
-  ExternalLink,
 } from 'lucide-react';
 import {
   Dialog,
@@ -43,7 +36,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function Account() {
-  const { user, profile, subscription, loading, signOut, updatePassword, refreshSubscription } = useAuth();
+  const { user, loading, signOut, updatePassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -57,7 +50,6 @@ export default function Account() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
   const [isDeactivating, setIsDeactivating] = useState(false);
 
@@ -67,10 +59,6 @@ export default function Account() {
 
   useEffect(() => {
     if (user?.user_metadata?.display_name) setDisplayName(user.user_metadata.display_name);
-  }, [user]);
-
-  useEffect(() => {
-    if (user) refreshSubscription();
   }, [user]);
 
   const handleSaveProfile = async () => {
@@ -111,26 +99,6 @@ export default function Account() {
     }
   };
 
-  const handleManageSubscription = async () => {
-    setIsLoadingPortal(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('customer-portal');
-      if (error) throw error;
-      if (data?.url) window.open(data.url, '_blank');
-      else throw new Error('No portal URL received');
-    } catch {
-      toast({
-        title: 'Error',
-        description: subscription.subscribed
-          ? 'Unable to open billing portal. Please try again.'
-          : 'You need an active subscription to manage billing.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoadingPortal(false);
-    }
-  };
-
   const handleDeactivateAccount = async () => {
     setIsDeactivating(true);
     try {
@@ -145,20 +113,13 @@ export default function Account() {
     }
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-  };
-
-  if (loading || subscription.loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <LoadingSpinner size="lg" text="Loading..." />
       </div>
     );
   }
-
-  const tierConfig = SUBSCRIPTION_TIERS[subscription.tier];
 
   return (
     <div className="min-h-screen bg-background">
@@ -227,71 +188,6 @@ export default function Account() {
             <Button variant="outline" onClick={() => setShowPasswordDialog(true)}>
               Update Password
             </Button>
-          </div>
-        </section>
-
-        {/* ── Subscription ────────────────────────────────── */}
-        <section className="chamfer bg-card border border-border p-6">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="w-12 h-12 chamfer-sm bg-accent/10 flex items-center justify-center flex-shrink-0">
-              <Wallet className="w-6 h-6 text-accent" />
-            </div>
-            <div>
-              <h2 className="text-lg font-serif font-semibold">Subscription & Billing</h2>
-              <p className="text-sm text-muted-foreground">Your current plan and payment details</p>
-            </div>
-          </div>
-          <div className="space-y-4">
-            <div className={`p-4 chamfer-sm ${subscription.tier !== 'free' ? 'bg-accent/5 border border-accent/20' : 'bg-secondary/50'}`}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  {subscription.tier !== 'free' && <Crown className="w-5 h-5 text-accent" />}
-                  <span className="font-semibold text-lg">{tierConfig.name} Plan</span>
-                </div>
-                <span className="text-2xl font-bold">
-                  {tierConfig.priceDisplay}
-                  <span className="text-sm font-normal text-muted-foreground">/mo</span>
-                </span>
-              </div>
-              {subscription.subscribed && (
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-3">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    <span>{subscription.cancelAtPeriodEnd ? 'Ends' : 'Renews'}: {formatDate(subscription.subscriptionEnd)}</span>
-                  </div>
-                  {subscription.cancelAtPeriodEnd && (
-                    <span className="text-warning font-medium">Cancellation pending</span>
-                  )}
-                </div>
-              )}
-              <ul className="mt-4 space-y-2">
-                {tierConfig.features.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {subscription.tier === 'free' ? (
-                <Button onClick={() => navigate('/paywall')} className="bg-accent hover:bg-accent/90 text-white shadow-accent">
-                  <Crown className="w-4 h-4 mr-2" />
-                  Upgrade Plan
-                </Button>
-              ) : (
-                <>
-                  <Button variant="outline" onClick={() => navigate('/paywall')}>Change Plan</Button>
-                  <Button variant="outline" onClick={handleManageSubscription} disabled={isLoadingPortal}>
-                    {isLoadingPortal ? <LoadingSpinner size="sm" /> : <><ExternalLink className="w-4 h-4 mr-2" />Manage Billing</>}
-                  </Button>
-                </>
-              )}
-              <Button variant="ghost" onClick={() => refreshSubscription()} className="text-muted-foreground gap-2">
-                <RefreshCw className="w-4 h-4" />
-                Refresh Status
-              </Button>
-            </div>
           </div>
         </section>
 
@@ -394,11 +290,6 @@ export default function Account() {
             <AlertDialogTitle>Deactivate Account?</AlertDialogTitle>
             <AlertDialogDescription>
               Deactivating will pause your Skill Path and coaching access. You can reactivate anytime by signing in.
-              {subscription.subscribed && (
-                <span className="block mt-2 font-medium text-warning">
-                  Note: Your subscription continues until the end of your current billing period.
-                </span>
-              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

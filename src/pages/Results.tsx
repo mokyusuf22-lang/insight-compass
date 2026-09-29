@@ -22,13 +22,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
 interface AssessmentResult {
-  mbtiType?: string;
   discProfile?: { primary: string; secondary?: string; scores?: Record<string, number> };
   topStrengths?: string[];
-  step1Hypothesis?: {
-    mbtiTendency?: string;
-    confidence?: number;
-  };
   blobTree?: { currentBlob: number | null; desiredBlob: number | null };
   valueMap?: { topFive: string[] };
   wheelOfLife?: { scores: Record<string, number>; average: number };
@@ -48,21 +43,6 @@ const DISC_LABELS: Record<string, string> = {
   D: 'Dominance', I: 'Influence', S: 'Steadiness', C: 'Conscientiousness',
 };
 
-// MBTI color mapping by temperament
-const getMBTIColor = (type?: string): { bg: string; gradient: string } => {
-  if (!type) return { bg: 'from-primary/20 via-primary/10 to-background', gradient: 'from-primary/20' };
-  if (['NT'].includes(type.slice(1, 3))) {
-    return { bg: 'from-purple-500/20 via-purple-500/10 to-background', gradient: 'from-purple-500/30' };
-  } else if (['NF'].includes(type.slice(1, 3))) {
-    return { bg: 'from-emerald-500/20 via-emerald-500/10 to-background', gradient: 'from-emerald-500/30' };
-  } else if (type.includes('S') && type.includes('J')) {
-    return { bg: 'from-blue-500/20 via-blue-500/10 to-background', gradient: 'from-blue-500/30' };
-  } else if (type.includes('S') && type.includes('P')) {
-    return { bg: 'from-orange-500/20 via-orange-500/10 to-background', gradient: 'from-orange-500/30' };
-  }
-  return { bg: 'from-primary/20 via-primary/10 to-background', gradient: 'from-primary/20' };
-};
-
 export default function Results() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -73,6 +53,7 @@ export default function Results() {
   const [auraSummary, setAuraSummary] = useState<string | null>(null);
   const [auraThemes, setAuraThemes] = useState<IdentifiedTheme[]>([]);
   const [profileName, setProfileName] = useState('');
+  const [goal, setGoal] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -86,31 +67,26 @@ export default function Results() {
       if (!user) return;
 
       try {
-        const [step1Data, mbtiData, discData, strengthsData, blobData, valueData, wolData, auraData] = await Promise.all([
-          supabase.from('step1_assessments').select('ai_hypothesis').eq('user_id', user.id).eq('is_complete', true).maybeSingle().then(r => r.data),
-          supabase.from('mbti_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data),
+        const [discData, strengthsData, blobData, valueData, wolData, auraData] = await Promise.all([
           supabase.from('disc_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data),
           supabase.from('strengths_assessments').select('result').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data),
           supabase.from('blob_tree_assessments').select('current_blob, desired_blob').eq('user_id', user.id).eq('is_complete', true).order('created_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data),
           supabase.from('value_map_assessments').select('top_five').eq('user_id', user.id).eq('is_complete', true).order('created_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data),
           supabase.from('wheel_of_life_assessments').select('scores').eq('user_id', user.id).eq('is_complete', true).order('updated_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data),
-          supabase.from('aura_sessions').select('aura_summary, identified_themes, name').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data),
+          supabase.from('aura_sessions').select('aura_summary, identified_themes, name, challenge_text').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data),
         ]);
 
-        const mbtiResult = mbtiData?.result as { type?: string; axisResults?: Record<string, { percentage: number }> } | null;
         const discResult = discData?.result as { D?: number; I?: number; S?: number; C?: number; primaryStyle?: string; secondaryStyle?: string | null } | null;
         const strengthsResult = strengthsData?.result as { ranked_strengths?: { name: string; score: number }[] } | null;
-        const step1Hypothesis = step1Data?.ai_hypothesis as { mbtiTendency?: string; confidence?: number } | null;
 
         // Aura data
         setAuraSummary((auraData as any)?.aura_summary || null);
         setAuraThemes(((auraData as any)?.identified_themes as IdentifiedTheme[]) || []);
         const name = (auraData as any)?.name || user.user_metadata?.display_name || '';
         setProfileName(name);
+        setGoal((auraData as any)?.challenge_text || null);
 
         let count = 0;
-        if (step1Data) count++;
-        if (mbtiData) count++;
         if (discData) count++;
         if (strengthsData) count++;
         if (blobData) count++;
@@ -131,14 +107,12 @@ export default function Results() {
         }
 
         setResults({
-          mbtiType: mbtiResult?.type,
           discProfile: discResult ? {
             primary: primaryLetter,
             secondary: secondaryLetter,
             scores: { D: discResult.D || 0, I: discResult.I || 0, S: discResult.S || 0, C: discResult.C || 0 }
           } : undefined,
           topStrengths: strengthsResult?.ranked_strengths?.slice(0, 5).map(s => s.name),
-          step1Hypothesis: step1Hypothesis || undefined,
           blobTree: blobData ? { currentBlob: (blobData as any).current_blob, desiredBlob: (blobData as any).desired_blob } : undefined,
           valueMap: topFiveValues.length > 0 ? { topFive: topFiveValues.map((v: any) => typeof v === 'string' ? v : v.name || v.label || String(v)) } : undefined,
           wheelOfLife: wolResult,
@@ -161,6 +135,7 @@ export default function Results() {
     lines.push(`Date: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`);
     lines.push('');
 
+    if (goal) lines.push(`Goal: ${goal}`);
     if (auraSummary) {
       lines.push('COACHING FOCUS');
       lines.push(auraSummary);
@@ -171,8 +146,6 @@ export default function Results() {
     }
 
     lines.push('ASSESSMENT RESULTS');
-    const type = results.mbtiType || (results.step1Hypothesis?.mbtiTendency ? `${results.step1Hypothesis.mbtiTendency} (preliminary)` : null);
-    if (type) lines.push(`Personality Type: ${type}`);
     if (results.discProfile?.primary) {
       const letter = results.discProfile.primary.charAt(0);
       const label = DISC_LABELS[letter] || results.discProfile.primary;
@@ -208,6 +181,13 @@ export default function Results() {
   }
 
   const hasResults = completedCount > 0;
+  // Next deep-dive to suggest, in dashboard order.
+  const nextDive = !results.discProfile ? '/assessment/disc'
+    : !results.wheelOfLife ? '/assessment/wheel-of-life'
+    : !results.valueMap ? '/assessment/value-map'
+    : !results.blobTree ? '/assessment/blob-tree'
+    : !results.topStrengths?.length ? '/assessment/strengths'
+    : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -217,12 +197,12 @@ export default function Results() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-serif font-semibold text-foreground mb-2">
-            Your Quick Assessment Result
+            Your results
           </h1>
           <p className="text-muted-foreground">
             {hasResults
-              ? `${completedCount} assessment${completedCount > 1 ? 's' : ''} completed`
-              : 'Complete assessments to see your results'
+              ? `${completedCount} of 5 deep-dive assessments completed`
+              : 'Take the deep-dive assessments from your dashboard to see results here'
             }
           </p>
         </div>
@@ -234,6 +214,7 @@ export default function Results() {
               <Sparkles className="w-4 h-4 text-accent" />
               <span className="text-xs font-semibold text-accent uppercase tracking-wide">Coaching Focus</span>
             </div>
+            {goal && <h2 className="text-2xl md:text-3xl font-serif font-semibold text-foreground mb-2">{goal}</h2>}
             <p className="text-foreground leading-relaxed mb-4">{auraSummary}</p>
             {auraThemes.length > 0 && (
               <div className="flex flex-wrap gap-2">
@@ -249,9 +230,9 @@ export default function Results() {
           <div className="chamfer bg-card border border-border p-12 text-center">
             <Brain className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-foreground mb-2">No results yet</h2>
-            <p className="text-muted-foreground mb-6">Start your assessment journey to see insights here.</p>
-            <Button onClick={() => navigate('/assessment/step1')} className="rounded-full">
-              Start Assessment
+            <p className="text-muted-foreground mb-6">Start with the working-style assessment. It takes about ten minutes.</p>
+            <Button onClick={() => navigate('/assessment/disc')} className="rounded-full">
+              Start DISC assessment
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
@@ -259,39 +240,6 @@ export default function Results() {
           <>
             {/* Bento Grid Layout with staggered animations */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
-
-            {/* Hero Card - Personality Type */}
-              {(() => {
-                const mbtiColor = getMBTIColor(results.mbtiType || results.step1Hypothesis?.mbtiTendency);
-                return (
-                  <button
-                    onClick={() => navigate(results.mbtiType ? '/assessment/mbti/results' : '/assessment/mbti')}
-                    className={`md:col-span-2 lg:col-span-2 chamfer bg-gradient-to-br ${mbtiColor.bg} p-8 md:p-10 relative overflow-hidden transition-all duration-700 hover:${mbtiColor.gradient} text-left ${
-                      animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                    }`}
-                    style={{ transitionDelay: '0ms' }}
-                  >
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-
-                    <p className="text-primary text-sm font-medium mb-2">Your Personality Profile</p>
-
-                    <h2 className="text-5xl md:text-7xl font-serif font-bold text-foreground mb-6">
-                      {results.mbtiType || results.step1Hypothesis?.mbtiTendency || '????'}
-                    </h2>
-
-                    <div className="chamfer-sm bg-background/80 backdrop-blur-sm p-4 max-w-md">
-                      <p className="text-foreground text-sm">
-                        {results.mbtiType
-                          ? "Your complete personality type based on 93 questions."
-                          : results.step1Hypothesis?.mbtiTendency
-                            ? "Preliminary type based on quick assessment. Complete full MBTI for accuracy."
-                            : "Complete assessments to discover your type."
-                        }
-                      </p>
-                    </div>
-                  </button>
-                );
-              })()}
 
               {/* Design Persona Card - DISC colored */}
               {(() => {
@@ -364,7 +312,7 @@ export default function Results() {
                   {completedCount}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  of 4 assessments completed
+                  of 5 deep-dives completed
                 </p>
               </div>
 
@@ -431,32 +379,6 @@ export default function Results() {
                 );
               })()}
 
-              {/* Confidence Score */}
-              <div
-                className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
-                  animationReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                }`}
-                style={{ transitionDelay: '300ms' }}
-              >
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                  Profile Confidence
-                </p>
-                <div className="flex items-baseline gap-2 mb-4">
-                  <span className="text-4xl font-serif font-bold text-foreground">
-                    {results.step1Hypothesis?.confidence
-                      ? `${Math.round(results.step1Hypothesis.confidence * 100)}%`
-                      : '—'
-                    }
-                  </span>
-                </div>
-                <div className="h-2 bg-muted chamfer-sm overflow-hidden">
-                  <div
-                    className="h-full bg-primary transition-all duration-500"
-                    style={{ width: `${(results.step1Hypothesis?.confidence || 0) * 100}%` }}
-                  />
-                </div>
-              </div>
-
               {/* Team Dynamics */}
               <div
                 className={`chamfer bg-card border border-border p-6 transition-all duration-700 ${
@@ -492,9 +414,9 @@ export default function Results() {
                   </p>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {completedCount >= 4
-                    ? 'All assessments complete. View your full strategy.'
-                    : `Complete ${4 - completedCount} more assessment${4 - completedCount > 1 ? 's' : ''} for personalized growth plan.`
+                  {completedCount >= 5
+                    ? 'All deep-dives complete. Your coach and Aura have the full picture.'
+                    : `${5 - completedCount} more deep-dive${5 - completedCount > 1 ? 's' : ''} will sharpen your plan.`
                   }
                 </p>
               </div>
@@ -599,35 +521,12 @@ export default function Results() {
             </div>
 
             {/* CTA to continue */}
-            {completedCount < 4 && (
-              <div className="text-center mb-8">
-                <Button
-                  size="lg"
-                  className="rounded-full"
-                  onClick={() => {
-                    if (!results.mbtiType) navigate('/assessment/mbti');
-                    else if (!results.discProfile) navigate('/assessment/disc');
-                    else navigate('/assessment/strengths');
-                  }}
-                >
-                  Continue to Next Assessment
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            )}
-
-            {completedCount >= 4 && (
-              <div className="text-center mb-8">
-                <Button
-                  size="lg"
-                  className="rounded-full"
-                  onClick={() => navigate('/strategy')}
-                >
-                  View Career Strategy
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            )}
+            <div className="text-center mb-8">
+              <Button size="lg" className="rounded-full" onClick={() => navigate(nextDive ?? '/welcome')}>
+                {nextDive ? 'Continue to next assessment' : 'Back to dashboard'}
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
 
             {/* Coach Profile Summary */}
             <div className="chamfer bg-card border border-border p-6">

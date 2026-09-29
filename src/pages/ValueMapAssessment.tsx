@@ -1,9 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuraReturn } from '@/hooks/useAuraReturn';
-import { setLocalProgress } from '@/components/RequireStep';
 import { coreValues, categoryLabels, categoryColors, type CoreValue } from '@/data/valueMapData';
 import { UserHeader } from '@/components/UserHeader';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
@@ -19,9 +17,6 @@ export default function ValueMapAssessment() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { hasAuraSession } = useAuraReturn();
-  const auraRef = useRef(hasAuraSession);
-  useEffect(() => { auraRef.current = hasAuraSession; }, [hasAuraSession]);
 
   const [step, setStep] = useState<Step>('intro');
   const [selectedValues, setSelectedValues] = useState<string[]>([]);
@@ -138,8 +133,7 @@ export default function ValueMapAssessment() {
         .update({ value_map_complete: true } as any)
         .eq('user_id', user.id);
     }
-    setLocalProgress('value_map_complete', true);
-    navigate(auraRef.current ? '/aura/assessments' : `/assessment/value-map/results?id=${assessmentId}`);
+    navigate(`/assessment/value-map/results?id=${assessmentId}`);
   };
 
   if (authLoading || isLoading) return <LoadingSpinner />;

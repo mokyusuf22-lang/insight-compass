@@ -1,28 +1,7 @@
 project_id = "ekcjzwqjwmupolbxktrr"
 
-[functions.create-payment]
-verify_jwt = true
-
-[functions.generate-hypothesis]
-verify_jwt = true
-
-[functions.generate-strategy]
+[functions.aura-plan]
 verify_jwt = true
 
 [functions.generate-coaching]
-verify_jwt = true
-
-[functions.generate-skill-plan]
-verify_jwt = true
-
-[functions.generate-weekly-plan]
-verify_jwt = true
-
-[functions.generate-reality-report]
-verify_jwt = true
-
-[functions.generate-path-options]
-verify_jwt = true
-
-[functions.generate-personal-path]
 verify_jwt = true
