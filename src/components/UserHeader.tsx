@@ -31,7 +31,10 @@ import {
   Settings,
   Menu,
   X,
+  Users,
+  Shield,
 } from 'lucide-react';
+import { useUnreadCount } from '@/hooks/useUnreadCount';
 
 interface UserHeaderProps {
   showHomeLink?: boolean;
@@ -44,8 +47,9 @@ interface AssessmentStats {
 }
 
 export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
-  const { user, signOut, subscription } = useAuth();
+  const { user, signOut, isCoach, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const unread = useUnreadCount(user?.id);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [stats, setStats] = useState<AssessmentStats>({ completed: 0, lastActive: null });
 
@@ -53,23 +57,13 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
     const loadStats = async () => {
       if (!user) return;
 
-      const { count } = await supabase
-        .from('assessments')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('is_complete', true);
-
-      // BUG-H005: The old query only checked step1_assessments, so users
-      // active only in the Aura flow or skill path always showed a stale
-      // "last active" date. Now we check multiple activity sources and use
-      // whichever timestamp is most recent.
-      const [step1Res, auraRes, pathRes] = await Promise.all([
+      // Completed deep-dive assessments come from the profile flags; "last active"
+      // is the most recent of the Aura session and the skill path (BUG-H005).
+      const [flagsRes, auraRes, pathRes] = await Promise.all([
         supabase
-          .from('step1_assessments')
-          .select('updated_at')
+          .from('profiles')
+          .select('disc_completed, wheel_of_life_complete, blob_tree_complete, value_map_complete, strengths_completed')
           .eq('user_id', user.id)
-          .order('updated_at', { ascending: false })
-          .limit(1)
           .maybeSingle(),
         supabase
           .from('aura_sessions')
@@ -87,8 +81,8 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
           .maybeSingle(),
       ]);
 
+      const count = flagsRes.data ? Object.values(flagsRes.data).filter(Boolean).length : 0;
       const timestamps = [
-        step1Res.data?.updated_at,
         auraRes.data?.updated_at,
         (pathRes.data as any)?.updated_at,
       ].filter(Boolean) as string[];
@@ -97,7 +91,7 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
         ? timestamps.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0]
         : null;
 
-      setStats({ completed: count || 0, lastActive });
+      setStats({ completed: count, lastActive });
     };
 
     loadStats();
@@ -121,7 +115,10 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
 
   if (!user) return null;
 
-  const navLinks = [
+  const navLinks: Array<
+    { to: string; icon: typeof LineChart; label: string; badge?: number } |
+    { href: string; icon: typeof LineChart; label: string; badge?: number }
+  > = [
     ...(showHomeLink ? [{ to: '/welcome', icon: LayoutDashboard, label: 'Home' }] : []),
     { to: '/results', icon: LineChart,        label: 'Results' },
     {
@@ -129,8 +126,19 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
       icon: Globe,
       label: 'Community',
     },
-    { to: '/human-coaching', icon: BotMessageSquare, label: 'Coaching' },
+    { to: '/my-coach', icon: BotMessageSquare, label: 'My coach', badge: unread },
+    ...(isCoach ? [{ to: '/coach', icon: Users, label: 'Coach portal' }] : []),
+    ...(isAdmin ? [{ to: '/admin/dashboard', icon: Shield, label: 'Admin' }] : []),
   ];
+
+  const badge = (n?: number) => (n ? (
+    <span
+      className="min-w-5 h-5 px-1.5 rounded-full bg-accent text-white text-[11px] font-semibold flex items-center justify-center"
+      aria-label={`${n} unread`}
+    >
+      {n}
+    </span>
+  ) : null);
 
   return (
     <header className="p-4 md:p-5 flex justify-between items-center border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-40">
@@ -164,6 +172,7 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
               <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground">
                 <link.icon className="w-4 h-4" />
                 {link.label}
+                {badge(link.badge)}
               </Button>
             </Link>
           )
@@ -261,6 +270,7 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
                   >
                     <link.icon className="w-4 h-4 flex-shrink-0" />
                     {link.label}
+                    {badge(link.badge)}
                   </Link>
                 )
               )}

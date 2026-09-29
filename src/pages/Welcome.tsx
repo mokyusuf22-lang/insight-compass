@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { clearAuraReturnFlag } from '@/hooks/useAuraReturn';
 import { Button } from '@/components/ui/button';
+import { DeepDiveAssessments } from '@/components/DeepDiveAssessments';
+import { findMyCoachAssignment, getCoachDisplayName } from '@/lib/coaching';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { UserHeader } from '@/components/UserHeader';
 import { Progress } from '@/components/ui/progress';
 import { Link } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
 import {
   ArrowRight,
   Sparkles,
@@ -19,8 +19,6 @@ import {
   TrendingUp,
   MessageSquare,
   Clock,
-  Lightbulb,
-  ChevronRight,
 } from 'lucide-react';
 
 export default function Welcome() {
@@ -33,9 +31,10 @@ export default function Welcome() {
   const [coachName, setCoachName] = useState<string | null>(null);
   const [hasCoach, setHasCoach] = useState(false);
   const [coachAppPending, setCoachAppPending] = useState(false);
-  const [realityReport, setRealityReport] = useState<{ headline?: string; key_insight?: string; summary?: string } | null>(null);
-  const [pathOptions, setPathOptions] = useState<Array<{ title: string; tagline: string; difficulty: string; time_horizon: string }>>([]);
-  const [selectedPathIndex, setSelectedPathIndex] = useState<number | null>(null);
+  const [themeAreas, setThemeAreas] = useState<string[]>([]);
+  const [obstacles, setObstacles] = useState<string[]>([]);
+  const [wantsCoach, setWantsCoach] = useState(false);
+  const [assessmentsDone, setAssessmentsDone] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!loading && !user) {
@@ -43,15 +42,12 @@ export default function Welcome() {
     }
   }, [user, loading, navigate]);
 
-  // Clear the Aura flow flag now that the user has successfully reached the dashboard.
-  useEffect(() => { clearAuraReturnFlag(); }, []);
-
   useEffect(() => {
     const loadData = async () => {
       if (!user) return;
 
       try {
-        const [pathRes, assignmentRes, appRes, reportRes, pathRecRes] = await Promise.all([
+        const [pathRes, assignmentRes, appRes, auraRes, flagsRes] = await Promise.all([
           supabase
             .from('personal_paths')
             .select('id, title, total_progress')
@@ -60,37 +56,38 @@ export default function Welcome() {
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle(),
-          supabase
-            .from('coach_assignments' as any)
-            .select('coach_id')
-            .eq('user_id', user.id)
-            .eq('status', 'active')
-            .maybeSingle(),
+          findMyCoachAssignment(user.id),
           supabase
             .from('coach_applications' as any)
             .select('status')
             .eq('user_id', user.id)
             .maybeSingle(),
           supabase
-            .from('reality_reports' as any)
-            .select('generated_summary')
+            .from('aura_sessions')
+            .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle(),
           supabase
-            .from('path_recommendations' as any)
-            .select('recommendations, selected_path_index')
+            .from('profiles')
+            .select('disc_completed, wheel_of_life_complete, blob_tree_complete, value_map_complete, strengths_completed')
             .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
             .maybeSingle(),
         ]);
+
+        const aura = auraRes.data as any;
+        if (aura) {
+          const themes = Array.isArray(aura.identified_themes) ? aura.identified_themes : [];
+          setThemeAreas(themes.map((t: any) => String(t.area ?? '')));
+          setObstacles(Array.isArray(aura.flow_data?.obstacles) ? aura.flow_data.obstacles : []);
+          setWantsCoach(aura.flow_data?.support === 'coach');
+        }
+        if (flagsRes.data) setAssessmentsDone(flagsRes.data as Record<string, boolean>);
 
         // BUG-H007: Check for DB errors rather than silently treating them
         // as "no data", which made failed queries look like empty state.
         if (pathRes.error) console.error('Error loading personal path:', pathRes.error);
-        if (assignmentRes.error) console.error('Error loading coach assignment:', assignmentRes.error);
         if (appRes.error) console.error('Error loading coach application:', appRes.error);
 
         if ((appRes.data as any)?.status === 'pending') {
@@ -103,33 +100,13 @@ export default function Welcome() {
           setPathProgress(pathRes.data.total_progress);
         }
 
-        if (assignmentRes.data) {
+        if (assignmentRes) {
           setHasCoach(true);
-          const { data: coachProfile } = await supabase
-            .from('coach_profiles' as any)
-            .select('display_name')
-            .eq('user_id', (assignmentRes.data as any).coach_id)
-            .maybeSingle();
-          // BUG-H001: Guard against empty-string display_name before the
-          // avatar renders coachName[0].toUpperCase() below.
-          const name = (coachProfile as any)?.display_name;
-          setCoachName(name && name.trim() ? name.trim() : 'Your Coach');
+          // getCoachDisplayName never returns an empty string (BUG-H001).
+          const { displayName } = await getCoachDisplayName(assignmentRes.coach_id);
+          setCoachName(displayName);
         }
 
-        if ((reportRes as any).data?.generated_summary) {
-          try {
-            const parsed = JSON.parse((reportRes as any).data.generated_summary);
-            setRealityReport(parsed);
-          } catch { /* ignore parse errors */ }
-        }
-
-        if ((pathRecRes as any).data) {
-          const recs = (pathRecRes as any).data.recommendations as any;
-          const arr: any[] = Array.isArray(recs) ? recs : recs?.paths ?? [];
-          if (arr.length > 0) setPathOptions(arr);
-          const sel = (pathRecRes as any).data.selected_path_index;
-          if (sel !== null && sel !== undefined) setSelectedPathIndex(sel);
-        }
       } catch (err) {
         console.error('Error loading welcome data:', err);
       } finally {
@@ -165,7 +142,7 @@ export default function Welcome() {
               ? "Your skill path is ready. Let's make progress."
               : hasCoach
                 ? 'Your coach is preparing your skill path.'
-                : 'Complete the Be:More flow to unlock your skill path.'
+                : 'Set a goal with Aura to unlock your skill path.'
             }
           </p>
         </div>
@@ -216,99 +193,6 @@ export default function Welcome() {
             </Button>
           </div>
         ) : !profile?.path_committed ? (
-          realityReport ? (
-            <div className="mb-8 space-y-4 animate-fade-up">
-              {/* Reality Report summary */}
-              <div className="chamfer bg-card border border-border p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 chamfer-sm bg-accent/10 flex items-center justify-center flex-shrink-0">
-                    <Lightbulb className="w-4 h-4 text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Your Reality Report</p>
-                    <h2 className="text-lg font-serif font-semibold text-foreground leading-tight">
-                      {realityReport.headline || 'Your Growth Profile'}
-                    </h2>
-                  </div>
-                </div>
-                {realityReport.key_insight && (
-                  <p className="text-sm text-muted-foreground leading-relaxed border-l-2 border-accent/40 pl-3">
-                    {realityReport.key_insight}
-                  </p>
-                )}
-              </div>
-
-              {/* Path options */}
-              {pathOptions.length > 0 ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between px-1">
-                    <p className="text-sm font-medium text-foreground">Choose your direction</p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate('/path-options')}
-                      className="text-xs text-accent gap-1"
-                    >
-                      View full options
-                      <ChevronRight className="w-3 h-3" />
-                    </Button>
-                  </div>
-                  {pathOptions.map((path, i) => (
-                    <button
-                      key={i}
-                      onClick={() => navigate('/path-options')}
-                      className={`w-full text-left chamfer border p-5 transition-all hover:border-accent/40 hover:shadow-sm ${
-                        selectedPathIndex === i
-                          ? 'border-accent/60 bg-accent/5'
-                          : 'border-border bg-card'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold text-foreground text-sm">{path.title}</p>
-                            {selectedPathIndex === i && (
-                              <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{path.tagline}</p>
-                        </div>
-                        <div className="flex-shrink-0 flex flex-col items-end gap-1">
-                          <Badge variant="secondary" className="text-xs capitalize whitespace-nowrap">
-                            {path.difficulty}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">{path.time_horizon}</span>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                  <Button
-                    onClick={() => navigate('/path-options')}
-                    className="w-full rounded-full"
-                  >
-                    {selectedPathIndex !== null ? 'Review & Confirm Selection' : 'Select a Path'}
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="chamfer bg-card border border-border p-6 flex items-start gap-4">
-                  <div className="w-10 h-10 chamfer-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground mb-1">Generate Your Path Options</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Your report is ready. Generate AI-powered path options tailored to your profile.
-                    </p>
-                    <Button onClick={() => navigate('/path-options')} className="rounded-full">
-                      Explore Path Options
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
             <div className="chamfer bg-card border border-border p-8 mb-8">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 chamfer-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -316,19 +200,18 @@ export default function Welcome() {
                 </div>
                 <div>
                   <h2 className="text-xl font-serif font-semibold text-foreground mb-2">
-                    Complete Your Be:More Journey
+                    Set Your Goal with Aura
                   </h2>
                   <p className="text-muted-foreground mb-4">
-                    Finish the assessment flow and commit to a path to unlock your personalized skill path.
+                    Pick a goal, answer three quick check-ins and commit to a path. It takes about five minutes.
                   </p>
-                  <Button onClick={() => navigate('/goals-reality')} className="rounded-full">
-                    Continue Journey
+                  <Button onClick={() => navigate('/aura')} className="rounded-full">
+                    Continue with Aura
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
               </div>
             </div>
-          )
         ) : hasCoach ? (
           <div className="chamfer bg-card border border-border p-8 mb-8 animate-fade-up">
             <div className="flex items-start gap-4">
@@ -392,6 +275,22 @@ export default function Welcome() {
               </Button>
             </div>
           </div>
+        )}
+
+        {/* Chose "with a human coach" in Aura but no coach assigned yet */}
+        {wantsCoach && !hasCoach && (
+          <div className="mb-8 flex items-start gap-3 bg-accent/8 border border-accent/20 rounded-2xl px-5 py-4 animate-fade-up">
+            <MessageSquare className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-foreground">
+              You asked for a human coach. Our coaches are fully booked right now, so you’re in the queue.
+              Your coach will message you here once you’re matched. Your path is live in the meantime.
+            </p>
+          </div>
+        )}
+
+        {/* Deep-dive assessments, taken after the Aura onboarding */}
+        {(hasPersonalPath || profile?.path_committed) && (
+          <DeepDiveAssessments themeAreas={themeAreas} obstacles={obstacles} completed={assessmentsDone} />
         )}
 
         {/* Quick Stats */}

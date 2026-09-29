@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuraReturn } from '@/hooks/useAuraReturn';
 import { discQuestions, answerOptions, DISCQuestion } from '@/data/discQuestions';
 import { calculateDISCResult, DISCResponse } from '@/lib/discScoring';
 import { UserHeader } from '@/components/UserHeader';
@@ -17,9 +16,6 @@ export default function DISCAssessment() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { hasAuraSession } = useAuraReturn();
-  const auraRef = useRef(hasAuraSession);
-  useEffect(() => { auraRef.current = hasAuraSession; }, [hasAuraSession]);
 
   const isMountedRef = useRef(true);
   useEffect(() => () => { isMountedRef.current = false; }, []);
@@ -54,9 +50,11 @@ export default function DISCAssessment() {
 
         if (existing) {
           setAssessmentId(existing.id);
-          setCurrentQuestion(existing.current_question);
+          // Questions are 1-based here but new rows default current_question to 0.
+          setCurrentQuestion(Math.min(Math.max(1, existing.current_question), totalQuestions));
+          // New rows default responses to {} (not []), so guard like StrengthsAssessment does.
           const typedResponses = existing.responses as unknown as DISCResponse[];
-          setResponses(typedResponses || []);
+          setResponses(Array.isArray(typedResponses) ? typedResponses : []);
         } else {
           // BNI-008: Before creating a new record, check whether a completed
           // assessment already exists. Browser-back from results would land
@@ -71,7 +69,7 @@ export default function DISCAssessment() {
             .maybeSingle();
 
           if (completed) {
-            navigate(auraRef.current ? '/aura/assessments' : `/assessment/disc/results?id=${completed.id}`);
+            navigate(`/assessment/disc/results?id=${completed.id}`);
             return;
           }
 
@@ -148,7 +146,7 @@ export default function DISCAssessment() {
         // BNI-004: Guard against ghost navigation if user left the page while
         // the final save was in flight.
         if (!isMountedRef.current) return;
-        navigate(auraRef.current ? '/aura/assessments' : `/assessment/disc/results?id=${assessmentId}`);
+        navigate(`/assessment/disc/results?id=${assessmentId}`);
       }
     } catch (error) {
       if (!isMountedRef.current) return;

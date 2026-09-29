@@ -21,6 +21,7 @@ import {
   Send,
   ArrowRight,
   Sparkles,
+  MapPin,
 } from 'lucide-react';
 import type { PathPhase, PathTask } from '@/types/skillPath';
 
@@ -102,6 +103,8 @@ export default function TaskPage() {
                 status: taskData.status || 'available',
                 successCriteria: taskData.successCriteria || '',
                 instructions: taskData.instructions,
+                where: taskData.where || '',
+                costNote: taskData.costNote || '',
               };
 
               const phaseTasks = (phaseData.tasks || []);
@@ -398,6 +401,18 @@ export default function TaskPage() {
                 {task.description}
               </p>
             </div>
+
+            {/* Location-specific guidance from Aura */}
+            {(task.where || task.costNote) && (
+              <div className="mb-8 rounded-2xl border border-accent/25 bg-accent/5 p-5">
+                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-accent" aria-hidden />
+                  Where to do this
+                </h3>
+                {task.where && <p className="leading-relaxed">{task.where}</p>}
+                {task.costNote && <p className="text-sm text-muted-foreground mt-2">Typical cost: {task.costNote}</p>}
+              </div>
+            )}
 
             {/* Instructions */}
             {task.instructions && task.instructions.length > 0 && (

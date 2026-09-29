@@ -126,6 +126,14 @@ export default function AdminDashboard() {
 
   const sections = [
     {
+      to: '/admin/coaching',
+      icon: Users,
+      label: 'Coach Matching',
+      description: 'Clients waiting for a coach, coach capacity, assign and reassign',
+      badge: null,
+      badgeLabel: null,
+    },
+    {
       to: '/admin/coach-applications',
       icon: UserCheck,
       label: 'Coach Applications',

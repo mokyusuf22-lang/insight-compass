@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
+import { AuraBrief, AuraBriefData } from '@/components/coaching/AuraBrief';
+import { coreValues } from '@/data/valueMapData';
+import { findCoachClientAssignment } from '@/lib/coaching';
 import {
   ArrowLeft,
   MessageSquare,
@@ -41,6 +44,7 @@ interface AuraSession {
   identified_themes: any;
   aura_summary: string | null;
   current_step: number | null;
+  flow_data: AuraBriefData | null;
 }
 
 interface AssessmentResult {
@@ -74,15 +78,17 @@ const DISC_COLORS: Record<string, string> = {
 
 function DISCResultsDisplay({ results }: { results: any }) {
   if (!results) return <p className="text-sm text-muted-foreground">No results data.</p>;
-  const scores: Record<string, number> = results.scores || results.rawScores || {};
-  const primaryType: string = results.primaryType || results.type || '';
+  const scores: Record<string, number> = results.scores
+    || Object.fromEntries(['D', 'I', 'S', 'C'].filter((k) => typeof results[k] === 'number').map((k) => [k, results[k]]));
+  const primaryType: string = results.primaryStyle || results.primaryType || results.type || '';
   return (
     <div className="space-y-3">
       {primaryType && (
         <p className="text-sm font-medium text-foreground mb-4">
-          Primary type: <span className="text-accent font-semibold">{primaryType} — {DISC_LABELS[primaryType] || primaryType}</span>
+          Primary style: <span className="text-accent font-semibold">{DISC_LABELS[primaryType] ? `${primaryType} — ${DISC_LABELS[primaryType]}` : primaryType}</span>
         </p>
       )}
+      {results.summary && <p className="text-sm text-muted-foreground leading-relaxed">{results.summary}</p>}
       {Object.entries(scores).map(([key, val]) => (
         <div key={key}>
           <div className="flex items-center justify-between text-xs mb-1">
@@ -150,7 +156,8 @@ function BlobTreeDisplay({ results }: { results: any }) {
 
 function ValueMapDisplay({ results }: { results: any }) {
   if (!results) return <p className="text-sm text-muted-foreground">No results data.</p>;
-  const values: string[] = results.topValues || results.selectedValues || results.values || [];
+  const raw: string[] = results.topValues || results.selectedValues || results.values || [];
+  const values = raw.map((id) => coreValues.find((v) => v.id === id)?.name ?? id);
   if (values.length === 0) return <p className="text-sm text-muted-foreground">Results stored but no values list available.</p>;
   return (
     <div className="flex flex-wrap gap-2">
@@ -165,7 +172,7 @@ function ValueMapDisplay({ results }: { results: any }) {
 
 function StrengthsDisplay({ results }: { results: any }) {
   if (!results) return <p className="text-sm text-muted-foreground">No results data.</p>;
-  const strengths: any[] = results.topStrengths || results.strengths || [];
+  const strengths: any[] = (results.ranked_strengths || results.topStrengths || results.strengths || []).slice(0, 5);
   if (strengths.length === 0) return <p className="text-sm text-muted-foreground">Results stored but no strengths data available.</p>;
   return (
     <div className="space-y-3">
@@ -197,13 +204,14 @@ const ASSESSMENT_META: Record<string, { label: string; icon: React.ReactNode; co
 
 export default function CoachUserProfile() {
   const { userId } = useParams<{ userId: string }>();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [auraSession, setAuraSession] = useState<AuraSession | null>(null);
   const [assessments, setAssessments] = useState<AssessmentResult[]>([]);
   const [personalPath, setPersonalPath] = useState<PersonalPath | null>(null);
+  const [report, setReport] = useState<{ summary?: string; working?: string; key_insight?: string; drives?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -215,25 +223,14 @@ export default function CoachUserProfile() {
     const load = async () => {
       if (!user || !userId) return;
 
-      const [assignmentRes, rolesRes] = await Promise.all([
-        supabase
-          .from('coach_assignments' as any)
-          .select('id')
-          .eq('coach_id', user.id)
-          .eq('user_id', userId)
-          .maybeSingle(),
-        supabase.rpc('get_my_roles'),
-      ]);
-
-      const isAdmin = rolesRes.data?.some((r) => r.role === 'admin') ?? false;
-
-      if (!assignmentRes.data && !isAdmin) {
+      const assignment = await findCoachClientAssignment(user.id, userId);
+      if (!assignment && !isAdmin) {
         setNotFound(true);
         setLoading(false);
         return;
       }
 
-      const [profileRes, auraRes, discRes, valuesRes, wheelRes, blobRes, strengthsRes, pathRes] = await Promise.all([
+      const [profileRes, auraRes, discRes, valuesRes, wheelRes, blobRes, strengthsRes, pathRes, reportRes] = await Promise.all([
         supabase
           .from('profiles')
           .select('*')
@@ -241,7 +238,7 @@ export default function CoachUserProfile() {
           .maybeSingle(),
         supabase
           .from('aura_sessions')
-          .select('name, challenge_text, identified_themes, aura_summary, current_step')
+          .select('name, challenge_text, identified_themes, aura_summary, current_step, flow_data')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(1)
@@ -259,8 +256,18 @@ export default function CoachUserProfile() {
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from('reality_reports')
+          .select('generated_summary')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
 
+      try {
+        setReport(reportRes.data?.generated_summary ? JSON.parse(reportRes.data.generated_summary) : null);
+      } catch { setReport(null); }
       setProfile(profileRes.data as UserProfile | null);
       setAuraSession(auraRes.data as AuraSession | null);
 
@@ -277,7 +284,7 @@ export default function CoachUserProfile() {
     };
 
     if (!authLoading && user) load();
-  }, [user, authLoading, userId]);
+  }, [user, authLoading, userId, isAdmin]);
 
   if (authLoading || loading) {
     return (
@@ -367,6 +374,22 @@ export default function CoachUserProfile() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-5 mt-0">
+            {auraSession?.flow_data && <AuraBrief data={auraSession.flow_data} goal={auraSession.challenge_text} />}
+
+            {report?.summary && (
+              <div className="bg-card border border-border/70 rounded-2xl p-6 shadow-card">
+                <h2 className="font-semibold mb-3 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-accent" />
+                  Reality report
+                </h2>
+                <p className="text-sm text-foreground leading-relaxed mb-4">{report.summary}</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                  {report.working && <div className="bg-secondary/40 rounded-xl p-3"><p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Working</p>{report.working}</div>}
+                  {report.key_insight && <div className="bg-secondary/40 rounded-xl p-3"><p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Watch-outs</p>{report.key_insight}</div>}
+                  {report.drives && <div className="bg-secondary/40 rounded-xl p-3"><p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Drives</p>{report.drives}</div>}
+                </div>
+              </div>
+            )}
 
             {auraSession && (
               <div className="bg-card border border-border/70 rounded-2xl p-6 shadow-card">
@@ -377,7 +400,7 @@ export default function CoachUserProfile() {
 
                 {auraSession.challenge_text && (
                   <div className="mb-4">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Primary Challenge</p>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Goal</p>
                     <p className="text-sm text-foreground leading-relaxed bg-secondary/40 rounded-xl p-3">
                       {auraSession.challenge_text}
                     </p>

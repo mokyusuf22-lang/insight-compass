@@ -22,7 +22,7 @@ export default function Index() {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    navigate('/aura/welcome');
+    navigate('/aura');
   };
 
   return (

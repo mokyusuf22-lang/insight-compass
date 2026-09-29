@@ -37,7 +37,7 @@ export default function Auth() {
   const [confirmedEmail, setConfirmedEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const { signIn, signUp, signInWithGoogle, resetPassword, user, loading, isCoach, isAdmin } = useAuth();
+  const { signIn, signUp, signInWithGoogle, resetPassword, user, loading, isCoach, isAdmin, rolesLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -47,7 +47,7 @@ export default function Auth() {
   const getRedirectTarget = useCallback(() => {
     if (returnTo) return returnTo;
     if (isCoach || isAdmin) return '/coach';
-    return '/aura/welcome';
+    return '/aura';
   }, [returnTo, isCoach, isAdmin]);
 
   const handleConfirmationComplete = useCallback(() => {
@@ -55,10 +55,11 @@ export default function Auth() {
   }, [navigate, getRedirectTarget]);
 
   useEffect(() => {
-    if (!loading && user && !showConfirmation) {
+    // Wait for roles so coaches aren't sent to /aura before isCoach is known.
+    if (!loading && !rolesLoading && user && !showConfirmation) {
       navigate(getRedirectTarget());
     }
-  }, [user, loading, navigate, showConfirmation, getRedirectTarget]);
+  }, [user, loading, rolesLoading, navigate, showConfirmation, getRedirectTarget]);
 
   const validateForm = () => {
     try {
@@ -86,7 +87,8 @@ export default function Auth() {
     setIsGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth('google', {
-        redirect_uri: window.location.origin,
+        // Land back here so the role-aware redirect above runs.
+        redirect_uri: `${window.location.origin}/auth`,
       });
 
       if (result.redirected) {
@@ -141,8 +143,11 @@ export default function Auth() {
         const { error } = await signIn(email, password);
         if (error) {
           if (error.message.toLowerCase().includes('email not confirmed')) {
-            setConfirmedEmail(email);
-            setMode('verify-email');
+            // 'verify-email' was never a real mode; tell the user what to do instead.
+            toast({
+              title: 'Confirm your email first',
+              description: `We sent a confirmation link to ${email}. Open it, then sign in.`,
+            });
           } else if (error.message.includes('Invalid login credentials')) {
             toast({
               title: 'Login failed',

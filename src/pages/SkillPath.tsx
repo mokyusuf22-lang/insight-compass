@@ -243,14 +243,14 @@ export default function SkillPath() {
                   Congratulations! You've completed your path!
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  You've finished all phases and tasks. Consider exploring new growth opportunities.
+                  You've finished all phases and tasks. Ready for the next one?
                 </p>
-                <Button 
-                  onClick={() => navigate('/success-growth')}
+                <Button
+                  onClick={() => navigate('/aura?new=1')}
                   className="gradient-primary text-primary-foreground rounded-full"
                 >
                   <Trophy className="w-4 h-4 mr-2" />
-                  View Growth Plan
+                  Set a new goal
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>

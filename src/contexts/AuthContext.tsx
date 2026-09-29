@@ -1,58 +1,34 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { SubscriptionTier } from '@/lib/subscriptionTiers';
 
 interface Profile {
   id: string;
   user_id: string;
   email: string | null;
-  has_paid: boolean;
   created_at: string;
   updated_at: string;
   path_committed?: boolean;
   personal_path_generated?: boolean;
 }
 
-interface SubscriptionState {
-  subscribed: boolean;
-  tier: SubscriptionTier;
-  tierName: string;
-  productId: string | null;
-  subscriptionEnd: string | null;
-  cancelAtPeriodEnd: boolean;
-  loading: boolean;
-  isAdmin: boolean;
-}
-
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
-  subscription: SubscriptionState;
   loading: boolean;
   isAdmin: boolean;
   isCoach: boolean;
+  /** True until the signed-in user's roles have loaded; wait on it before role-based redirects. */
+  rolesLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  refreshSubscription: () => Promise<void>;
   updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
 }
-
-const defaultSubscription: SubscriptionState = {
-  subscribed: false,
-  tier: 'free',
-  tierName: 'Free',
-  productId: null,
-  subscriptionEnd: null,
-  cancelAtPeriodEnd: false,
-  loading: true,
-  isAdmin: false,
-};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -60,10 +36,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [subscription, setSubscription] = useState<SubscriptionState>(defaultSubscription);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isCoach, setIsCoach] = useState(false);
+  const [rolesLoading, setRolesLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -77,89 +53,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const checkUserRoles = async (userId: string) => {
+  // Uses the get_my_roles RPC (security definer) rather than reading user_roles
+  // directly, so it can't trip over user_roles RLS policies.
+  const checkUserRoles = async () => {
     try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-
-      if (!error && data && data.length > 0) {
-        const roles = data.map((r: any) => r.role as string);
-        const userIsAdmin = roles.includes('admin');
-        const userIsCoach = roles.includes('coach') || userIsAdmin;
-        setIsAdmin(userIsAdmin);
-        setIsCoach(userIsCoach);
-        return { isAdmin: userIsAdmin, isCoach: userIsCoach };
-      }
-      setIsAdmin(false);
-      setIsCoach(false);
-      return { isAdmin: false, isCoach: false };
+      const { data, error } = await supabase.rpc('get_my_roles');
+      if (error) throw error;
+      const roles = (data ?? []).map((r) => r.role as string);
+      const userIsAdmin = roles.includes('admin');
+      const userIsCoach = roles.includes('coach') || userIsAdmin;
+      setIsAdmin(userIsAdmin);
+      setIsCoach(userIsCoach);
+      return { isAdmin: userIsAdmin, isCoach: userIsCoach };
     } catch (err) {
       console.error('Error checking user roles:', err);
       setIsAdmin(false);
       setIsCoach(false);
       return { isAdmin: false, isCoach: false };
+    } finally {
+      setRolesLoading(false);
     }
   };
-
-  const fetchSubscription = useCallback(async () => {
-    if (!session?.access_token || !user) {
-      setSubscription({ ...defaultSubscription, loading: false });
-      return;
-    }
-
-    // Check if user is admin first
-    const { isAdmin: userIsAdmin } = await checkUserRoles(user.id);
-    
-    // If admin, grant full access without checking Stripe
-    if (userIsAdmin) {
-      setSubscription({
-        subscribed: true,
-        tier: 'premium',
-        tierName: 'Admin (Full Access)',
-        productId: null,
-        subscriptionEnd: null,
-        cancelAtPeriodEnd: false,
-        loading: false,
-        isAdmin: true,
-      });
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.functions.invoke('check-subscription');
-      
-      if (error) {
-        console.error('Error checking subscription:', error);
-        setSubscription({ ...defaultSubscription, loading: false });
-        return;
-      }
-
-      setSubscription({
-        subscribed: data.subscribed || false,
-        tier: (data.tier as SubscriptionTier) || 'free',
-        tierName: data.tier_name || 'Free',
-        productId: data.product_id || null,
-        subscriptionEnd: data.subscription_end || null,
-        cancelAtPeriodEnd: data.cancel_at_period_end || false,
-        loading: false,
-        isAdmin: false,
-      });
-    } catch (err) {
-      console.error('Error fetching subscription:', err);
-      setSubscription({ ...defaultSubscription, loading: false });
-    }
-  }, [session?.access_token, user]);
 
   const refreshProfile = async () => {
     if (user) {
       await fetchProfile(user.id);
     }
-  };
-
-  const refreshSubscription = async () => {
-    await fetchSubscription();
   };
 
   useEffect(() => {
@@ -170,15 +89,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          if (event === 'SIGNED_IN') setRolesLoading(true);
           setTimeout(() => {
             fetchProfile(session.user.id);
-            checkUserRoles(session.user.id);
+            checkUserRoles();
           }, 0);
         } else {
           setProfile(null);
           setIsAdmin(false);
           setIsCoach(false);
-          setSubscription({ ...defaultSubscription, loading: false });
+          setRolesLoading(false);
         }
       }
     );
@@ -190,31 +110,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (session?.user) {
         fetchProfile(session.user.id);
-        checkUserRoles(session.user.id);
+        checkUserRoles();
+      } else {
+        setRolesLoading(false);
       }
       setLoading(false);
     });
 
     return () => authSubscription.unsubscribe();
   }, []);
-
-  // Fetch subscription when session changes
-  useEffect(() => {
-    if (session) {
-      fetchSubscription();
-    }
-  }, [session, fetchSubscription]);
-
-  // Auto-refresh subscription every minute
-  useEffect(() => {
-    if (!session) return;
-
-    const interval = setInterval(() => {
-      fetchSubscription();
-    }, 60000); // 1 minute
-
-    return () => clearInterval(interval);
-  }, [session, fetchSubscription]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -230,7 +134,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/aura/welcome`,
+        // Back to /auth so its role-aware redirect sends coaches to /coach.
+        redirectTo: `${window.location.origin}/auth`,
       },
     });
     return { error: error as Error | null };
@@ -253,7 +158,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setIsAdmin(false);
     setIsCoach(false);
-    setSubscription({ ...defaultSubscription, loading: false });
   };
 
   return (
@@ -261,17 +165,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       session,
       profile,
-      subscription,
       loading,
       isAdmin,
       isCoach,
+      rolesLoading,
       signIn,
       signUp,
       signInWithGoogle,
       resetPassword,
       signOut,
       refreshProfile,
-      refreshSubscription,
       updatePassword
     }}>
       {children}

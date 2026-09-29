@@ -10,7 +10,32 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -81,9 +106,11 @@ export type Database = {
           created_at: string
           current_step: number | null
           email: string | null
+          flow_data: Json | null
           id: string
           identified_themes: Json | null
           name: string | null
+          phone: string | null
           preferred_contact: string | null
           updated_at: string
           user_confirmed: boolean | null
@@ -95,9 +122,11 @@ export type Database = {
           created_at?: string
           current_step?: number | null
           email?: string | null
+          flow_data?: Json | null
           id?: string
           identified_themes?: Json | null
           name?: string | null
+          phone?: string | null
           preferred_contact?: string | null
           updated_at?: string
           user_confirmed?: boolean | null
@@ -109,9 +138,11 @@ export type Database = {
           created_at?: string
           current_step?: number | null
           email?: string | null
+          flow_data?: Json | null
           id?: string
           identified_themes?: Json | null
           name?: string | null
+          phone?: string | null
           preferred_contact?: string | null
           updated_at?: string
           user_confirmed?: boolean | null
@@ -300,6 +331,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          max_clients: number
           specialties: Json | null
           updated_at: string
           user_id: string
@@ -311,6 +343,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          max_clients?: number
           specialties?: Json | null
           updated_at?: string
           user_id: string
@@ -322,8 +355,36 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          max_clients?: number
           specialties?: Json | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      coach_requests: {
+        Row: {
+          assigned_at: string | null
+          created_at: string
+          goal: string | null
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          created_at?: string
+          goal?: string | null
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          created_at?: string
+          goal?: string | null
+          id?: string
+          status?: string
           user_id?: string
         }
         Relationships: []
@@ -358,6 +419,36 @@ export type Database = {
           result?: Json | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          keywords: string
+          label: string
+          popularity: number
+          search: unknown
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id: string
+          keywords?: string
+          label: string
+          popularity?: number
+          search?: unknown
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          keywords?: string
+          label?: string
+          popularity?: number
+          search?: unknown
         }
         Relationships: []
       }
@@ -833,11 +924,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_assign_coach: {
+        Args: { p_coach: string; p_user: string }
+        Returns: string
+      }
+      admin_coaching_overview: { Args: never; Returns: Json }
+      admin_end_assignment: { Args: { p_assignment: string }; Returns: boolean }
+      admin_set_max_clients: {
+        Args: { p_coach: string; p_max: number }
+        Returns: boolean
+      }
       assign_demo_to_all_coaches: {
         Args: { p_demo_user_id: string }
         Returns: number
       }
       bootstrap_admin: { Args: { _user_id: string }; Returns: boolean }
+      coach_loads: {
+        Args: never
+        Returns: {
+          active_clients: number
+          coach_id: string
+          display_name: string
+          max_clients: number
+        }[]
+      }
       get_my_roles: {
         Args: never
         Returns: {
@@ -856,6 +966,16 @@ export type Database = {
       is_assignment_participant: {
         Args: { _assignment_id: string; _user_id: string }
         Returns: boolean
+      }
+      is_coach_of: { Args: { _client: string }; Returns: boolean }
+      request_coach: { Args: { p_goal?: string }; Returns: Json }
+      search_goals: {
+        Args: { lim?: number; q?: string }
+        Returns: {
+          category: string
+          id: string
+          label: string
+        }[]
       }
       upsert_coach_profile: {
         Args: { p_bio: string; p_display_name: string; target_user_id: string }
@@ -879,12 +999,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -908,11 +1028,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -933,11 +1053,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -958,11 +1078,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -975,11 +1095,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -989,6 +1109,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["admin", "user", "coach"],
