@@ -21,6 +21,9 @@ interface AuthContextType {
   isCoach: boolean;
   /** True until the signed-in user's roles have loaded; wait on it before role-based redirects. */
   rolesLoading: boolean;
+  /** Signed in with a guest (anonymous) account: no email attached. */
+  isGuest: boolean;
+  signInAsGuest: () => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
@@ -125,6 +128,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error as Error | null };
   };
 
+  // Needs "Anonymous sign-ins" enabled in Supabase → Authentication → Sign In / Providers.
+  const signInAsGuest = async () => {
+    const { error } = await supabase.auth.signInAnonymously();
+    return { error: error as Error | null };
+  };
+
   const signUp = async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({ email, password });
     return { error: error as Error | null };
@@ -169,6 +178,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin,
       isCoach,
       rolesLoading,
+      isGuest: !!user?.is_anonymous,
+      signInAsGuest,
       signIn,
       signUp,
       signInWithGoogle,

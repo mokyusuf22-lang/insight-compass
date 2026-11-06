@@ -26,6 +26,16 @@ export const AURA_COMMITTED_STEP = 8;
 const MIN_ANALYSE_MS = 1400;
 const draftKey = (userId: string) => `aura_flow_v2:${userId}`;
 
+/** Log the edge function's { error, stage } body, not just "non-2xx status". */
+async function logAiError(label: string, err: unknown) {
+  let detail: unknown = err;
+  const ctx = (err as { context?: Response })?.context;
+  if (ctx && typeof ctx.json === 'function') {
+    try { detail = await ctx.clone().json(); } catch { /* not JSON */ }
+  }
+  console.error(`${label}:`, detail);
+}
+
 export default function AuraFlow() {
   const { user, loading, refreshProfile } = useAuth();
   const navigate = useNavigate();
@@ -44,6 +54,8 @@ export default function AuraFlow() {
   stateRef.current = s;
   // Key of the plan request currently in flight (drops stale responses and duplicate calls).
   const planInFlight = useRef<string | null>(null);
+  // Lets the themes-failed toast retry without a stale closure.
+  const analyseRef = useRef<(() => void) | null>(null);
   // Set false if the flow_data column hasn't been migrated yet; we then save the core columns only.
   const flowDataSupported = useRef(true);
 
@@ -147,8 +159,11 @@ export default function AuraFlow() {
       if (error) throw error;
       aiThemes = (data?.themes ?? []).map((t: { area: string; confidence: number; why: string }): Theme => [t.area, t.confidence, t.why]);
     } catch (err) {
-      // Fall back to generic themes rather than blocking the flow.
-      console.error('aura-plan themes failed, using defaults:', err);
+      // Fall back to generic themes rather than blocking the flow, but tell the user and offer a retry.
+      await logAiError('aura-plan themes failed, using defaults', err);
+      toast.error('Aura couldn’t read your goal just now, so these are general themes.', {
+        action: { label: 'Try again', onClick: () => analyseRef.current?.() },
+      });
     }
 
     const wait = MIN_ANALYSE_MS - (Date.now() - started);
@@ -156,6 +171,8 @@ export default function AuraFlow() {
     setS((prev) => ({ ...prev, aiThemes: aiThemes?.length ? aiThemes : null, themesKey: aiThemes?.length ? key : null }));
     setAnalysing(false);
   }, []);
+
+  analyseRef.current = analyse;
 
   // ── Location-aware plan (requested on the way to Insights) ─
   const ensurePlan = useCallback(async (force = false) => {
@@ -178,7 +195,7 @@ export default function AuraFlow() {
       setS((prev) => ({ ...prev, plan: { key, phases: data.phases as PlanPhase[] } }));
       setPlanStatus('idle');
     } catch (err) {
-      console.error('aura-plan plan failed, using a general plan:', err);
+      await logAiError('aura-plan plan failed, using a general plan', err);
       if (planInFlight.current === key) setPlanStatus('error');
     } finally {
       if (planInFlight.current === key) planInFlight.current = null;
@@ -316,7 +333,7 @@ export default function AuraFlow() {
   const showRail = s.step >= 1 && s.step <= 7;
 
   return (
-    <div className="relative flex min-h-screen bg-bm-cream font-manrope text-bm-ink">
+    <div className="relative flex min-h-screen bg-bm-cream font-sans text-bm-ink">
       {showRail && (
         // Outer div stretches with the page so the sand background runs full height; the rail itself stays sticky.
         <div className="hidden w-[260px] shrink-0 border-r border-bm-line bg-bm-sand lg:block">
@@ -345,7 +362,7 @@ export default function AuraFlow() {
                     className={cn(
                       'flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border-[1.5px] text-xs font-bold',
                       cur ? 'border-bm-ink bg-bm-ink text-bm-paper'
-                        : done ? 'border-bm-green bg-bm-green text-bm-paper'
+                        : done ? 'border-bm-orange bg-bm-orange text-bm-paper'
                         : 'border-bm-stone bg-transparent text-bm-muted',
                     )}
                   >
@@ -359,7 +376,7 @@ export default function AuraFlow() {
           {m.has && (
             <div className="mt-auto flex flex-col gap-1.5 rounded-[14px] border border-bm-line bg-bm-paper p-4">
               <div className="text-xs font-bold uppercase tracking-[0.08em] text-bm-muted">Your goal</div>
-              <div className="font-display text-[22px] leading-[1.15]">{m.title}</div>
+              <div className="font-serif text-[22px] leading-[1.15]">{m.title}</div>
             </div>
           )}
         </aside>
@@ -380,7 +397,7 @@ export default function AuraFlow() {
           <div className="flex flex-col gap-3 border-b border-bm-line bg-bm-sand px-5 pb-4 pt-4 lg:hidden">
             <Wordmark className="text-2xl" />
             <div className="h-1.5 overflow-hidden rounded-full bg-bm-track" aria-hidden>
-              <div className="h-1.5 rounded-full bg-bm-green transition-all" style={{ width: `${(s.step / 7) * 100}%` }} />
+              <div className="h-1.5 rounded-full bg-bm-orange transition-all" style={{ width: `${(s.step / 7) * 100}%` }} />
             </div>
           </div>
         )}

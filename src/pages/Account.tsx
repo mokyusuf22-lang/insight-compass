@@ -160,7 +160,7 @@ export default function Account() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <Input id="email" value={user?.email || ''} disabled className="max-w-md bg-muted" />
+              <Input id="email" value={user?.email || 'Guest account (no email)'} disabled className="max-w-md bg-muted" />
               <p className="text-xs text-muted-foreground">Email cannot be changed. Contact support if needed.</p>
             </div>
             <Button onClick={handleSaveProfile} disabled={isSavingProfile} className="mt-2">

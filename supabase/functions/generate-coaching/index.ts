@@ -1,141 +1,84 @@
+// Task-page "Ask Aura": answers a question about one task in the user's plan.
+//
+// POST { question, goal?, task_context: { title, description?, phase? } }
+//   → { answer }                                         (Claude Haiku 5.5)
+// The user's location is read from their latest path commitment, so answers can be local.
+// The prompt is in ../_shared/prompts.ts (readable copy: docs/AI_PROMPTS.md).
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders, errorResponse, generate, getUser, json } from "../_shared/ai.ts";
+import { TASK_COACH_SYSTEM } from "../_shared/prompts.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+
+const ANSWER_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["answer"],
+  properties: { answer: { type: "string" } },
 };
 
-const SYSTEM_PROMPT = `You are a personalized career coach.
-
-Your role is to translate a career strategy into focused, actionable guidance.
-
-You must:
-- Match communication style to MBTI and DISC
-- Be direct, structured, and concise
-- Avoid encouragement fluff
-- Focus on execution, not reflection
-- Treat the user as capable and self-directed
-
-Every output must be actionable.
-
-Adapt your tone based on personality:
-- INTJ: Direct, systems-focused, efficiency-oriented
-- ENFP: Exploratory but structured, connection-focused
-- ISTJ: Practical and methodical, detail-oriented
-- ENTJ: Strategic and commanding, results-focused
-- INFJ: Insightful and purposeful, meaning-oriented
-- Other types: Adapt based on the dominant functions`;
+async function userLocation(req: Request, userId: string): Promise<string> {
+  try {
+    const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
+      global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
+    });
+    const { data } = await supabase
+      .from("path_commitments")
+      .select("chosen_path")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const loc = (data?.chosen_path as { location?: { city?: string; country?: string } } | null)?.location;
+    return [loc?.city, loc?.country].filter(Boolean).join(", ");
+  } catch {
+    return "";
+  }
+}
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+
+  const user = await getUser(req);
+  if (!user) return json({ error: "Unauthorized", stage: "auth" }, 401);
+
+  let raw: { question?: unknown; goal?: unknown; task_context?: { title?: unknown; description?: unknown; phase?: unknown } };
+  try {
+    raw = await req.json();
+  } catch {
+    return json({ error: "Invalid JSON body", stage: "input" }, 400);
   }
+  const question = str(raw?.question, 1000);
+  const taskTitle = str(raw?.task_context?.title, 200);
+  if (question.length < 2) return json({ error: "question is required", stage: "input" }, 400);
+  if (!taskTitle) return json({ error: "task_context.title is required", stage: "input" }, 400);
+
+  const location = await userLocation(req, user.id);
+  const prompt = [
+    raw?.goal && `Goal: ${str(raw.goal, 200)}`,
+    location && `Location: ${location}`,
+    raw?.task_context?.phase && `Current phase: ${str(raw.task_context.phase, 100)}`,
+    `Task: ${taskTitle}`,
+    raw?.task_context?.description && `Task details: ${str(raw.task_context.description, 800)}`,
+    "",
+    `Their question: ${question}`,
+  ].filter((l) => l !== false && l !== undefined && l !== null).join("\n");
 
   try {
-    const { mbti_result, disc_result, strengths_result, career_strategy, current_phase } = await req.json();
-    
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) {
-      throw new Error("ANTHROPIC_API_KEY is not configured");
-    }
-
-    // Determine current phase from roadmap
-    const phaseInfo = career_strategy?.roadmap?.[current_phase || 0] || career_strategy?.roadmap?.[0];
-
-    const userPrompt = `User Profile:
-- MBTI: ${mbti_result?.type || 'Not provided'}
-- DISC Primary Style: ${disc_result?.primary_style || 'Not provided'}
-- Top Strengths: ${strengths_result?.ranked_strengths?.map((s: any) => s.name).join(', ') || 'Not provided'}
-
-Current Strategy:
-- Current phase: ${phaseInfo?.phase || 'Positioning & Direction'}
-- Phase focus: ${phaseInfo?.focus || 'Define target role and position strengths'}
-- Success likelihood: ${career_strategy?.success_likelihood || 'Not calculated'}
-- Key execution rules: ${career_strategy?.execution_rules?.join('; ') || 'None specified'}
-
-Task:
-Generate today's coaching focus.
-
-Requirements:
-1. One clear focus for today or this week
-2. Why this focus fits the user's personality
-3. One concrete action to take
-4. One measurable outcome
-
-Respond with ONLY valid JSON in exactly this format:
-{
-  "focus": "Clear focus statement",
-  "rationale": "Why this fits the user's personality",
-  "action": "One specific action to take",
-  "success_metric": "How to measure completion"
-}`;
-
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
+    const out = await generate(
+      { model: "claude-haiku-5-5", system: TASK_COACH_SYSTEM, user: prompt, schema: ANSWER_SCHEMA,
+        maxTokens: 2000, effort: "low", timeoutMs: 40_000 },
+      (o) => {
+        const answer = str((o as { answer?: unknown })?.answer, 3000);
+        if (!answer) throw new Error("Empty answer");
+        return { answer };
       },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 4096,
-        system: SYSTEM_PROMPT,
-        messages: [
-          { role: "user", content: userPrompt },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limits exceeded, please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required, please add credits to your workspace." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "AI gateway error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const data = await response.json();
-    const content = data.content?.[0]?.text;
-
-    if (!content) {
-      throw new Error("No content in AI response");
-    }
-
-    // Parse the JSON response
-    let coaching;
-    try {
-      const jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      coaching = JSON.parse(jsonStr);
-    } catch (parseError) {
-      console.error("Failed to parse AI response:", content);
-      throw new Error("Failed to parse coaching response");
-    }
-
-    return new Response(JSON.stringify({ coaching }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    console.error("generate-coaching error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      "generate-coaching",
     );
+    return json(out);
+  } catch (error) {
+    return errorResponse(error);
   }
 });

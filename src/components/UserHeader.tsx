@@ -184,7 +184,7 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
             <Button variant="outline" size="sm" className="gap-2 ml-1">
               <CircleUser className="w-4 h-4" />
               <span className="hidden lg:inline max-w-[140px] truncate text-xs">
-                {user.email}
+                {user.email || 'Guest'}
               </span>
               <ChevronDown className="w-3 h-3" />
             </Button>
@@ -196,7 +196,7 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
                   <CheckCircle className="w-4 h-4 text-accent" />
                   <span className="text-sm font-medium">Progress saved</span>
                 </div>
-                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                <p className="text-xs text-muted-foreground truncate">{user.email || 'Guest'}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -243,7 +243,7 @@ export function UserHeader({ showHomeLink = true, children }: UserHeaderProps) {
 
             {/* User info */}
             <div className="mb-6 p-3 bg-secondary rounded-lg">
-              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              <p className="text-xs text-muted-foreground truncate">{user.email || 'Guest'}</p>
             </div>
 
             {/* Nav items */}

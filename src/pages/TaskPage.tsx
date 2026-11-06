@@ -48,6 +48,7 @@ export default function TaskPage() {
   const [task, setTask] = useState<PathTask | null>(null);
   const [phase, setPhase] = useState<PathPhase | null>(null);
   const [pathId, setPathId] = useState<string>('');
+  const [goalTitle, setGoalTitle] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isCompleting, setIsCompleting] = useState(false);
   const [question, setQuestion] = useState('');
@@ -86,6 +87,7 @@ export default function TaskPage() {
         }
 
         setPathId(personalPath.id);
+        setGoalTitle((personalPath as { title?: string }).title ?? '');
         const phases = personalPath.phases as any[];
 
         let foundTask: PathTask | null = null;
@@ -232,20 +234,18 @@ export default function TaskPage() {
       const { data, error } = await supabase.functions.invoke('generate-coaching', {
         body: {
           question,
+          goal: goalTitle,
           task_context: {
             title: task.title,
             description: task.description,
             phase: phase.title,
           },
-          user_profile: {},
         },
       });
 
       if (error) throw error;
       
-      if (data?.coaching?.focus) {
-        setAiResponse(data.coaching.focus);
-      } else if (data?.answer) {
+      if (data?.answer) {
         setAiResponse(data.answer);
       } else {
         setAiResponse("I can help you with this task. Try breaking it down into smaller steps.");

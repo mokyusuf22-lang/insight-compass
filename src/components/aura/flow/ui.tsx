@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('text-[13px] font-bold uppercase tracking-[0.08em] text-bm-green', className)}>
+    <div className={cn('text-[13px] font-bold uppercase tracking-[0.08em] text-bm-orange', className)}>
       {children}
     </div>
   );
@@ -13,7 +13,7 @@ export function StepHeader({ eyebrow, title, sub }: { eyebrow: ReactNode; title:
   return (
     <header className="flex flex-col gap-2.5">
       <Eyebrow>{eyebrow}</Eyebrow>
-      <h1 className="m-0 font-display text-4xl font-normal leading-[1.02] md:text-5xl">{title}</h1>
+      <h1 className="m-0 font-serif text-4xl font-normal leading-[1.02] md:text-5xl">{title}</h1>
       {sub && <p className="m-0 text-[17px] leading-normal text-bm-muted">{sub}</p>}
     </header>
   );
@@ -79,7 +79,7 @@ export function SelectCard({ on, className, children, ...rest }: ButtonHTMLAttri
       aria-pressed={on}
       className={cn(
         'flex flex-col items-start rounded-2xl border text-left transition-colors',
-        on ? 'border-bm-green bg-bm-green text-bm-paper' : 'border-bm-line bg-bm-paper text-bm-ink hover:border-bm-stone',
+        on ? 'border-bm-orange bg-bm-orange text-bm-paper' : 'border-bm-line bg-bm-paper text-bm-ink hover:border-bm-stone',
         className,
       )}
       {...rest}
@@ -91,8 +91,8 @@ export function SelectCard({ on, className, children, ...rest }: ButtonHTMLAttri
 
 export function Wordmark({ className }: { className?: string }) {
   return (
-    <div className={cn('font-display text-[32px] leading-none', className)}>
-      Be<span className="text-bm-green">:</span>More
+    <div className={cn('font-serif text-[32px] leading-none', className)}>
+      Be<span className="text-bm-orange">:</span>More
     </div>
   );
 }

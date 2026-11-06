@@ -56,7 +56,7 @@ export function GoalStep({ s, m, update, go, resetDown }: GoalStepProps) {
           autoComplete="off"
           maxLength={120}
           placeholder="Try “climb a mountain”, “pass my driving test”, “get promoted”…"
-          className="h-16 w-full rounded-full border-[1.5px] border-bm-ink bg-bm-paper pl-[58px] pr-16 text-lg text-bm-ink outline-none focus:outline-2 focus:outline-offset-1 focus:outline-bm-green"
+          className="h-16 w-full rounded-full border-[1.5px] border-bm-ink bg-bm-paper pl-[58px] pr-16 text-lg text-bm-ink outline-none focus:outline-2 focus:outline-offset-1 focus:outline-bm-orange"
         />
         {hasQuery && (
           <button
@@ -77,15 +77,15 @@ export function GoalStep({ s, m, update, go, resetDown }: GoalStepProps) {
           aria-pressed={customOn}
           className={cn(
             'flex items-center gap-4 rounded-[14px] border-[1.5px] px-5 py-3.5 text-left',
-            customOn ? 'border-solid border-bm-green bg-bm-green text-bm-paper' : 'border-dashed border-bm-stone bg-bm-paper text-bm-ink',
+            customOn ? 'border-solid border-bm-orange bg-bm-orange text-bm-paper' : 'border-dashed border-bm-stone bg-bm-paper text-bm-ink',
           )}
         >
           <Pencil className="h-[22px] w-[22px] shrink-0" aria-hidden />
           <span className="flex min-w-0 flex-col gap-0.5">
-            <span className={cn('text-[11px] font-bold uppercase tracking-[0.08em]', customOn ? 'text-bm-green-pale' : 'text-bm-muted')}>
+            <span className={cn('text-[11px] font-bold uppercase tracking-[0.08em]', customOn ? 'text-bm-orange-pale' : 'text-bm-muted')}>
               Use my own words
             </span>
-            <span className="truncate font-display text-2xl leading-tight">“{q}”</span>
+            <span className="truncate font-serif text-2xl leading-tight">“{q}”</span>
           </span>
         </button>
       )}
@@ -107,12 +107,12 @@ export function GoalStep({ s, m, update, go, resetDown }: GoalStepProps) {
                   aria-pressed={on}
                   className={cn(
                     'flex min-h-[84px] animate-fade-in flex-col items-start justify-between gap-2.5 rounded-[14px] border px-4 py-[13px] text-left',
-                    on ? 'border-bm-green bg-bm-green text-bm-paper' : 'border-bm-line bg-bm-paper text-bm-ink hover:border-bm-stone',
+                    on ? 'border-bm-orange bg-bm-orange text-bm-paper' : 'border-bm-line bg-bm-paper text-bm-ink hover:border-bm-stone',
                     loading && 'opacity-60',
                   )}
                 >
-                  <span className={cn('text-[11px] font-bold uppercase tracking-[0.08em]', on ? 'text-bm-green-pale' : 'text-bm-muted')}>{g.category}</span>
-                  <span className="font-display text-[22px] leading-[1.05]">{g.label}</span>
+                  <span className={cn('text-[11px] font-bold uppercase tracking-[0.08em]', on ? 'text-bm-orange-pale' : 'text-bm-muted')}>{g.category}</span>
+                  <span className="font-serif text-[22px] leading-[1.05]">{g.label}</span>
                 </button>
               );
             })}
@@ -122,7 +122,7 @@ export function GoalStep({ s, m, update, go, resetDown }: GoalStepProps) {
       <footer className="mt-auto flex items-center justify-between gap-4 border-t border-bm-line pt-5">
         <div className="flex min-w-0 flex-col gap-0.5">
           <span className="text-xs font-bold uppercase tracking-[0.08em] text-bm-muted">Your goal</span>
-          <span className="truncate font-display text-[22px]">{m.has ? m.title : 'Search, pick a goal, or type your own'}</span>
+          <span className="truncate font-serif text-[22px]">{m.has ? m.title : 'Search, pick a goal, or type your own'}</span>
         </div>
         <PrimaryButton onClick={() => go(2)} disabled={!m.has}>Continue</PrimaryButton>
       </footer>

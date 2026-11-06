@@ -25,8 +25,8 @@ export function PathsStep({ s, m, update, go, planStatus, onRetryPlan }: PathsSt
       />
 
       {loading && (
-        <div role="status" className="flex items-center gap-3 rounded-[14px] bg-bm-green-soft px-5 py-3.5 text-[15px] text-bm-green">
-          <span className="h-3 w-3 animate-pulse rounded-full bg-bm-green" aria-hidden />
+        <div role="status" className="flex items-center gap-3 rounded-[14px] bg-bm-orange-soft px-5 py-3.5 text-[15px] text-bm-orange">
+          <span className="h-3 w-3 animate-pulse rounded-full bg-bm-orange" aria-hidden />
           Aura is writing your step-by-step plan{where ? ` for ${where}` : ''}…
         </div>
       )}
@@ -47,7 +47,7 @@ export function PathsStep({ s, m, update, go, planStatus, onRetryPlan }: PathsSt
               key={p.name}
               className={cn(
                 'relative flex flex-col gap-3 rounded-[18px] border border-bm-line p-[22px]',
-                on ? 'bg-bm-green-soft shadow-[0_0_0_2px_#1F5A43]' : 'bg-bm-paper',
+                on ? 'bg-bm-orange-soft shadow-[0_0_0_2px_#D9591C]' : 'bg-bm-paper',
               )}
             >
               <div className="flex h-6">
@@ -55,7 +55,7 @@ export function PathsStep({ s, m, update, go, planStatus, onRetryPlan }: PathsSt
                   <span className="rounded-full bg-bm-gold px-2.5 py-1 text-xs font-bold text-bm-gold-ink">Aura recommends</span>
                 )}
               </div>
-              <div className="font-display text-[32px] leading-none">{p.name}</div>
+              <div className="font-serif text-[32px] leading-none">{p.name}</div>
               <div className="flex flex-wrap items-baseline gap-2.5">
                 <span className="text-[22px] font-bold">{p.weeks} weeks</span>
                 <span className="text-sm text-bm-muted">{p.cadence}</span>
@@ -79,7 +79,7 @@ export function PathsStep({ s, m, update, go, planStatus, onRetryPlan }: PathsSt
                   // The coach-guided path implies a coach; switching away from it drops back to self-directed.
                   support: i === 2 ? 'coach' : s.support === 'coach' ? 'self' : s.support,
                 })}
-                className={cn('mt-1 h-[46px] rounded-full text-[15px] font-semibold text-bm-paper', on ? 'bg-bm-green' : 'bg-bm-ink')}
+                className={cn('mt-1 h-[46px] rounded-full text-[15px] font-semibold text-bm-paper', on ? 'bg-bm-orange' : 'bg-bm-ink')}
               >
                 {on ? 'Selected' : 'Choose this path'}
               </button>
@@ -99,7 +99,7 @@ export function PathsStep({ s, m, update, go, planStatus, onRetryPlan }: PathsSt
                 <span className="text-[15px] font-semibold">{t.title}</span>
                 {t.description && <span className="text-sm leading-normal text-bm-muted">{t.description}</span>}
                 {t.where && (
-                  <span className="flex gap-1.5 text-sm leading-normal text-bm-green">
+                  <span className="flex gap-1.5 text-sm leading-normal text-bm-orange">
                     <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                     <span>{t.where}</span>
                   </span>
