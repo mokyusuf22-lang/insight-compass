@@ -21,6 +21,9 @@ const emailSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
 });
 
+// Google sign-in is switched off until the Google OAuth app is verified. Flip to true to show it again.
+const GOOGLE_ENABLED = false;
+
 type AuthMode = 'login' | 'signup' | 'forgot' | 'reset-sent';
 
 export default function Auth() {
@@ -32,12 +35,13 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isGuestLoading, setIsGuestLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedEmail, setConfirmedEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const { signIn, signUp, signInWithGoogle, resetPassword, user, loading, isCoach, isAdmin, rolesLoading } = useAuth();
+  const { signIn, signUp, signInAsGuest, resetPassword, user, loading, isCoach, isAdmin, rolesLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -81,6 +85,22 @@ export default function Auth() {
       }
       return false;
     }
+  };
+
+  const handleGuest = async () => {
+    setIsGuestLoading(true);
+    const { error } = await signInAsGuest();
+    setIsGuestLoading(false);
+    if (error) {
+      toast({
+        title: 'Couldn’t start a guest session',
+        description: /anonymous sign-ins are disabled/i.test(error.message)
+          ? 'Guest access isn’t switched on yet. Please sign in with your email for now.'
+          : error.message,
+        variant: 'destructive',
+      });
+    }
+    // On success the redirect effect above sends the user on.
   };
 
   const handleGoogleSignIn = async () => {
@@ -287,8 +307,32 @@ export default function Auth() {
               )}
             </div>
 
-            {/* Google Sign In - only show for login/signup */}
             {mode !== 'forgot' && (
+              <>
+                <Button
+                  type="button"
+                  className="w-full h-12 rounded-full mb-2 bg-accent text-accent-foreground hover:bg-accent/90 text-base font-medium"
+                  onClick={handleGuest}
+                  disabled={isGuestLoading || isLoading}
+                >
+                  {isGuestLoading ? <LoadingSpinner size="sm" /> : 'Continue as guest'}
+                </Button>
+                <p className="text-xs text-muted-foreground text-center mb-6">
+                  No email needed. Your progress is saved on this device.
+                </p>
+                <div className="relative mb-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">or use your email</span>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Google Sign In - only show for login/signup */}
+            {GOOGLE_ENABLED && mode !== 'forgot' && (
               <>
                 <Button
                   type="button"
@@ -324,7 +368,7 @@ export default function Auth() {
                   )}
                 </Button>
 
-                {/* Divider */}
+                {/* Divider (Google) */}
                 <div className="relative mb-6">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-border" />

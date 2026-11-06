@@ -37,7 +37,7 @@ export function CheckInsStep({ s, update, go }: StepProps) {
               className={cn(
                 'flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold disabled:cursor-not-allowed',
                 cur ? 'border-bm-ink bg-bm-ink text-bm-paper'
-                  : complete ? 'border-bm-green-soft bg-bm-green-soft text-bm-green'
+                  : complete ? 'border-bm-orange-soft bg-bm-orange-soft text-bm-orange'
                   : unlocked[i] ? 'border-bm-line bg-transparent text-bm-ink' : 'border-bm-line bg-transparent text-bm-muted',
               )}
             >
@@ -53,7 +53,7 @@ export function CheckInsStep({ s, update, go }: StepProps) {
             <div key={d} className="flex flex-col gap-2.5 rounded-[14px] border border-bm-line bg-bm-paper px-[18px] py-4">
               <div className="flex justify-between text-base font-semibold">
                 <span>{d}</span>
-                <span className="text-bm-green">{s.wheel[d] ? `${s.wheel[d]} / 5` : 'Not rated'}</span>
+                <span className="text-bm-orange">{s.wheel[d] ? `${s.wheel[d]} / 5` : 'Not rated'}</span>
               </div>
               <div className="flex gap-2.5" role="radiogroup" aria-label={d}>
                 {[1, 2, 3, 4, 5].map((n) => {
@@ -68,7 +68,7 @@ export function CheckInsStep({ s, update, go }: StepProps) {
                       onClick={() => update({ wheel: { ...s.wheel, [d]: n } })}
                       className={cn(
                         'h-11 w-11 rounded-full border-[1.5px] text-sm font-bold',
-                        on ? 'border-bm-green bg-bm-green text-bm-paper' : 'border-bm-line bg-bm-paper text-bm-ink',
+                        on ? 'border-bm-orange bg-bm-orange text-bm-paper' : 'border-bm-line bg-bm-paper text-bm-ink',
                       )}
                     >
                       {n}
@@ -87,8 +87,8 @@ export function CheckInsStep({ s, update, go }: StepProps) {
             const on = s.style === c.k;
             return (
               <SelectCard key={c.k} on={on} onClick={() => update({ style: c.k })} className="gap-2 px-6 py-[22px]">
-                <span className="font-display text-[32px] leading-none">{c.name}</span>
-                <span className={cn('text-base leading-normal', on ? 'text-bm-green-mist' : 'text-bm-muted')}>“{c.desc}”</span>
+                <span className="font-serif text-[32px] leading-none">{c.name}</span>
+                <span className={cn('text-base leading-normal', on ? 'text-bm-orange-mist' : 'text-bm-muted')}>“{c.desc}”</span>
               </SelectCard>
             );
           })}
@@ -113,8 +113,8 @@ export function CheckInsStep({ s, update, go }: StepProps) {
                     else if (!full) update({ values: [...s.values, v] });
                   }}
                   className={cn(
-                    'h-16 rounded-[14px] border font-display text-2xl',
-                    on ? 'border-bm-green bg-bm-green text-bm-paper'
+                    'h-16 rounded-[14px] border font-serif text-2xl',
+                    on ? 'border-bm-orange bg-bm-orange text-bm-paper'
                       : full ? 'cursor-not-allowed border-bm-line bg-bm-paper text-bm-muted'
                       : 'border-bm-line bg-bm-paper text-bm-ink hover:border-bm-stone',
                   )}

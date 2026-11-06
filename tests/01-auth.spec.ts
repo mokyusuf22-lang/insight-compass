@@ -30,6 +30,19 @@ test.describe('AUTH-P: Positive', () => {
     expect(page.url()).not.toContain('/auth');
   });
 
+  test('AUTH-P-03b — "Continue as guest" signs in without an email and opens Aura', async ({ page }) => {
+    // Needs "Allow anonymous sign-ins" enabled on the Supabase project.
+    await page.goto('/auth');
+    await page.click('button:has-text("Continue as guest")');
+    await page.waitForURL(/\/aura/, { timeout: 15_000 });
+    expect(page.url()).toContain('/aura');
+  });
+
+  test('AUTH-P-03c — Google sign-in is hidden while disabled', async ({ page }) => {
+    await page.goto('/auth');
+    await expect(page.locator('button:has-text("Continue with Google")')).toHaveCount(0);
+  });
+
   test('AUTH-P-04 — "Get started" switches to the sign-up form', async ({ page }) => {
     await page.goto('/auth');
     await page.click('button:has-text("Get started")');

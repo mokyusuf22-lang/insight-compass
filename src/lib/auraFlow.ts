@@ -1,3 +1,5 @@
+import { PRIMARY_COACH } from './coachProfile';
+
 // Aura onboarding flow — state shape, answer options, report composer and path builder.
 // Goals come from the `goals` catalogue (search_goals RPC). Themes and the step-by-step,
 // location-aware plan come from the `aura-plan` edge function; if that is unavailable,
@@ -259,7 +261,7 @@ export function buildPaths(s: AuraFlowState, m: ResolvedGoal): PathOption[] {
   return [
     mk('Steady climb', W, '3 sessions a week', 'A pace that fits around life. Best when your weeks are unpredictable.'),
     mk('Focused sprint', Math.max(3, Math.round(W * 0.7)), '5 sessions a week', 'Faster and more intense. Best when you have protected time and want momentum.'),
-    mk('Coach-guided', W, '3 sessions + weekly coach call', 'The steady plan, reviewed every week by a human coach who adjusts it with you.'),
+    mk('Coach-guided', W, '3 sessions + weekly coach call', `The steady plan, reviewed every week by ${PRIMARY_COACH.name}, your coach, who adjusts it with you.`),
   ];
 }
 

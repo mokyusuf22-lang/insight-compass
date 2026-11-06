@@ -28,18 +28,18 @@ export function InsightsStep({ s, m, update, go }: StepProps) {
       <StepHeader eyebrow="Step 5 of 7 · Insights" title="Your reality report" />
 
       <div
-        className="min-h-[150px] rounded-2xl border border-bm-line bg-bm-paper px-7 py-6 font-display text-[22px] leading-[1.32] md:text-[25px]"
+        className="min-h-[150px] rounded-2xl border border-bm-line bg-bm-paper px-7 py-6 font-serif text-[22px] leading-[1.32] md:text-[25px]"
         aria-live="polite"
       >
         {typed}
-        {!done && <span className="animate-pulse text-bm-green" aria-hidden>▍</span>}
+        {!done && <span className="animate-pulse text-bm-orange" aria-hidden>▍</span>}
       </div>
 
       {done && (
         <div className="flex animate-fade-up flex-col gap-5">
           <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3">
-            <div className="flex flex-col gap-2 rounded-[14px] bg-bm-green-soft px-5 py-[18px]">
-              <div className="text-xs font-bold uppercase tracking-[0.08em] text-bm-green">What’s working</div>
+            <div className="flex flex-col gap-2 rounded-[14px] bg-bm-orange-soft px-5 py-[18px]">
+              <div className="text-xs font-bold uppercase tracking-[0.08em] text-bm-orange">What’s working</div>
               <div className="text-[15px] leading-normal">{report.working}</div>
             </div>
             <div className="flex flex-col gap-2 rounded-[14px] bg-bm-amber px-5 py-[18px]">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, MessageSquare, User } from 'lucide-react';
+import { ArrowLeft, Clock, Info } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,8 @@ import { UserHeader } from '@/components/UserHeader';
 import { MessageThread } from '@/components/coaching/MessageThread';
 import { useCoachThread } from '@/hooks/useCoachThread';
 import { findMyCoachAssignment, getCoachDisplayName } from '@/lib/coaching';
+import { CoachCard } from '@/components/coaching/CoachCard';
+import { PRIMARY_COACH } from '@/lib/coachProfile';
 
 interface CoachInfo {
   assignmentId: string;
@@ -23,6 +26,9 @@ export default function MyCoach() {
   const [coach, setCoach] = useState<CoachInfo | null>(null);
   const [queued, setQueued] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth', { state: { from: '/my-coach' } });
@@ -34,7 +40,12 @@ export default function MyCoach() {
       const assignment = await findMyCoachAssignment(user.id);
       if (assignment) {
         const { displayName, bio } = await getCoachDisplayName(assignment.coach_id);
-        setCoach({ assignmentId: assignment.id, displayName, bio });
+        // The DB may not have the coach's name/bio filled in yet; fall back to the profile copy.
+        setCoach({
+          assignmentId: assignment.id,
+          displayName: displayName === 'Your coach' ? PRIMARY_COACH.name : displayName,
+          bio,
+        });
       } else {
         const { data: request } = await supabase
           .from('coach_requests')
@@ -46,7 +57,21 @@ export default function MyCoach() {
       setChecking(false);
     };
     if (!authLoading && user) load();
-  }, [user, authLoading]);
+  }, [user, authLoading, reloadKey]);
+
+  // Everyone has the same coach: one click assigns them (or queues them if no coach account exists yet).
+  const connect = async () => {
+    setConnecting(true);
+    const { error } = await supabase.rpc('request_coach', {});
+    setConnecting(false);
+    if (error) {
+      console.error('request_coach failed:', error);
+      toast.error('We couldn’t connect you just now. Please try again.');
+      return;
+    }
+    setChecking(true);
+    setReloadKey((k) => k + 1);
+  };
 
   const { messages, loading, sending, send } = useCoachThread(coach?.assignmentId ?? null, user?.id);
 
@@ -62,26 +87,35 @@ export default function MyCoach() {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <UserHeader showHomeLink />
-        <main className="flex-1 flex flex-col items-center justify-center px-4 text-center">
-          <div className="w-16 h-16 chamfer bg-secondary flex items-center justify-center mb-5">
-            {queued ? <Clock className="w-8 h-8 text-muted-foreground" /> : <User className="w-8 h-8 text-muted-foreground" />}
+        <main className="flex-1 flex flex-col items-center justify-center px-4 py-10">
+          <div className="w-full max-w-md flex flex-col gap-5">
+            <h1 className="text-2xl font-serif font-semibold text-center">Meet your coach</h1>
+            <CoachCard />
+            {queued ? (
+              <p className="flex items-start gap-2 text-sm text-muted-foreground leading-relaxed">
+                <Clock className="w-4 h-4 mt-0.5 shrink-0" aria-hidden />
+                You’re on {PRIMARY_COACH.name}’s list. They’ll message you here as soon as you’re connected.
+              </p>
+            ) : (
+              <Button onClick={connect} disabled={connecting} className="h-12 rounded-full bg-accent text-accent-foreground hover:bg-accent/90">
+                {connecting ? 'Connecting…' : `Message ${PRIMARY_COACH.name}`}
+              </Button>
+            )}
+            <Button onClick={() => navigate('/welcome')} variant="ghost" className="rounded-full">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to dashboard
+            </Button>
           </div>
-          <h1 className="text-2xl font-serif font-semibold mb-3">
-            {queued ? 'We’re finding your coach' : 'No coach yet'}
-          </h1>
-          <p className="text-muted-foreground max-w-sm mb-6 leading-relaxed">
-            {queued
-              ? 'All our coaches are fully booked right now. You’re in the queue and your coach will message you here as soon as you’re matched.'
-              : 'Choose “With a human coach” when you commit to a path with Aura and we’ll match you with one.'}
-          </p>
-          <Button onClick={() => navigate(queued ? '/welcome' : '/aura')} variant="outline" className="rounded-full">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {queued ? 'Back to dashboard' : 'Go to Aura'}
-          </Button>
         </main>
       </div>
     );
   }
+
+  // The profile copy describes the primary coach. If the assigned coach account has a different
+  // name, show that account's own name and bio instead of someone else's description.
+  const cardCoach = coach.displayName === PRIMARY_COACH.name
+    ? { ...PRIMARY_COACH, bio: coach.bio || PRIMARY_COACH.bio }
+    : { ...PRIMARY_COACH, name: coach.displayName, title: 'Your coach', bio: coach.bio || `${coach.displayName} is your Be:More coach.` };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -102,8 +136,22 @@ export default function MyCoach() {
           <p className="font-semibold text-sm truncate">{coach.displayName}</p>
           <p className="text-xs text-muted-foreground">Your coach</p>
         </div>
-        <MessageSquare className="w-4 h-4 text-muted-foreground flex-shrink-0" aria-hidden />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowAbout((v) => !v)}
+          aria-expanded={showAbout}
+          className="rounded-full gap-1.5 text-muted-foreground"
+        >
+          <Info className="w-4 h-4" aria-hidden />
+          About
+        </Button>
       </header>
+      {showAbout && (
+        <div className="border-b border-border bg-background px-4 py-4">
+          <CoachCard coach={cardCoach} className="max-w-3xl mx-auto" />
+        </div>
+      )}
 
       <MessageThread
         messages={messages}
@@ -112,12 +160,7 @@ export default function MyCoach() {
         onSend={send}
         placeholder={`Message ${coach.displayName}… (Enter to send)`}
         emptyHint="Say hello to start your coaching conversation."
-        intro={coach.bio && (
-          <div className="bg-secondary/40 border border-border/60 rounded-2xl p-4">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">About your coach</p>
-            <p className="text-sm text-foreground leading-relaxed">{coach.bio}</p>
-          </div>
-        )}
+        intro={<CoachCard compact coach={cardCoach} />}
       />
     </div>
   );

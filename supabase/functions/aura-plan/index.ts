@@ -1,24 +1,16 @@
 // Aura onboarding AI: goal themes and a location-aware step-by-step plan.
 //
 // POST { mode: "themes" | "plan", goal, about, location, checkins? }
-//   themes → { summary, themes: [{ area, confidence, why }] }            (Claude Haiku 4.5)
+//   themes → { summary, themes: [{ area, confidence, why }] }            (Claude Haiku 5.5)
 //   plan   → { phases: [{ title, tasks: [{ title, description, where,
-//               instructions[], successCriteria, estimatedMinutes, costNote }] }] }  (Claude Sonnet 5)
+//               instructions[], successCriteria, estimatedMinutes, costNote }] }] }  (Claude Sonnet 5.5)
+// Either call falls back to Claude Haiku 5.5 once if the first model fails.
+// Errors come back as { error, stage } so the client can log why.
 //
-// Location guidance rules: name the country's real official bodies and processes,
-// explain how to find local providers, never name private businesses.
+// The prompts are in ../_shared/prompts.ts (readable copy: docs/AI_PROMPTS.md).
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import Anthropic from "npm:@anthropic-ai/sdk";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
-
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+import { corsHeaders, errorResponse, generate, getUser, json } from "../_shared/ai.ts";
+import { PLAN_SYSTEM, THEMES_SYSTEM } from "../_shared/prompts.ts";
 
 // ── Input validation ─────────────────────────────────────────
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
@@ -70,32 +62,7 @@ function parseInput(raw: any): Input | string {
   };
 }
 
-// ── Prompts and output schemas ───────────────────────────────
-const LOCATION_RULES = `Location rules:
-- Tailor every practical step to the user's country (and town, if given): use that country's real official bodies, websites, processes, documents and typical costs.
-- Never name, recommend or invent private businesses, schools, gyms, instructors or apps. Instead say how to find good local options (for example: "search the official instructor register on the government website and filter by your postcode; compare two or three").
-- If you are not sure how something works in that country, say what to check and where, rather than guessing.
-- Give costs only as rough ranges in the local currency, and only when you are reasonably confident; otherwise leave costNote empty.`;
-
-const THEMES_SYSTEM = `You are Aura, a warm, practical coach. From a user's goal and circumstances, identify the three themes that matter most for reaching this goal.
-Write a one-sentence summary that reflects back what they told you, in second person.
-Each theme: a short name (2-4 words), a confidence 50-95 that it is critical for this person, and one plain sentence on why.
-Take their country into account when it changes what matters (e.g. a licensing process, an exam system, climate).
-${LOCATION_RULES}`;
-
-const PLAN_SYSTEM = `You are Aura, a practical coach who writes step-by-step plans people can act on this week.
-Write exactly 3 phases for the goal, in order, each with 3 or 4 tasks. Each task is one concrete action that can be ticked off.
-For every task:
-- title: short imperative (max 10 words).
-- description: one or two sentences on what to do and why it matters for this person.
-- where: where or how to do it in their location, following the location rules. Empty string if location is irrelevant (e.g. "walk 10k").
-- instructions: 2-4 short steps.
-- successCriteria: how they know it is done.
-- estimatedMinutes: realistic time for the task.
-- costNote: rough local-currency cost range, or empty string.
-Pace the plan to their weekly hours and timeline. Front-load early wins if confidence or motivation is an obstacle. Match their working style.
-${LOCATION_RULES}`;
-
+// ── Output schemas ───────────────────────────────────────────
 const THEMES_SCHEMA = {
   type: "object",
   additionalProperties: false,
@@ -204,56 +171,33 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  // Only signed-in users may spend API credits.
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
-  const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "");
-  const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
-  if (authError || !user) return json({ error: "Unauthorized" }, 401);
+  // Only signed-in users (guests included) may spend API credits.
+  if (!(await getUser(req))) return json({ error: "Unauthorized", stage: "auth" }, 401);
 
   let input: Input | string;
   try {
     input = parseInput(await req.json());
   } catch {
-    return json({ error: "Invalid JSON body" }, 400);
+    return json({ error: "Invalid JSON body", stage: "input" }, 400);
   }
-  if (typeof input === "string") return json({ error: input }, 400);
+  if (typeof input === "string") return json({ error: input, stage: "input" }, 400);
 
-  if (!Deno.env.get("ANTHROPIC_API_KEY")) return json({ error: "ANTHROPIC_API_KEY is not configured" }, 500);
-  const client = new Anthropic(); // reads ANTHROPIC_API_KEY
-
-  const isPlan = input.mode === "plan";
   try {
-    const response = await client.messages.create({
-      model: isPlan ? "claude-sonnet-5" : "claude-haiku-4-5",
-      max_tokens: isPlan ? 16000 : 2000,
-      system: isPlan ? PLAN_SYSTEM : THEMES_SYSTEM,
-      messages: [{ role: "user", content: userPrompt(input) }],
-      output_config: {
-        format: { type: "json_schema", schema: isPlan ? PLAN_SCHEMA : THEMES_SCHEMA },
-        // Effort isn't supported on Haiku 4.5; medium keeps plan latency reasonable.
-        ...(isPlan ? { effort: "medium" } : {}),
-      },
-    } as Anthropic.MessageCreateParamsNonStreaming);
-
-    if (response.stop_reason === "refusal") return json({ error: "The request was declined." }, 422);
-    if (response.stop_reason === "max_tokens") throw new Error("Model output was cut off");
-
-    const text = response.content.find((b): b is Anthropic.TextBlock => b.type === "text")?.text;
-    if (!text) throw new Error("No text in model response");
-    const parsed = JSON.parse(text);
-    return json(isPlan ? cleanPlan(parsed) : cleanThemes(parsed));
+    if (input.mode === "plan") {
+      const out = await generate(
+        { model: "claude-sonnet-5-5", system: PLAN_SYSTEM, user: userPrompt(input), schema: PLAN_SCHEMA,
+          maxTokens: 16000, effort: "low", timeoutMs: 85_000 },
+        cleanPlan, "aura-plan:plan",
+      );
+      return json(out);
+    }
+    const out = await generate(
+      { model: "claude-haiku-5-5", system: THEMES_SYSTEM, user: userPrompt(input), schema: THEMES_SCHEMA,
+        maxTokens: 4000, effort: "low", timeoutMs: 40_000 },
+      cleanThemes, "aura-plan:themes",
+    );
+    return json(out);
   } catch (error) {
-    if (error instanceof Anthropic.RateLimitError) return json({ error: "Rate limit exceeded. Please try again shortly." }, 429);
-    if (error instanceof Anthropic.AuthenticationError) {
-      console.error("aura-plan: invalid ANTHROPIC_API_KEY");
-      return json({ error: "AI service is misconfigured." }, 500);
-    }
-    if (error instanceof Anthropic.APIError) {
-      console.error("aura-plan API error:", error.status, error.message);
-      return json({ error: "AI service error. Please try again." }, 502);
-    }
-    console.error("aura-plan error:", error);
-    return json({ error: error instanceof Error ? error.message : "Unknown error" }, 500);
+    return errorResponse(error);
   }
 });

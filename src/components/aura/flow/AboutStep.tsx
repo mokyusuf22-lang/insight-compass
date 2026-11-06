@@ -7,7 +7,7 @@ import { Chip, PrimaryButton, StepFooter, StepHeader } from './ui';
 type NumKey = 'level' | 'timeline' | 'hours';
 
 const fieldClass =
-  'h-[46px] rounded-full border border-bm-line bg-bm-paper px-5 text-[15px] text-bm-ink outline-none focus:outline-2 focus:outline-offset-1 focus:outline-bm-green';
+  'h-[46px] rounded-full border border-bm-line bg-bm-paper px-5 text-[15px] text-bm-ink outline-none focus:outline-2 focus:outline-offset-1 focus:outline-bm-orange';
 
 export function AboutStep({ s, update, go }: StepProps) {
   const countries = useMemo(getCountries, []);

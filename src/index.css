@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Be:More Design System — Warm energy: coral accents, jade highlights, editorial type
+/* Be:More Design System — Warm energy: orange accents throughout, editorial type
    Fonts loaded via <link> in index.html (non-render-blocking)
 */
 
@@ -40,7 +40,7 @@
     --radius: 0.5rem;
 
     /* Extended palette */
-    --pop: 168 65% 42%;            /* jade teal — secondary accent */
+    --pop: 28 85% 46%;             /* deep amber-orange — secondary accent */
     --pop-foreground: 0 0% 100%;
     --warm: 35 60% 50%;
     --warm-light: 40 50% 96%;
@@ -54,7 +54,7 @@
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(25 20% 12%) 0%, hsl(20 45% 28%) 100%);
     --gradient-coral: linear-gradient(135deg, hsl(22 92% 62%) 0%, hsl(35 90% 60%) 100%);
-    --gradient-pop: linear-gradient(135deg, hsl(168 65% 38%) 0%, hsl(185 60% 42%) 100%);
+    --gradient-pop: linear-gradient(135deg, hsl(22 85% 48%) 0%, hsl(35 90% 52%) 100%);
     --gradient-warm: linear-gradient(180deg, hsl(42 45% 92%), hsl(45 30% 97%));
 
     /* Shadows — warm tinted */
@@ -62,7 +62,7 @@
     --shadow-card: 0 8px 30px -8px hsl(25 30% 15% / 0.12);
     --shadow-elevated: 0 20px 50px -12px hsl(25 30% 15% / 0.18);
     --shadow-accent: 0 8px 24px -4px hsl(22 92% 62% / 0.28);
-    --shadow-pop: 0 8px 24px -4px hsl(168 65% 42% / 0.25);
+    --shadow-pop: 0 8px 24px -4px hsl(28 85% 46% / 0.25);
 
     --sidebar-background: 40 25% 96%;
     --sidebar-foreground: 25 20% 12%;
@@ -103,7 +103,7 @@
     --input: 25 10% 22%;
     --ring: 22 88% 60%;
 
-    --pop: 168 58% 48%;
+    --pop: 28 85% 52%;
     --pop-foreground: 0 0% 100%;
 
     --success: 155 55% 45%;
@@ -112,7 +112,7 @@
     --warning-foreground: 25 12% 8%;
 
     --shadow-accent: 0 8px 24px -4px hsl(22 88% 60% / 0.35);
-    --shadow-pop: 0 8px 24px -4px hsl(168 58% 48% / 0.3);
+    --shadow-pop: 0 8px 24px -4px hsl(28 85% 52% / 0.3);
 
     --sidebar-background: 25 10% 10%;
     --sidebar-foreground: 40 20% 95%;
