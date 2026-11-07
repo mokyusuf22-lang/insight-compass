@@ -4,6 +4,7 @@
 |---|---|
 | `aura-plan` | Aura's goal themes (`mode: "themes"`) and the step-by-step plan (`mode: "plan"`) |
 | `generate-coaching` | "Ask Aura" answers on the task page |
+| `delete-account` | Account → "Delete my account": removes the user's data and login (uses the service role, server-side only) |
 | `_shared/` | Shared prompts (`prompts.ts`), Claude helper (`ai.ts`), coach name (`coach.ts`). Not deployed on its own. |
 
 Prompts, readable: [docs/AI_PROMPTS.md](../../docs/AI_PROMPTS.md).
@@ -16,8 +17,12 @@ The app talks to the Supabase project in `.env` (`VITE_SUPABASE_PROJECT_ID`, cur
 supabase login
 supabase link --project-ref gbrgscsloxjvqquknmxm
 supabase secrets set ANTHROPIC_API_KEY=sk-ant-...        # from console.anthropic.com
-supabase functions deploy aura-plan generate-coaching
+# Websites allowed to call the functions from a browser (comma-separated; * matches a subdomain part).
+supabase secrets set ALLOWED_ORIGINS="https://<your-domain>,https://www.<your-domain>,https://*.vercel.app,http://localhost:8080"
+supabase functions deploy aura-plan generate-coaching delete-account
 ```
+
+Run `supabase/migrations/20261107120000_security_hardening.sql` too. It adds the per-user AI limits that the functions check. Until it's run, the functions log `quota check failed` and allow the call.
 
 ### Smoke test
 

@@ -14,6 +14,43 @@ export const corsHeaders = {
 export const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+/**
+ * Browser origins allowed to call the functions, from the ALLOWED_ORIGINS secret
+ * (comma-separated, e.g. "https://bemore.app,https://www.bemore.app,http://localhost:8080").
+ * Unset means any origin, which is only acceptable before launch.
+ */
+function allowedOrigin(req: Request): string {
+  const list = (Deno.env.get("ALLOWED_ORIGINS") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (list.length === 0) return "*";
+  const origin = req.headers.get("Origin") ?? "";
+  // Vercel preview deployments: allow "https://*.vercel.app"-style wildcard entries.
+  const ok = list.some((o) =>
+    o === origin || (o.includes("*") && new RegExp(`^${o.split("*").map(escapeRe).join("[a-z0-9-]+")}$`).test(origin))
+  );
+  return ok ? origin : list[0];
+}
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Wraps a handler: answers CORS preflight and stamps the allowed origin on every response. */
+export function withCors(handler: (req: Request) => Promise<Response>) {
+  return async (req: Request): Promise<Response> => {
+    const origin = allowedOrigin(req);
+    const res = req.method === "OPTIONS" ? new Response(null, { headers: corsHeaders }) : await handler(req);
+    const headers = new Headers(res.headers);
+    for (const [k, v] of Object.entries(corsHeaders)) headers.set(k, v);
+    headers.set("Access-Control-Allow-Origin", origin);
+    if (origin !== "*") headers.set("Vary", "Origin");
+    return new Response(res.body, { status: res.status, headers });
+  };
+}
+
+/** A Supabase client acting as the caller, so RLS and auth.uid() apply. */
+export function userClient(req: Request) {
+  return createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
+    global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
+  });
+}
+
 /** The signed-in user (guest accounts included), or null. */
 export async function getUser(req: Request) {
   const authHeader = req.headers.get("Authorization");
@@ -21,6 +58,22 @@ export async function getUser(req: Request) {
   const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "");
   const { data: { user }, error } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
   return error ? null : user;
+}
+
+/**
+ * Per-user AI limits (see consume_ai_quota in the security_hardening migration).
+ * Returns a 429 response when the user is over their limit, otherwise null.
+ * If the quota function is missing (migration not run yet) it logs and lets the call through.
+ */
+export async function enforceQuota(req: Request, kind: "themes" | "plan" | "qa"): Promise<Response | null> {
+  const { data, error } = await userClient(req).rpc("consume_ai_quota", { p_kind: kind });
+  if (error) {
+    console.error(`quota check failed (${kind}), allowing call:`, error.message);
+    return null;
+  }
+  return data === false
+    ? json({ error: "You’ve reached today’s limit for AI requests. Please try again tomorrow.", stage: "quota" }, 429)
+    : null;
 }
 
 export const FALLBACK_MODEL = "claude-haiku-5-5";
@@ -94,11 +147,12 @@ export async function generate<T>(spec: CallSpec, clean: (out: unknown) => T, ta
   if (last instanceof AiError) throw last;
   if (last instanceof Anthropic.RateLimitError) throw new AiError("Rate limit exceeded. Please try again shortly.", 429, "rate_limit");
   if (last instanceof Anthropic.APIError) throw new AiError("AI service error. Please try again.", 502, "api");
-  throw new AiError(last instanceof Error ? last.message : "Unknown error", 500, "unknown");
+  throw new AiError("AI service error. Please try again.", 500, "unknown");
 }
 
 export function errorResponse(error: unknown) {
   if (error instanceof AiError) return json({ error: error.message, stage: error.stage }, error.status);
   console.error("unexpected error:", error);
-  return json({ error: error instanceof Error ? error.message : "Unknown error", stage: "unknown" }, 500);
+  // Don't echo internal error details to the browser; they're in the function logs.
+  return json({ error: "Something went wrong. Please try again.", stage: "unknown" }, 500);
 }

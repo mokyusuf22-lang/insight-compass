@@ -8,11 +8,16 @@ import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
+import { openCookieSettings, recordConsents, untypedDb } from '@/lib/consent';
+import { LegalLinks } from './Legal';
 import {
   CircleUser,
   ShieldCheck,
   UserMinus,
   ArrowLeft,
+  Download,
+  Lock,
   Eye,
   EyeOff,
 } from 'lucide-react';
@@ -50,8 +55,11 @@ export default function Account() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
-  const [isDeactivating, setIsDeactivating] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [marketing, setMarketing] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth');
@@ -59,6 +67,14 @@ export default function Account() {
 
   useEffect(() => {
     if (user?.user_metadata?.display_name) setDisplayName(user.user_metadata.display_name);
+  }, [user]);
+
+  // Latest marketing-email choice (consents are append-only, so the newest row wins).
+  useEffect(() => {
+    if (!user) return;
+    untypedDb.from('user_consents').select('granted').eq('user_id', user.id).eq('consent_type', 'marketing_email')
+      .order('created_at', { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => setMarketing(!!(data as { granted?: boolean } | null)?.granted));
   }, [user]);
 
   const handleSaveProfile = async () => {
@@ -99,17 +115,73 @@ export default function Account() {
     }
   };
 
-  const handleDeactivateAccount = async () => {
-    setIsDeactivating(true);
+  const handleMarketing = async (on: boolean) => {
+    setMarketing(on);
+    const ok = await recordConsents([{ type: 'marketing_email', granted: on }]);
+    if (!ok) {
+      setMarketing(!on);
+      toast({ title: 'Error', description: 'Couldn’t save your choice. Please try again.', variant: 'destructive' });
+    }
+  };
+
+  // GDPR data portability: everything we hold about the user, as one JSON file.
+  const handleExport = async () => {
+    if (!user) return;
+    setIsExporting(true);
     try {
+      const tables = [
+        'profiles', 'aura_sessions', 'path_commitments', 'path_recommendations', 'personal_paths',
+        'weekly_execution_plans', 'reality_reports', 'career_strategies', 'assessments', 'assessment_responses',
+        'disc_assessments', 'mbti_assessments', 'strengths_assessments', 'wheel_of_life_assessments',
+        'value_map_assessments', 'blob_tree_assessments', 'coach_requests', 'coach_assignments', 'user_consents',
+      ];
+      const out: Record<string, unknown> = {
+        exported_at: new Date().toISOString(),
+        account: { id: user.id, email: user.email ?? null, created_at: user.created_at, guest: !!user.is_anonymous },
+      };
+      await Promise.all(tables.map(async (t) => {
+        const { data, error } = await untypedDb.from(t).select('*').eq('user_id', user.id);
+        if (!error) out[t] = data;
+      }));
+      const assignmentIds = ((out.coach_assignments as { id: string }[] | undefined) ?? []).map((a) => a.id);
+      if (assignmentIds.length) {
+        const { data } = await untypedDb.from('coach_messages').select('*').in('assignment_id', assignmentIds);
+        out.coach_messages = data ?? [];
+      }
+      const url = URL.createObjectURL(new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bemore-data-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({ title: 'Error', description: 'Couldn’t prepare your data. Please try again.', variant: 'destructive' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-account', { body: { confirm: 'DELETE' } });
+      if (error || !(data as { deleted?: boolean } | null)?.deleted) {
+        let message = 'We couldn’t delete your account. Please contact support.';
+        try {
+          const body = await (error as { context?: Response } | null)?.context?.json();
+          if (body?.error) message = body.error;
+        } catch { /* keep the default message */ }
+        throw new Error(message);
+      }
       await signOut();
       navigate('/');
-      toast({ title: 'Account Deactivated', description: 'Sign in anytime to reactivate.' });
-    } catch {
-      toast({ title: 'Error', description: 'Failed to deactivate account.', variant: 'destructive' });
+      toast({ title: 'Account deleted', description: 'Your account and data have been permanently deleted.' });
+    } catch (e) {
+      toast({ title: 'Error', description: (e as Error).message, variant: 'destructive' });
     } finally {
-      setIsDeactivating(false);
-      setShowDeactivateDialog(false);
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+      setDeleteConfirm('');
     }
   };
 
@@ -191,28 +263,76 @@ export default function Account() {
           </div>
         </section>
 
-        {/* ── Danger Zone ─────────────────────────────────── */}
+        {/* ── Privacy & data ──────────────────────────────── */}
+        <section className="chamfer bg-card border border-border p-6">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="w-12 h-12 chamfer-sm bg-secondary flex items-center justify-center flex-shrink-0">
+              <Lock className="w-6 h-6 text-foreground" />
+            </div>
+            <div>
+              <h2 className="text-lg font-serif font-semibold">Privacy &amp; data</h2>
+              <p className="text-sm text-muted-foreground">Your choices and a copy of your data</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-4 p-4 chamfer-sm bg-secondary/50">
+              <label htmlFor="acct-marketing">
+                <p className="font-medium text-sm">Tips and updates by email</p>
+                <p className="text-sm text-muted-foreground">
+                  {user?.email ? 'Occasional emails. You can turn this off at any time.' : 'Add an email to your account to receive these.'}
+                </p>
+              </label>
+              <Switch
+                id="acct-marketing"
+                checked={!!marketing}
+                disabled={marketing === null || !user?.email}
+                onCheckedChange={handleMarketing}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-4 p-4 chamfer-sm bg-secondary/50">
+              <div>
+                <p className="font-medium text-sm">Cookies</p>
+                <p className="text-sm text-muted-foreground">Change whether we use analytics and advertising cookies</p>
+              </div>
+              <Button variant="outline" onClick={openCookieSettings}>Cookie settings</Button>
+            </div>
+            <div className="flex items-center justify-between gap-4 p-4 chamfer-sm bg-secondary/50">
+              <div>
+                <p className="font-medium text-sm">Download my data</p>
+                <p className="text-sm text-muted-foreground">Your goal, answers, plan, consents and coach messages as a file</p>
+              </div>
+              <Button variant="outline" onClick={handleExport} disabled={isExporting} className="gap-2">
+                {isExporting ? <LoadingSpinner size="sm" /> : <><Download className="w-4 h-4" />Download</>}
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Delete account ──────────────────────────────── */}
         <section className="chamfer bg-destructive/3 border-2 border-destructive/25 p-6">
           <div className="flex items-start gap-4 mb-5">
             <div className="w-12 h-12 chamfer-sm bg-destructive/10 flex items-center justify-center flex-shrink-0">
               <UserMinus className="w-6 h-6 text-destructive" />
             </div>
             <div>
-              <h2 className="text-lg font-serif font-semibold text-destructive">Danger Zone</h2>
-              <p className="text-sm text-muted-foreground">Irreversible account actions</p>
+              <h2 className="text-lg font-serif font-semibold text-destructive">Delete account</h2>
+              <p className="text-sm text-muted-foreground">Permanent and can’t be undone</p>
             </div>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            Deactivating your account will pause your Skill Path and coaching access. Your data is retained and you can reactivate anytime by signing in again.
+            This permanently deletes your account, goal, answers, plan, progress and coach messages.
+            Download your data first if you want a copy.
           </p>
           <Button
             variant="outline"
             className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-            onClick={() => setShowDeactivateDialog(true)}
+            onClick={() => setShowDeleteDialog(true)}
           >
-            Deactivate Account
+            Delete my account
           </Button>
         </section>
+
+        <LegalLinks className="justify-center pt-2" />
       </main>
 
       {/* Password Dialog */}
@@ -283,23 +403,30 @@ export default function Account() {
         </DialogContent>
       </Dialog>
 
-      {/* Deactivation Dialog */}
-      <AlertDialog open={showDeactivateDialog} onOpenChange={setShowDeactivateDialog}>
+      {/* Delete Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={(o) => { setShowDeleteDialog(o); if (!o) setDeleteConfirm(''); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate Account?</AlertDialogTitle>
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
             <AlertDialogDescription>
-              Deactivating will pause your Skill Path and coaching access. You can reactivate anytime by signing in.
+              Everything will be permanently deleted. Type <strong>DELETE</strong> to confirm.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <Input
+            value={deleteConfirm}
+            onChange={(e) => setDeleteConfirm(e.target.value)}
+            placeholder="DELETE"
+            aria-label="Type DELETE to confirm"
+            autoComplete="off"
+          />
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeactivateAccount}
-              disabled={isDeactivating}
+              onClick={(e) => { e.preventDefault(); handleDeleteAccount(); }}
+              disabled={isDeleting || deleteConfirm !== 'DELETE'}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeactivating ? <LoadingSpinner size="sm" /> : 'Deactivate'}
+              {isDeleting ? <LoadingSpinner size="sm" /> : 'Delete permanently'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

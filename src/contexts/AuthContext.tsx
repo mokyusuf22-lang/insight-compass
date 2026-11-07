@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { flushPendingConsents } from '@/lib/consent';
 
 interface Profile {
   id: string;
@@ -96,6 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(() => {
             fetchProfile(session.user.id);
             checkUserRoles();
+            // Save consents ticked on the sign-in page before the account existed.
+            flushPendingConsents();
           }, 0);
         } else {
           setProfile(null);

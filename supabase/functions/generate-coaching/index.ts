@@ -5,8 +5,7 @@
 // The user's location is read from their latest path commitment, so answers can be local.
 // The prompt is in ../_shared/prompts.ts (readable copy: docs/AI_PROMPTS.md).
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, errorResponse, generate, getUser, json } from "../_shared/ai.ts";
+import { enforceQuota, errorResponse, generate, getUser, json, userClient, withCors } from "../_shared/ai.ts";
 import { TASK_COACH_SYSTEM } from "../_shared/prompts.ts";
 
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
@@ -20,9 +19,7 @@ const ANSWER_SCHEMA = {
 
 async function userLocation(req: Request, userId: string): Promise<string> {
   try {
-    const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
-      global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
-    });
+    const supabase = userClient(req);
     const { data } = await supabase
       .from("path_commitments")
       .select("chosen_path")
@@ -37,8 +34,7 @@ async function userLocation(req: Request, userId: string): Promise<string> {
   }
 }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+serve(withCors(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const user = await getUser(req);
@@ -54,6 +50,9 @@ serve(async (req) => {
   const taskTitle = str(raw?.task_context?.title, 200);
   if (question.length < 2) return json({ error: "question is required", stage: "input" }, 400);
   if (!taskTitle) return json({ error: "task_context.title is required", stage: "input" }, 400);
+
+  const overLimit = await enforceQuota(req, "qa");
+  if (overLimit) return overLimit;
 
   const location = await userLocation(req, user.id);
   const prompt = [
@@ -81,4 +80,4 @@ serve(async (req) => {
   } catch (error) {
     return errorResponse(error);
   }
-});
+}));

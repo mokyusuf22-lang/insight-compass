@@ -9,7 +9,7 @@
 //
 // The prompts are in ../_shared/prompts.ts (readable copy: docs/AI_PROMPTS.md).
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders, errorResponse, generate, getUser, json } from "../_shared/ai.ts";
+import { enforceQuota, errorResponse, generate, getUser, json, withCors } from "../_shared/ai.ts";
 import { PLAN_SYSTEM, THEMES_SYSTEM } from "../_shared/prompts.ts";
 
 // ── Input validation ─────────────────────────────────────────
@@ -167,8 +167,7 @@ function cleanPlan(out: any) {
 }
 
 // ── Handler ──────────────────────────────────────────────────
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+serve(withCors(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   // Only signed-in users (guests included) may spend API credits.
@@ -181,6 +180,9 @@ serve(async (req) => {
     return json({ error: "Invalid JSON body", stage: "input" }, 400);
   }
   if (typeof input === "string") return json({ error: input, stage: "input" }, 400);
+
+  const overLimit = await enforceQuota(req, input.mode === "plan" ? "plan" : "themes");
+  if (overLimit) return overLimit;
 
   try {
     if (input.mode === "plan") {
@@ -200,4 +202,4 @@ serve(async (req) => {
   } catch (error) {
     return errorResponse(error);
   }
-});
+}));
