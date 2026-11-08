@@ -12,6 +12,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { ScrollReveal } from '@/components/ScrollReveal';
+import { openCookieSettings } from '@/lib/consent';
 import heroImage from '@/assets/hero-gen-z.jpg';
 import quoteImage from '@/assets/professional-nurse.jpg';
 import builderImage from '@/assets/professional-builder.jpg';
@@ -310,7 +311,7 @@ export default function Index() {
               <h4 className="font-sans font-semibold mb-4 text-sm uppercase tracking-wider">Links</h4>
               <ul className="space-y-2 text-background/60 text-sm">
                 <li><a href="#" className="hover:text-background transition-colors">How it works</a></li>
-                <li><a href="#" className="hover:text-background transition-colors">Privacy</a></li>
+                <li><Link to="/privacy" className="hover:text-background transition-colors">Privacy</Link></li>
                 <li><a href="#" className="hover:text-background transition-colors">Contact</a></li>
                 <li><a href="#" className="hover:text-background transition-colors">Contact</a></li>
               </ul>
@@ -336,9 +337,11 @@ export default function Index() {
           <div className="pt-8 border-t border-background/20">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-xs text-background/40">© 2026 Be:More. All rights reserved.</p>
-              <div className="text-xs text-background/40 flex gap-4">
-                <a href="#" className="hover:text-background/60">Terms of Service</a>
-                <a href="#" className="hover:text-background/60">Privacy Policy</a>
+              <div className="text-xs text-background/40 flex flex-wrap gap-4">
+                <Link to="/terms" className="hover:text-background/60">Terms of Service</Link>
+                <Link to="/privacy" className="hover:text-background/60">Privacy Policy</Link>
+                <Link to="/cookies" className="hover:text-background/60">Cookie Policy</Link>
+                <button type="button" onClick={openCookieSettings} className="hover:text-background/60">Cookie settings</button>
               </div>
             </div>
           </div>

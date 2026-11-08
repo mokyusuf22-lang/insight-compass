@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { recordConsents } from '@/lib/consent';
 import { StepProps } from './types';
 import { Wordmark } from './ui';
 
@@ -9,6 +12,19 @@ const HOW_IT_WORKS = [
 ];
 
 export function WelcomeStep({ s, update, go }: StepProps) {
+  const [agreed, setAgreed] = useState(false);
+  const [showError, setShowError] = useState(false);
+
+  const start = () => {
+    if (!agreed) { setShowError(true); return; }
+    // Saved in the background; a failed save is logged and shouldn't block the user.
+    void recordConsents([
+      { type: 'ai_processing', granted: true },
+      { type: 'sensitive_data', granted: true },
+    ]);
+    go(1);
+  };
+
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
       <div className="flex flex-col justify-between gap-10 px-6 py-10 md:px-16 md:py-14">
@@ -24,7 +40,7 @@ export function WelcomeStep({ s, update, go }: StepProps) {
           </p>
           <form
             className="flex max-w-[480px] flex-col gap-2.5"
-            onSubmit={(e) => { e.preventDefault(); go(1); }}
+            onSubmit={(e) => { e.preventDefault(); start(); }}
           >
             <label htmlFor="bm-name" className="text-sm font-semibold">What should we call you?</label>
             <div className="flex flex-col gap-2.5 sm:flex-row">
@@ -40,6 +56,26 @@ export function WelcomeStep({ s, update, go }: StepProps) {
                 Let’s start
               </button>
             </div>
+            <label className="mt-2 flex items-start gap-2.5 text-[13px] leading-snug text-bm-muted">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => { setAgreed(e.target.checked); setShowError(false); }}
+                aria-invalid={showError}
+                aria-describedby={showError ? 'bm-consent-error' : undefined}
+                className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[hsl(var(--accent))]"
+              />
+              <span>
+                I agree that Aura can use my answers, including how I rate my health and wellbeing, to build my plan.
+                Plans are written by AI (Claude, by Anthropic, or a backup AI provider if Claude is unavailable), so my
+                answers are sent to them for that purpose only. <Link to="/privacy" target="_blank" className="underline hover:text-bm-ink">How we use your data</Link>
+              </span>
+            </label>
+            {showError && (
+              <p id="bm-consent-error" role="alert" className="m-0 text-sm text-red-700">
+                Please tick the box to continue.
+              </p>
+            )}
           </form>
         </div>
         <p className="m-0 text-[13px] text-bm-muted">About 5 minutes · You can take the deeper assessments later</p>

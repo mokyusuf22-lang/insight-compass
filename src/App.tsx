@@ -34,6 +34,9 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminCoachApplications from "./pages/AdminCoachApplications";
 import AdminCoaching from "./pages/AdminCoaching";
 import NotFound from "./pages/NotFound";
+import { Privacy, Terms, Cookies } from "./pages/Legal";
+import { CookieBanner } from "@/components/legal/CookieBanner";
+import { PageViewTracker } from "@/components/legal/PageViewTracker";
 
 const queryClient = new QueryClient();
 
@@ -44,9 +47,14 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <CookieBanner />
+          <PageViewTracker />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/cookies" element={<Cookies />} />
             {/* Aura onboarding: goal → check-ins → report → path → commit.
                 Deep-dive assessments are taken afterwards from /welcome. */}
             <Route path="/aura" element={<AuraFlow />} />

@@ -59,7 +59,15 @@ export function CommitStep({ s, m, update, go, saving, planLoading, onCommit }: 
                 );
               })}
             </div>
-            {s.support === 'coach' && <CoachCard compact className="border-bm-line bg-bm-paper" />}
+            {s.support === 'coach' && (
+              <>
+                <CoachCard compact className="border-bm-line bg-bm-paper" />
+                <p className="m-0 text-[13px] leading-snug text-bm-muted">
+                  By choosing coaching you agree that {PRIMARY_COACH.name} can see your goal, Aura answers, plan,
+                  progress and messages. You can stop coaching at any time.
+                </p>
+              </>
+            )}
           </div>
           <div className="flex flex-col gap-2">
             <label htmlFor="bm-why" className="text-base font-semibold">

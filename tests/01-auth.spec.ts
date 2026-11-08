@@ -33,10 +33,19 @@ test.describe('AUTH-P: Positive', () => {
   test('AUTH-P-03b — "Continue as guest" signs in without an email and opens Aura', async ({ page }) => {
     // Needs "Allow anonymous sign-ins" enabled on the Supabase project.
     await page.goto('/auth');
+    await page.click('#agree');
     await page.click('button:has-text("Continue as guest")');
     await page.waitForURL(/\/aura/, { timeout: 15_000 });
     expect(page.url()).toContain('/aura');
   });
+
+  test('AUTH-P-03d — Guest start is blocked until the age and terms box is ticked', async ({ page }) => {
+    await page.goto('/auth');
+    await page.click('button:has-text("Continue as guest")');
+    await expect(page.locator('#agree-error')).toBeVisible();
+    expect(page.url()).toContain('/auth');
+  });
+
 
   test('AUTH-P-03c — Google sign-in is hidden while disabled', async ({ page }) => {
     await page.goto('/auth');
@@ -54,6 +63,18 @@ test.describe('AUTH-P: Positive', () => {
     await page.goto('/aura');
     // Aura saves progress to the user's account, so it requires sign-in first
     await page.waitForURL('/auth', { timeout: 10_000 });
+  });
+});
+
+test.describe('AUTH-C: Cookie consent', () => {
+  // Start with no saved cookie choice so the banner shows.
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test('AUTH-C-01 — Cookie banner offers Reject all as well as Accept all', async ({ page }) => {
+    await page.goto('/auth');
+    await expect(page.locator('button:has-text("Reject all")')).toBeVisible();
+    await page.click('button:has-text("Reject all")');
+    await expect(page.locator('button:has-text("Accept all")')).toHaveCount(0);
   });
 });
 

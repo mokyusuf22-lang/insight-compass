@@ -12,6 +12,7 @@ import { useCoachThread } from '@/hooks/useCoachThread';
 import { findMyCoachAssignment, getCoachDisplayName } from '@/lib/coaching';
 import { CoachCard } from '@/components/coaching/CoachCard';
 import { PRIMARY_COACH } from '@/lib/coachProfile';
+import { recordConsents } from '@/lib/consent';
 
 interface CoachInfo {
   assignmentId: string;
@@ -62,6 +63,7 @@ export default function MyCoach() {
   // Everyone has the same coach: one click assigns them (or queues them if no coach account exists yet).
   const connect = async () => {
     setConnecting(true);
+    void recordConsents([{ type: 'coach_access', granted: true }]);
     const { error } = await supabase.rpc('request_coach', {});
     setConnecting(false);
     if (error) {
@@ -97,9 +99,14 @@ export default function MyCoach() {
                 You’re on {PRIMARY_COACH.name}’s list. They’ll message you here as soon as you’re connected.
               </p>
             ) : (
-              <Button onClick={connect} disabled={connecting} className="h-12 rounded-full bg-accent text-accent-foreground hover:bg-accent/90">
-                {connecting ? 'Connecting…' : `Message ${PRIMARY_COACH.name}`}
-              </Button>
+              <>
+                <Button onClick={connect} disabled={connecting} className="h-12 rounded-full bg-accent text-accent-foreground hover:bg-accent/90">
+                  {connecting ? 'Connecting…' : `Message ${PRIMARY_COACH.name}`}
+                </Button>
+                <p className="text-xs text-muted-foreground text-center leading-relaxed">
+                  {PRIMARY_COACH.name} will be able to see your goal, Aura answers, plan, progress and messages.
+                </p>
+              </>
             )}
             <Button onClick={() => navigate('/welcome')} variant="ghost" className="rounded-full">
               <ArrowLeft className="w-4 h-4 mr-2" />

@@ -4,6 +4,7 @@ import { RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { recordConsents } from '@/lib/consent';
 import { cn } from '@/lib/utils';
 import {
   AuraFlowState, HOURS, PlanPhase, STEP_LABELS, Theme,
@@ -298,6 +299,7 @@ export default function AuraFlow() {
       // Match a human coach now (least-loaded with room) or join the admin queue.
       // A failure here shouldn't undo the commit; the dashboard shows the queued state.
       if (s.support === 'coach') {
+        void recordConsents([{ type: 'coach_access', granted: true }]);
         const { data: match, error: matchError } = await supabase.rpc('request_coach', { p_goal: m.title });
         if (matchError) console.error('request_coach failed:', matchError);
         const name = (match as { display_name?: string } | null)?.display_name;

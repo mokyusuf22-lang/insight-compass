@@ -9,8 +9,11 @@ import { LoadingSpinner } from '@/components/assessment/LoadingSpinner';
 import { SignInConfirmation } from '@/components/SignInConfirmation';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 import { Eye, EyeOff } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { MIN_AGE, queuePendingConsents } from '@/lib/consent';
 import { z } from 'zod';
 import { lovable } from '@/integrations/lovable/index';
+import { LegalLinks } from './Legal';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -40,6 +43,9 @@ export default function Auth() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedEmail, setConfirmedEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [marketing, setMarketing] = useState(false);
+  const [agreeError, setAgreeError] = useState(false);
 
   const { signIn, signUp, signInAsGuest, resetPassword, user, loading, isCoach, isAdmin, rolesLoading } = useAuth();
   const navigate = useNavigate();
@@ -87,7 +93,22 @@ export default function Auth() {
     }
   };
 
+  // Guest start and sign-up both create an account, so both need the age + terms agreement.
+  const requireAgreement = (withMarketing: boolean) => {
+    if (!agreed) {
+      setAgreeError(true);
+      return false;
+    }
+    queuePendingConsents([
+      { type: 'age_16', granted: true },
+      { type: 'terms_privacy', granted: true },
+      ...(withMarketing ? [{ type: 'marketing_email' as const, granted: marketing }] : []),
+    ]);
+    return true;
+  };
+
   const handleGuest = async () => {
+    if (!requireAgreement(false)) return;
     setIsGuestLoading(true);
     const { error } = await signInAsGuest();
     setIsGuestLoading(false);
@@ -186,6 +207,7 @@ export default function Auth() {
           setShowConfirmation(true);
         }
       } else {
+        if (!requireAgreement(true)) return;
         const { error } = await signUp(email, password);
         if (error) {
           if (error.message.includes('already registered')) {
@@ -309,6 +331,28 @@ export default function Auth() {
 
             {mode !== 'forgot' && (
               <>
+                <div className="mb-4">
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="agree"
+                      checked={agreed}
+                      onCheckedChange={(v) => { setAgreed(v === true); setAgreeError(false); }}
+                      aria-invalid={agreeError}
+                      aria-describedby={agreeError ? 'agree-error' : undefined}
+                      className="mt-0.5"
+                    />
+                    <Label htmlFor="agree" className="text-sm font-normal leading-snug text-muted-foreground">
+                      I’m {MIN_AGE} or over and I agree to the{' '}
+                      <Link to="/terms" target="_blank" className="underline hover:text-foreground">Terms of Service</Link> and{' '}
+                      <Link to="/privacy" target="_blank" className="underline hover:text-foreground">Privacy Policy</Link>.
+                    </Label>
+                  </div>
+                  {agreeError && (
+                    <p id="agree-error" role="alert" className="mt-2 text-sm text-destructive">
+                      Please tick this box to continue.
+                    </p>
+                  )}
+                </div>
                 <Button
                   type="button"
                   className="w-full h-12 rounded-full mb-2 bg-accent text-accent-foreground hover:bg-accent/90 text-base font-medium"
@@ -447,6 +491,20 @@ export default function Auth() {
                 </div>
               )}
 
+              {mode === 'signup' && (
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="marketing"
+                    checked={marketing}
+                    onCheckedChange={(v) => setMarketing(v === true)}
+                    className="mt-0.5"
+                  />
+                  <Label htmlFor="marketing" className="text-sm font-normal leading-snug text-muted-foreground">
+                    Send me occasional tips and updates by email. Optional; unsubscribe any time.
+                  </Label>
+                </div>
+              )}
+
               <Button
                 type="submit"
                 className="w-full h-12 rounded-full bg-foreground text-background hover:bg-foreground/90 text-base font-medium"
@@ -497,17 +555,7 @@ export default function Auth() {
             </div>
           </div>
 
-          {/* Terms */}
-          <div className="mt-8 text-center">
-            <p className="text-xs text-muted-foreground">
-              By continuing, you acknowledge and agree to our
-            </p>
-            <p className="text-xs text-muted-foreground">
-              <a href="#" className="underline hover:text-foreground">terms of service</a>
-              {' '}and{' '}
-              <a href="#" className="underline hover:text-foreground">privacy policy</a>
-            </p>
-          </div>
+          <LegalLinks className="mt-8 justify-center" />
         </div>
       </main>
 
