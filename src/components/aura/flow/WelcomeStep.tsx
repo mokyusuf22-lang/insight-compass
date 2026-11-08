@@ -67,8 +67,8 @@ export function WelcomeStep({ s, update, go }: StepProps) {
               />
               <span>
                 I agree that Aura can use my answers, including how I rate my health and wellbeing, to build my plan.
-                Plans are written by AI (Claude, by Anthropic), so my answers are sent to Anthropic for that purpose
-                only. <Link to="/privacy" target="_blank" className="underline hover:text-bm-ink">How we use your data</Link>
+                Plans are written by AI (Claude, by Anthropic, or a backup AI provider if Claude is unavailable), so my
+                answers are sent to them for that purpose only. <Link to="/privacy" target="_blank" className="underline hover:text-bm-ink">How we use your data</Link>
               </span>
             </label>
             {showError && (

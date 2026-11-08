@@ -20,7 +20,9 @@
     "test:bemore": "playwright test tests/03-bemore-flow.spec.ts",
     "test:assessments": "playwright test tests/04-assessments.spec.ts",
     "test:access": "playwright test tests/05-access-control.spec.ts",
-    "test:coaching": "playwright test tests/06-coaching.spec.ts"
+    "test:coaching": "playwright test tests/06-coaching.spec.ts",
+    "supabase:setup": "node scripts/supabase-setup.mjs",
+    "supabase:check": "node scripts/supabase-setup.mjs --check"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

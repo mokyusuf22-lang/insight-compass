@@ -7,9 +7,13 @@
 | `delete-account` | Account → "Delete my account": removes the user's data and login (uses the service role, server-side only) |
 | `_shared/` | Shared prompts (`prompts.ts`), Claude helper (`ai.ts`), coach name (`coach.ts`). Not deployed on its own. |
 
+Backup AI providers (Groq, Mistral, OpenRouter) and how to get free keys: [docs/AI_PROVIDERS.md](../../docs/AI_PROVIDERS.md).
+
 Prompts, readable: [docs/AI_PROMPTS.md](../../docs/AI_PROMPTS.md).
 
 ## Deploy and verify
+
+**Shortcut:** `npm run supabase:setup` runs the new migrations and deploys all three functions. Options: `--admin <email>`, `--domain <domain>`, `--check`. See `scripts/supabase-setup.mjs`. The manual steps are below.
 
 The app talks to the Supabase project in `.env` (`VITE_SUPABASE_PROJECT_ID`, currently `gbrgscsloxjvqquknmxm`). The functions **and** the secret must be on that same project, or every AI call fails and Aura shows general content instead.
 

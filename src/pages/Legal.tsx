@@ -87,8 +87,9 @@ export function Privacy() {
 
       <h2>AI</h2>
       <p>
-        Your plan, themes and task answers are written by AI (Claude, made by Anthropic). To do this we send your
-        goal, Aura answers and town/country to Anthropic. Under Anthropic’s commercial terms this data isn’t used to
+        Your plan, themes and task answers are written by AI. We use Claude (made by Anthropic) first. If it’s
+        unavailable, we use a backup AI provider instead (listed below). To do this we send your goal, Aura answers
+        and town/country to the provider that answers. We only use providers whose terms say this data isn’t used to
         train their models. AI suggestions can be wrong: they aren’t medical, financial or legal advice. No decision
         with legal or similarly significant effects is made about you by automated means.
       </p>
@@ -98,6 +99,7 @@ export function Privacy() {
         <li><strong>Your coach</strong> ({PRIMARY_COACH.name}), if you choose coaching: your goal, answers, plan, progress and messages.</li>
         <li><strong>Supabase</strong> (database, sign-in and hosting of our data), in Ireland (EU).</li>
         <li><strong>Anthropic</strong> (AI), in the United States.</li>
+        <li><strong>Backup AI providers</strong>, used only if Anthropic is unavailable: Groq (United States), Mistral AI (France, EU) and OpenRouter (United States).</li>
         <li><strong>Vercel</strong> (website hosting), global.</li>
         <li><strong>Google</strong> (Analytics and Ads), only if you accept those cookies.</li>
       </ul>

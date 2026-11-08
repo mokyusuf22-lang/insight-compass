@@ -22,13 +22,13 @@ CREATE POLICY "Anyone can view coach profiles" ON public.coach_profiles
 DROP POLICY IF EXISTS "Coaches can insert own profile" ON public.coach_profiles;
 CREATE POLICY "Coaches can insert own profile" ON public.coach_profiles
   FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = user_id AND public.has_role(auth.uid(), 'coach'));
+  WITH CHECK (auth.uid() = user_id AND public.has_role(_user_id => auth.uid(), _role => 'coach'));
 
 DROP POLICY IF EXISTS "Coaches can update own profile" ON public.coach_profiles;
 CREATE POLICY "Coaches can update own profile" ON public.coach_profiles
   FOR UPDATE TO authenticated
-  USING (auth.uid() = user_id AND public.has_role(auth.uid(), 'coach'))
-  WITH CHECK (auth.uid() = user_id AND public.has_role(auth.uid(), 'coach'));
+  USING (auth.uid() = user_id AND public.has_role(_user_id => auth.uid(), _role => 'coach'))
+  WITH CHECK (auth.uid() = user_id AND public.has_role(_user_id => auth.uid(), _role => 'coach'));
 
 CREATE OR REPLACE FUNCTION public.protect_coach_admin_fields()
 RETURNS trigger
